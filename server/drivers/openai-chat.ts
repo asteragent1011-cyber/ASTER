@@ -118,8 +118,11 @@ function rejectsToolsParameter(status: number, body: string): boolean {
   try { envelope = object(JSON.parse(body)); } catch { return false; }
   const error = object(envelope?.error);
   if (error?.param === "tools" && error.code === "unsupported_parameter") return true;
-  const message = error?.message ?? envelope?.error;
+  // NVIDIA NIM answers with RFC 7807 problem details ({ status, title, detail }).
+  const message = error?.message ?? envelope?.error ?? envelope?.detail;
   return typeof message === "string" && (
+    // vLLM (and the NIMs built on it) when the model has no tool parser.
+    /^"auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\.?$/i.test(message.trim()) ||
     /\bdoes not support (?:tools|tool calling|function calling)(?:[.!]?$|[.!]?\s)/i.test(message) ||
     /\b(?:tools|tool calling|function calling) (?:is|are) not supported\b/i.test(message) ||
     /^(?:unsupported|unknown|unrecognized) (?:parameter|field):?\s*['"]?tools['"]?[.!]?$/i.test(message.trim())

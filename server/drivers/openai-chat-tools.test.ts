@@ -160,6 +160,8 @@ describe("optional built-in question compatibility", () => {
     [422, { error: { code: "unsupported_parameter", param: "tools", message: "Unsupported request parameter." } }],
     [400, { error: "tools are not supported by this model" }],
     [400, { error: { message: "Unrecognized parameter: 'tools'" } }],
+    [400, { status: 400, title: "Bad Request", detail: "\"auto\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set" }],
+    [400, { type: "about:blank", status: 400, title: "Bad Request", detail: "This model does not support tools." }],
   ])("retries a plain turn once without optional questions after explicit HTTP %s rejection", async (status, error) => {
     const f = await fixture((_body, response, round) => {
       if (round === 1) {
@@ -188,6 +190,7 @@ describe("optional built-in question compatibility", () => {
     [400, { error: { message: "Unsupported parameter: tools[0].function.parameters." } }],
     [400, { error: { code: "unsupported_parameter", param: "temperature", message: "Unsupported parameter: temperature" } }],
     [400, { error: { message: "Invalid request body." } }],
+    [400, { status: 400, title: "Bad Request", detail: "Invalid request body." }],
     [404, { error: { message: "Unknown model." } }],
     [200, unsupported],
   ])("does not downgrade tools for unrelated HTTP %s error %j", async (status, error) => {

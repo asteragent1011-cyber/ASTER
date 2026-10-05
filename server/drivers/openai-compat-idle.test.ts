@@ -1,9 +1,21 @@
 import { createServer } from "node:http";
 import { afterEach, expect, it, vi } from "vitest";
-import { OpenAICompatDriver } from "./openai-compat.ts";
+import { idleTimeoutMs, OpenAICompatDriver } from "./openai-compat.ts";
 import { recordEvents } from "../testing/events.ts";
 
 afterEach(() => vi.unstubAllEnvs());
+
+it("waits longer for NVIDIA's queued NIM endpoint unless the operator sets a limit", () => {
+  vi.stubEnv("OPENMAUS_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "");
+  expect(idleTimeoutMs("https://openrouter.ai/api/v1")).toBe(180_000);
+  expect(idleTimeoutMs("https://integrate.api.nvidia.com/v1")).toBe(600_000);
+  expect(idleTimeoutMs("https://integrate.api.nvidia.com.example.test/v1")).toBe(180_000);
+  expect(idleTimeoutMs("not a url")).toBe(180_000);
+  vi.stubEnv("OPENMAUS_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "240000");
+  expect(idleTimeoutMs("https://integrate.api.nvidia.com/v1")).toBe(240_000);
+  vi.stubEnv("OPENMAUS_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "nonsense");
+  expect(idleTimeoutMs("https://integrate.api.nvidia.com/v1")).toBe(600_000);
+});
 
 it.each(["json", "http-error", "truncated", "interrupt"] as const)("settles a real loopback %s response without hanging or reporting false success", async (mode) => {
   vi.stubEnv("OPENMAUS_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "1000");

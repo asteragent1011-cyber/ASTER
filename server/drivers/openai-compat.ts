@@ -5,11 +5,25 @@ import { createOpenAIChatRuntime } from "./openai-chat.ts";
 
 const DRIVER_KIND = "openai-compat";
 const DEFAULT_IDLE_TIMEOUT_MS = 180_000;
-const idleTimeoutMs = () => {
+// NVIDIA's hosted NIM queues requests and sends no bytes until the model
+// starts; first-byte waits of two minutes and more were measured on short
+// prompts, so a full turn outlasted the default.
+const QUEUED_IDLE_TIMEOUT_MS = 600_000;
+
+function isNvidiaHostedUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname.toLowerCase() === "integrate.api.nvidia.com";
+  } catch {
+    return false;
+  }
+}
+
+export const idleTimeoutMs = (url: string) => {
+  const fallback = isNvidiaHostedUrl(url) ? QUEUED_IDLE_TIMEOUT_MS : DEFAULT_IDLE_TIMEOUT_MS;
   const raw = process.env.OPENMAUS_OPENAI_COMPAT_IDLE_TIMEOUT_MS;
-  if (!raw) return DEFAULT_IDLE_TIMEOUT_MS;
+  if (!raw) return fallback;
   const value = Number(raw);
-  return Number.isSafeInteger(value) && value >= 1_000 && value <= 2_147_483_647 ? value : DEFAULT_IDLE_TIMEOUT_MS;
+  return Number.isSafeInteger(value) && value >= 1_000 && value <= 2_147_483_647 ? value : fallback;
 };
 const DEFAULT_MODELS: ModelCatalog = {
   default: "meta-llama/llama-3.3-70b-instruct",
@@ -167,7 +181,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       httpErrorLabel: "upstream",
       missingKeyError: missingKey,
       unavailableReason: missingKey,
-      timeoutMs: idleTimeoutMs(),
+      timeoutMs: idleTimeoutMs(config.url),
       reasoning: true,
       billing: "metered",
       includeUsageInCompleted: true,

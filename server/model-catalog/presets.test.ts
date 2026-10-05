@@ -71,6 +71,7 @@ describe("provider presets table", () => {
     expect(providerPreset("openrouter")).toMatchObject({ keyCheck: "/key", publicModels: true });
     expect(providerPreset("cline-credits")).toMatchObject({ publicModels: true });
     expect(providerPreset("cline-credits")?.keyCheck).toBeUndefined();
+    expect(providerPreset("nvidia")).toMatchObject({ api: "https://integrate.api.nvidia.com/v1", publicModels: true });
   });
 });
 

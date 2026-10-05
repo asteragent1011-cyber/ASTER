@@ -190,6 +190,18 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
     checkedAt: CHECKED,
   },
   {
+    // NVIDIA NIM (build.nvidia.com). /models answers without a key, so a
+    // models probe proves nothing about one. No Responses API is documented:
+    // Codex stays behind the experimental switch and its check.
+    id: "nvidia",
+    catalogId: "nvidia",
+    label: "NVIDIA NIM",
+    api: "https://integrate.api.nvidia.com/v1",
+    doc: "https://build.nvidia.com/settings/api-keys",
+    publicModels: true,
+    checkedAt: CHECKED,
+  },
+  {
     id: "opencode",
     catalogId: "opencode",
     label: "OpenCode Zen",

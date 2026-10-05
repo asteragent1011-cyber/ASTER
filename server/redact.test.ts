@@ -152,6 +152,7 @@ describe("redactSecretsInText", () => {
       [`npm ${"npm" + "_"}${alpha}`, /npm_[a-z]/],
       [`xai ${"xai-"}${alpha}`, /xai-/],
       [`groq ${"gsk_"}${alpha}ABCD`, /gsk_/],
+      [`nvidia ${"nvapi-"}${alpha}ABCD`, /nvapi-/],
       [`huggingface ${"hf_"}${alpha}`, /hf_/],
     ];
     for (const [input, leak] of cases) {
@@ -164,6 +165,7 @@ describe("redactSecretsInText", () => {
   it.each([
     ["xai-", 20],
     ["gsk_", 40],
+    ["nvapi-", 40],
     ["hf_", 30],
   ] as const)("bounds %s masking without changing ordinary text", (prefix, minimum) => {
     const key = prefix + "a".repeat(minimum);
