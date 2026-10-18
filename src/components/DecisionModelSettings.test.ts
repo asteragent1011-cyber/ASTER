@@ -42,10 +42,17 @@ function render() {
     html,
     switches: all.filter((node) => node.type === Switch),
     master: byTestId("decider-master")[0]!,
+    clefMaster: byTestId("decider-clef-master")[0]!,
     job: byTestId("decider-job-roomRouting")[0]!,
     save: byTestId("decider-save")[0]!,
     test: byTestId("decider-test")[0]!,
-    input: all.find((node) => node.type === "input")!,
+    input: all.find((node) => node.type === "input" && node.props["aria-label"] === "Jev API key")!,
+    jevStatus: byTestId("decider-status")[0]!,
+    clefStatus: byTestId("decider-clef-status")[0]!,
+    clefAccountId: byTestId("decider-clef-account-id")[0]!,
+    clefToken: byTestId("decider-clef-token")[0]!,
+    clefSave: byTestId("decider-clef-save")[0]!,
+    clefTest: byTestId("decider-clef-test")[0]!,
   };
 }
 const click = (node: Node) => (node.props.onClick as () => void)();
@@ -62,17 +69,27 @@ beforeEach(() => {
 });
 
 describe("DecisionModelSettings", () => {
-  it("explains itself, then the switch, the key, and what it decides", () => {
+  it("explains itself, then the switches, the keys, and what it decides", () => {
     const view = render();
-    const order = ["A fast decision model that picks things for your bots", "Use Jev for fast decisions", "Jev API key", "What it decides", "Who answers in rooms"]
-      .map((text) => view.html.indexOf(text));
+    const order = [
+      "A fast decision model that picks things for your bots",
+      "Use Jev for fast decisions",
+      "Use Clef-Flash for fast decisions",
+      "Jev API key",
+      "Cloudflare Clef-Flash",
+      "What it decides",
+      "Who answers in rooms",
+    ].map((text) => view.html.indexOf(text));
     expect(order.every((at) => at >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(view.html).toContain("Not connected");
     expect(view.html).toContain('href="https://typesafe.ai"');
-    // the switch stays off, and cannot be turned on, while no key is saved
+    expect(view.html).toContain('href="https://dash.cloudflare.com/"');
+    // the switches stay off, and cannot be turned on, while no key is saved
     expect(view.master.props.checked).toBe(false);
     expect(view.master.props.disabled).toBe(true);
+    expect(view.clefMaster.props.checked).toBe(false);
+    expect(view.clefMaster.props.disabled).toBe(true);
     expect(view.html).toContain("Save a key below to turn this on.");
   });
 
@@ -80,13 +97,15 @@ describe("DecisionModelSettings", () => {
     const view = render();
     for (const label of ["Browser clicks", "Tool selection", "Where work runs"]) expect(view.html).toContain(label);
     expect(view.html.match(/Coming soon/g)).toHaveLength(3);
-    // only the master switch and the room job have switches
-    expect(view.switches).toHaveLength(2);
+    // Jev switch, Clef switch, and the room job switch
+    expect(view.switches).toHaveLength(3);
   });
 
   it("every button shows a pointer cursor", () => {
     const view = render();
-    for (const node of [view.save, view.test, view.master, view.job]) expect(String(node.props.className)).toContain("cursor-pointer");
+    for (const node of [view.save, view.test, view.master, view.clefMaster, view.clefSave, view.clefTest, view.job]) {
+      expect(String(node.props.className)).toContain("cursor-pointer");
+    }
   });
 
   it("saves the key, shows Connected, and never renders the key back", async () => {
@@ -102,16 +121,50 @@ describe("DecisionModelSettings", () => {
     expect(view.master.props.checked).toBe(true);
   });
 
-  it("the master switch and the job switch patch the config", async () => {
+  it("the master switches and the job switch patch the config", async () => {
     fixture.config = status({ provider: "jev", configured: true, enabled: true, jobs: { roomRouting: true } });
     fixture.api.mockResolvedValue(fixture.config);
     click(render().master);
     await flush();
     expect(fixture.api).toHaveBeenLastCalledWith("/api/config", { method: "PUT", body: JSON.stringify({ decider: { enabled: false } }) });
+
+    fixture.config = status({ provider: "clef-flash", configured: true, clefConfigured: true, enabled: false, jobs: { roomRouting: true } });
+    click(render().clefMaster);
+    await flush();
+    expect(fixture.api).toHaveBeenLastCalledWith("/api/config", { method: "PUT", body: JSON.stringify({ decider: { provider: "clef-flash", enabled: true } }) });
+
     fixture.config = status({ provider: "jev", configured: true, enabled: true, jobs: { roomRouting: true } });
     click(render().job);
     await flush();
     expect(fixture.api).toHaveBeenLastCalledWith("/api/config", { method: "PUT", body: JSON.stringify({ decider: { jobs: { roomRouting: false } } }) });
+  });
+
+  it("saves Clef credentials and tests Clef-Flash", async () => {
+    fixture.api.mockResolvedValueOnce(status({
+      provider: "clef-flash",
+      configured: true,
+      clefConfigured: true,
+      clefAccountId: "cf_acc_123",
+      enabled: true,
+      jobs: { roomRouting: true },
+    }));
+    type(render().clefAccountId, "cf_acc_123");
+    type(render().clefToken, "cf_token_secret");
+    click(render().clefSave);
+    await flush();
+    expect(fixture.api).toHaveBeenCalledWith("/api/config", {
+      method: "PUT",
+      body: JSON.stringify({ decider: { cloudflareAccountId: "cf_acc_123", provider: "clef-flash", cloudflareToken: "cf_token_secret" } }),
+    });
+
+    fixture.api.mockResolvedValueOnce({ ok: true, latencyMs: 250 });
+    click(render().clefTest);
+    await flush();
+    expect(fixture.api).toHaveBeenLastCalledWith("/api/decider/test", {
+      method: "POST",
+      body: JSON.stringify({ provider: "clef-flash" }),
+    });
+    expect(render().html).toContain("Clef-Flash answered in 250 ms.");
   });
 
   it("Test shows the result: how fast on success, a fixed sentence on failure", async () => {
@@ -135,7 +188,7 @@ describe("DecisionModelSettings", () => {
     const view = render();
     expect(view.html).toContain("Included with Cloud Pro");
     expect(view.html).not.toContain("Connected");
-    expect(view.html).not.toContain("Not connected");
+    expect(view.jevStatus.props.children).toBe("Included with Cloud Pro");
     expect(view.html).not.toContain("Save a key below to turn this on.");
     expect(view.master.props.checked).toBe(true);
     expect(view.master.props.disabled).toBe(false);

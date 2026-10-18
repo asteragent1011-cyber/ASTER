@@ -59,10 +59,34 @@ function getStore(): Storage | undefined {
   }
 }
 
-export function readSkin(): SkinId {
+export const APPEARANCE_MODES = ["system", "dark", "light"] as const;
+export type AppearanceMode = (typeof APPEARANCE_MODES)[number];
+
+export function resolveSystemSkin(): SkinId {
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "daylight" : "midnight";
+  }
+  return DEFAULT_SKIN;
+}
+
+export function readAppearancePreference(): AppearanceMode | SkinId {
   try {
     const stored = getStore()?.getItem(KEY);
-    return isSkinId(stored) ? stored : DEFAULT_SKIN;
+    if (!stored || stored === "system") return "system";
+    if (stored === "dark") return "midnight";
+    if (stored === "light") return "daylight";
+    return isSkinId(stored) ? stored : "system";
+  } catch {
+    return "system";
+  }
+}
+
+export function readSkin(): SkinId {
+  try {
+    const pref = readAppearancePreference();
+    if (pref === "system") return resolveSystemSkin();
+    if (isSkinId(pref)) return pref;
+    return DEFAULT_SKIN;
   } catch {
     return DEFAULT_SKIN;
   }
@@ -73,8 +97,18 @@ export function readSkin(): SkinId {
  * paint (main.tsx) and again on every change from the picker — a stamped
  * attribute rather than a class so it can never collide with Tailwind.
  */
-export function applySkin(id: SkinId): void {
-  document.documentElement.dataset.skin = id;
+export function applySkin(id: SkinId | "system" | "dark" | "light"): void {
+  const targetId: SkinId =
+    id === "system"
+      ? resolveSystemSkin()
+      : id === "dark"
+        ? "midnight"
+        : id === "light"
+          ? "daylight"
+          : id;
+
+  document.documentElement.dataset.skin = targetId;
+  document.documentElement.classList.toggle("dark", targetId !== "daylight" && targetId !== "atelier" && targetId !== "lagoon" && targetId !== "linen");
   try {
     getStore()?.setItem(KEY, id);
   } catch {
@@ -86,8 +120,29 @@ export function applySkin(id: SkinId): void {
   // corner" of issue #454. Best-effort: a browser tab or an older desktop
   // build has no bridge, and the skin still applies without it.
   try {
-    void window.ogb?.applySkin?.(id)?.catch(() => undefined);
+    void window.ogb?.applySkin?.(targetId)?.catch(() => undefined);
   } catch {
     /* no bridge */
+  }
+}
+
+// Watch system appearance changes and update immediately if following system
+if (typeof window !== "undefined" && window.matchMedia) {
+  try {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      const pref = readAppearancePreference();
+      if (pref === "system") {
+        const resolved = resolveSystemSkin();
+        document.documentElement.dataset.skin = resolved;
+        document.documentElement.classList.toggle("dark", resolved !== "daylight" && resolved !== "atelier" && resolved !== "lagoon" && resolved !== "linen");
+        try {
+          void window.ogb?.applySkin?.(resolved)?.catch(() => undefined);
+        } catch {
+          /* no bridge */
+        }
+      }
+    });
+  } catch {
+    /* environment without matchMedia listener support */
   }
 }

@@ -326,7 +326,7 @@ export function BotSettingsDialog({ bot }: { bot: Bot }) {
         role="dialog"
         aria-labelledby="bot-settings-title"
         tabIndex={-1}
-        className="animate-panel-in absolute inset-0 z-40 flex h-full min-w-0 flex-col border-l border-hairline/40 bg-panel outline-none lg:static lg:z-auto lg:w-[min(420px,42vw)] lg:shrink-0"
+        className="glass-sheet animate-panel-in absolute inset-0 z-40 flex h-full min-w-0 flex-col outline-none lg:relative lg:z-auto lg:w-[min(420px,42vw)] lg:shrink-0"
       >
         <div className={cn("flex shrink-0 items-center justify-between px-4 py-3", padClass)}>
           <span id="bot-settings-title" className="truncate text-[15px] font-semibold text-ink">

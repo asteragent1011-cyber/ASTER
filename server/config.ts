@@ -473,8 +473,11 @@ const appConfigSchema = z.object({
    * authorization log's retention. */
   decider: z.object({
     enabled: z.boolean().optional(),
-    provider: z.enum(["jev", "off"]).optional(),
+    provider: z.enum(["jev", "clef-flash", "off"]).optional(),
     key: optionalText,
+    accountId: optionalText,
+    cloudflareAccountId: optionalText,
+    cloudflareToken: optionalText,
     baseUrl: z
       .string()
       .trim()
@@ -584,7 +587,7 @@ export interface AppConfig {
   opencodeGo?: { apiKey?: string };
   tts?: { key?: string; fishKey?: string; voice?: string; provider?: "elevenlabs" | "fish" | "system" | "chatterbox" | "xai"; baseUrl?: string; model?: string };
   /** The decision model; see the schema above and server/decider. */
-  decider?: { enabled?: boolean; provider?: "jev" | "off"; key?: string; baseUrl?: string; jobs?: { roomRouting?: boolean } };
+  decider?: { enabled?: boolean; provider?: "jev" | "clef-flash" | "off"; key?: string; accountId?: string; cloudflareAccountId?: string; cloudflareToken?: string; baseUrl?: string; jobs?: { roomRouting?: boolean } };
   imageGen?: ImageGenerationConfig;
   profile?: { name?: string; email?: string; aboutMe?: string };
   rooms?: { turnTimeoutMinutes: number; handoffLifetimeMinutes?: number; handoffMinRunwayMinutes?: number; handoffHardCapMinutes?: number };
@@ -922,8 +925,8 @@ export function providerReloadKeys(patch: object): string[] {
   return Object.keys(patch).filter((key) => !FLEET_NEUTRAL_KEYS.has(key));
 }
 
-// OMB_DATA_DIR isolates test/soak rigs from the user's real fleet.
-export const DATA_DIR = process.env.OMB_DATA_DIR ?? join(homedir(), ".openmausbot");
+// ASTER_DATA_DIR or OMB_DATA_DIR isolates test/soak rigs from the user's real fleet.
+export const DATA_DIR = process.env.ASTER_DATA_DIR ?? process.env.OMB_DATA_DIR ?? join(homedir(), ".openmausbot");
 const LEGACY_DATA_DIR = join(homedir(), ".opengrokbot");
 export const EVENTS_DIR = join(DATA_DIR, "events");
 export const NATIVE_DIR = join(DATA_DIR, "native");
@@ -1035,6 +1038,14 @@ export function loadConfig(): AppConfig {
   if (process.env.OMB_FISH_AUDIO_API_KEY !== undefined) cfg.tts.fishKey = process.env.OMB_FISH_AUDIO_API_KEY;
   cfg.decider = { ...cfg.decider };
   if (process.env.OMB_JEV_API_KEY !== undefined) cfg.decider.key = process.env.OMB_JEV_API_KEY;
+  if (process.env.CLOUDFLARE_API_TOKEN !== undefined) cfg.decider.cloudflareToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (process.env.CLOUDFLARE_ACCOUNT_ID !== undefined) cfg.decider.accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  if (process.env.DECIDER_PROVIDER !== undefined || process.env.OMB_DECIDER_PROVIDER !== undefined) {
+    const raw = (process.env.DECIDER_PROVIDER || process.env.OMB_DECIDER_PROVIDER)!.trim();
+    if (raw === "jev" || raw === "clef-flash" || raw === "clef" || raw === "off") {
+      cfg.decider.provider = raw === "clef" ? "clef-flash" : raw;
+    }
+  }
   cfg.imageGen = { ...cfg.imageGen };
   if (process.env.OMB_OPENAI_IMAGE_KEY !== undefined) cfg.imageGen.key = process.env.OMB_OPENAI_IMAGE_KEY;
   if (process.env.OMB_CUSTOM_IMAGE_KEY !== undefined) cfg.imageGen.customApiKey = process.env.OMB_CUSTOM_IMAGE_KEY;
@@ -1068,6 +1079,7 @@ export function syncCredentialEnv(patch: Partial<Omit<AppConfig, "threads" | "ne
     [patch.tts?.key, "OMB_TTS_KEY"],
     [patch.tts?.fishKey, "OMB_FISH_AUDIO_API_KEY"],
     [patch.decider?.key, "OMB_JEV_API_KEY"],
+    [patch.decider?.cloudflareToken, "CLOUDFLARE_API_TOKEN"],
     [patch.imageGen?.key, "OMB_OPENAI_IMAGE_KEY"],
     [patch.imageGen?.customApiKey, "OMB_CUSTOM_IMAGE_KEY"],
   ];
@@ -1083,6 +1095,8 @@ export function syncCredentialEnv(patch: Partial<Omit<AppConfig, "threads" | "ne
     [patch.anthropic?.url, "OMB_ANTHROPIC_API_URL"],
     [patch.openaiCompat?.model, "OPENAI_COMPAT_MODEL"],
     [patch.openaiCompat?.provider, "OPENAI_COMPAT_PROVIDER"],
+    [patch.decider?.accountId, "CLOUDFLARE_ACCOUNT_ID"],
+    [patch.decider?.provider, "DECIDER_PROVIDER"],
   ];
   for (const [value, name] of settings) {
     if (value === undefined) continue;
@@ -1110,6 +1124,8 @@ export const WORKSPACE_CREDENTIAL_ENV = [
   "OMB_TTS_KEY",
   "OMB_FISH_AUDIO_API_KEY",
   "OMB_JEV_API_KEY",
+  "CLOUDFLARE_API_TOKEN",
+  "CLOUDFLARE_ACCOUNT_ID",
   "OMB_OPENAI_IMAGE_KEY",
   "OMB_CUSTOM_IMAGE_KEY",
   "COMPOSIO_API_KEY",

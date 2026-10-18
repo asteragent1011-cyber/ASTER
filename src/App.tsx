@@ -7,6 +7,8 @@ import { FirstConversationTour } from "@/components/onboarding/FirstConversation
 import { GuidedTour } from "@/components/onboarding/GuidedTour";
 import { ThreadRefsProvider } from "@/components/ThreadRefs";
 import { initAnalytics } from "@/lib/analytics";
+import { cn } from "@/lib/cn";
+import { NavigationRail } from "@/components/NavigationRail";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatView } from "@/components/ChatView";
 import { GroupView } from "@/components/GroupView";
@@ -74,6 +76,23 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   // turn the aside into a containing block for its fixed descendants (see
   // Sidebar.tsx's className comment).
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("aster.sidebarExpanded") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarExpanded = useCallback(() => {
+    setSidebarExpanded((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("aster.sidebarExpanded", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
   // Apply this device's language, else the server's default, the moment
   // either changes; "" follows the system. The epoch bump re-renders
   // extracted strings — t() reads a module variable, so React needs this nudge.
@@ -119,6 +138,11 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
 
       const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
+      if (e.key === "b" && !e.shiftKey) {
+        e.preventDefault();
+        toggleSidebarExpanded();
+        return;
+      }
       const bots = state.bots.filter((b) => !b.hidden);
       if (e.key === "n" && !e.shiftKey) {
         e.preventDefault();
@@ -140,7 +164,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.bots, state.selectedId, state.shortcutsOpen, dispatch]);
+  }, [state.bots, state.selectedId, state.shortcutsOpen, toggleSidebarExpanded, dispatch]);
 
   useEffect(() => {
     window.ogb?.setUnreadCount?.(unreadCount);
@@ -254,17 +278,32 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       {/* fixed-position popup, bottom-left — outside the layout flow */}
       <UpdateBanner />
       <ProIntroduction quiet={paletteOpen || drawerOpen || Boolean(localVmWorkspaceBotId)} />
-      <div className="relative flex min-h-0 flex-1">
-      {!calendarFocus && <button
-        type="button"
-        ref={menuButtonRef}
-        aria-label="Open bot list"
-        aria-expanded={drawerOpen}
-        onClick={() => setDrawerOpen(true)}
-        className="absolute left-3 top-3 z-30 rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink md:hidden"
-      >
-        <Menu size={18} />
-      </button>}
+      <div className="glass-ground relative flex min-h-0 flex-1">
+      {!calendarFocus && (
+        <NavigationRail
+          expanded={sidebarExpanded}
+          onToggleExpanded={toggleSidebarExpanded}
+          onOpenSearch={() => setPaletteOpen(true)}
+          onNewConversation={() => {
+            if (bot) dispatch({ type: "newTask", botId: bot.id });
+            else dispatch({ type: "toggleNewBot", open: true });
+          }}
+          activeBot={bot}
+          unreadCount={unreadCount}
+        />
+      )}
+      {!calendarFocus && (
+        <button
+          type="button"
+          ref={menuButtonRef}
+          aria-label="Open bot list"
+          aria-expanded={drawerOpen || sidebarExpanded}
+          onClick={() => setDrawerOpen(true)}
+          className="absolute left-[70px] top-3 z-30 rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink md:hidden"
+        >
+          <Menu size={18} />
+        </button>
+      )}
       {drawerOpen && !calendarFocus && (
         <div
           aria-hidden
@@ -272,13 +311,28 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
           className="absolute inset-0 z-30 bg-black/50 md:hidden"
         />
       )}
-      {!calendarFocus && <Sidebar
-        open={drawerOpen}
-        onClose={() => {
-          setDrawerOpen(false);
-          menuButtonRef.current?.focus();
-        }}
-      />}
+      {!calendarFocus && (
+        <div
+          className={cn(
+            // w-auto, not a fixed 300px: the sidebar sizes itself (320px, or
+            // its resized width, plus the floating pane's inset), and a fixed
+            // wrapper clipped its right edge. interpolate-size (Chromium 129+)
+            // keeps the width animating to and from auto.
+            "relative transition-[width,opacity] duration-300 ease-out shrink-0 overflow-hidden [interpolate-size:allow-keywords]",
+            sidebarExpanded ? "w-auto opacity-100" : "w-0 opacity-0 pointer-events-none md:w-0",
+            drawerOpen && "max-md:w-full max-md:opacity-100 max-md:pointer-events-auto",
+          )}
+        >
+          <Sidebar
+            open={drawerOpen || sidebarExpanded}
+            onClose={() => {
+              setDrawerOpen(false);
+              setSidebarExpanded(false);
+              menuButtonRef.current?.focus();
+            }}
+          />
+        </div>
+      )}
       {state.activeView === "team-map" ? (
         <TeamMapPage />
       ) : state.activeView === "routines" ? (

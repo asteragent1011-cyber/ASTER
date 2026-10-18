@@ -3,10 +3,10 @@
   "private": true,
   "version": "0.1.92",
   "description": "A local-first chat app for running a team of AI agents.",
-  "homepage": "https://github.com/milind-soni/OpenMausBot",
+  "homepage": "https://github.com/asteragent1011-cyber/ASTER",
   "repository": {
     "type": "git",
-    "url": "https://github.com/milind-soni/OpenMausBot.git"
+    "url": "https://github.com/asteragent1011-cyber/ASTER.git"
   },
   "author": {
     "name": "Milind Soni",
@@ -31,10 +31,12 @@
     "docs:build": "pnpm --filter @openmausbot/docs build",
     "docs:preview": "pnpm --filter @openmausbot/docs preview",
     "companion": "node --experimental-strip-types companion/src/index.ts",
+    "aster": "node --experimental-strip-types server/aster.ts",
     "omb": "node --experimental-strip-types server/openmausbot.ts",
-    "pair": "node --experimental-strip-types server/openmausbot.ts pair",
+    "pair": "node --experimental-strip-types server/aster.ts pair",
     "dev:server": "node --experimental-strip-types server/index.ts",
     "mcp": "node --experimental-strip-types scripts/mcp-server.ts",
+    "control:aster": "node --experimental-strip-types scripts/control-aster.ts",
     "control:omb": "node --experimental-strip-types scripts/control-omb.ts",
     "eval": "node --experimental-strip-types evals/runners/run-evals.ts",
     "dev:desktop": "node scripts/prepare-cloudflared.mjs --current && electron .",
@@ -87,9 +89,11 @@
   "dependencies": {
     "@clack/prompts": "1.7.0",
     "@hpke/core": "1.9.0",
+    "@radix-ui/react-slot": "1.2.3",
     "@trycua/cua-driver": "0.28.2",
     "ajv": "8.17.1",
     "ajv-formats": "3.0.1",
+    "class-variance-authority": "0.7.1",
     "clsx": "^2.1.1",
     "croner": "10.0.1",
     "jose": "6.2.10",
@@ -109,6 +113,7 @@
     "shiki": "^4.4.3",
     "tailwind-merge": "^3.3.1",
     "tar": "7.5.22",
+    "undici": "8.10.2",
     "yaml": "^2.9.0",
     "zod": "4.4.3"
   },

@@ -1432,3 +1432,607 @@ button:disabled.bg-danger {
 [data-sidebar] :is(button, [role="button"]):not(:disabled, [aria-busy="true"]) {
   cursor: pointer;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIQUID GLASS
+
+   Ported from Glin UI (github.com/glincker/glinui, MIT, Copyright 2026
+   Glincker LLC; full text in third_party/glinui/LICENSE). What comes from
+   where:
+
+   - packages/tokens/theme.css — the glass primitives: saturate(180%) always
+     paired with blur; a top "refraction" edge brighter than the sides; a
+     readable opacity floor rather than free transparency (72% light, 66%
+     dark); the 8/12/16/24px blur tiers; the glass-sm/md/lg shadows (light)
+     and drop-1/2/3 (dark); the 1px inner highlight, the 0.5px hairline
+     (`--hl`) and the top sheen; the reduced-transparency fallback.
+   - packages/ui/src/lib/surface.ts, the `glass` variant and
+     interactiveSurface: stronger border on hover, press to 0.98, a focus
+     ring on the accent.
+   - lib/panel.ts `panelSurface.glass` — menus, popovers and dialogs at an
+     88% floor with the deepest elevation.
+   - components/glass-navbar.tsx GLASS_FLOOR (84%) and sidebar.tsx `glass`
+     (84%, blur-xl) — the chats sidebar; the rail sits one step lighter.
+   - components/prompt-input.tsx `glass` — the composer pill.
+   - components/glass-card.tsx hoverLift — starter cards rise 2px.
+
+   Glin's components are Radix + cva over its own OKLCH palette and
+   Tailwind 3 preset. ASTER has neither, and its eight skins own every
+   colour, so the recipes are re-expressed over the skin tokens instead of
+   importing @glinui/ui (a second component system and a second palette).
+
+   Two deliberate departures from Glin:
+   1. The blur and tint live on a ::before layer, not on the element.
+      backdrop-filter makes its element a containing block for `position:
+      fixed` descendants, which would reparent the sidebar's fixed context
+      menus and NewRoomPanel overlay (see the comment on Sidebar.tsx's
+      className). A pseudo-element is nobody's ancestor.
+   2. Hover lightens with a wash, not Glin's `filter: brightness()`, which
+      would shift the text on the glass along with the glass.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Dark skins — Glin's dark scope: lower border/refraction alpha, heavier
+   drops, and more opaque glass (its "dark is MORE opaque" rule lives in the
+   floors: the tint is already dark, so 66% reads denser than light's 72%). */
+:root,
+[data-skin="midnight"],
+[data-skin="foundry"],
+[data-skin="graphite"],
+[data-skin="dusk"] {
+  --glass-saturate: 180%;
+  /* Thinner than Glin's 66% floor: on a near-black ground the stock value
+     read as an opaque panel, so these are tuned to show the ground through
+     while every text pair still clears 4.5:1 (text sits on the tint, which
+     is already darker than the ground it lets through). */
+  --glass-floor-tile: 0.14;     /* cards, chips, toolbar: mostly frost */
+  --glass-floor: 0.32;          /* composer */
+  --glass-floor-rail: 0.34;     /* the rail, a step under the sidebar */
+  --glass-floor-bar: 0.42;      /* chats sidebar (Glin navbar/sidebar) */
+  --glass-floor-panel: 0.66;    /* menus and popovers (panelSurface) */
+  --glass-floor-dialog: 0.78;   /* settings: dense text, so the densest */
+  --gx-border: rgb(255 255 255 / 0.12);
+  --glass-refraction-top: rgb(255 255 255 / 0.3);
+  /* The specular rim: Apple's light comes from the upper left, so the ring
+     is brightest at that corner, dies out along the sides and catches a
+     faint second glint at the lower right. */
+  --glass-rim: linear-gradient(135deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0.1) 28%, rgb(255 255 255 / 0.04) 55%, rgb(255 255 255 / 0.16));
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  --glass-hl: inset 0 0 0 0.5px rgb(255 255 255 / 0.1);
+  --glass-sheen: rgb(255 255 255 / 0.07);
+  --glass-wash: rgb(255 255 255 / 0.06);
+  --gx-shadow-sm: 0 1px 1px rgb(0 0 0 / 0.4), 0 3px 6px -2px rgb(0 0 0 / 0.4);
+  --gx-shadow-md: 0 1px 1px rgb(0 0 0 / 0.45), 0 8px 16px -4px rgb(0 0 0 / 0.5), 0 24px 48px -12px rgb(0 0 0 / 0.55);
+  --gx-shadow-lg: 0 2px 2px rgb(0 0 0 / 0.45), 0 12px 24px -6px rgb(0 0 0 / 0.55), 0 36px 72px -18px rgb(0 0 0 / 0.7);
+  --glass-ground-tint: 34%;
+  --glass-ground-tint-2: 20%;
+}
+
+/* Light skins — Glin's light scope. A white rim vanishes on a near-white
+   page, so the side border is its `--line-soft` (black 7%) and the white is
+   kept for the top refraction edge and the inner highlight. */
+[data-skin="atelier"],
+[data-skin="lagoon"],
+[data-skin="linen"],
+[data-skin="daylight"] {
+  --glass-floor-tile: 0.3;
+  --glass-floor: 0.5;
+  --glass-floor-rail: 0.45;
+  --glass-floor-bar: 0.55;
+  --glass-floor-panel: 0.74;
+  --glass-floor-dialog: 0.84;
+  --gx-border: rgb(0 0 0 / 0.08);
+  --glass-refraction-top: rgb(255 255 255 / 0.95);
+  --glass-rim: linear-gradient(135deg, rgb(255 255 255 / 1), rgb(255 255 255 / 0.5) 30%, rgb(0 0 0 / 0.06) 60%, rgb(255 255 255 / 0.7));
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.95);
+  --glass-hl: inset 0 0 0 0.5px rgb(0 0 0 / 0.08);
+  --glass-sheen: rgb(255 255 255 / 0.5);
+  --glass-wash: rgb(0 0 0 / 0.025);
+  --gx-shadow-sm: 0 2px 8px rgb(0 0 0 / 0.06);
+  --gx-shadow-md: 0 8px 24px rgb(0 0 0 / 0.1), 0 2px 4px rgb(0 0 0 / 0.06);
+  --gx-shadow-lg: 0 16px 48px rgb(0 0 0 / 0.14), 0 4px 8px rgb(0 0 0 / 0.07);
+  --glass-ground-tint: 22%;
+  --glass-ground-tint-2: 14%;
+  --color-ink-secondary: #24292e;
+  --color-ink-tertiary: #444c56;
+}
+
+/* ── Glass UI tokens and utilities ─────────────────────────────────────
+   From Glass UI (github.com/crenspire/glass-ui, app/globals.css; MIT,
+   Crenspire Technologies — third_party/glass-ui/NOTICE). They back the
+   vendored components in src/components/glass-ui (Button, Card, Badge use
+   `glass-bg`, `glass-frosted`, `glass-crystal`), and the surfaces above
+   take their white frost and inner glow as a layer over the skin tint.
+
+   Values are Glass UI's own, with two additions: `--glass-border-top` and
+   `--glass-border-bottom`, which its `.glass-bg` reads but never defines
+   (the 0.5px edge fell back to nothing), and the light scope keyed to
+   ASTER's light skins rather than a `.dark` class. Their 10px blur is kept:
+   it is cheaper per frame than the 24px it replaces, which matters with a
+   dozen blurred surfaces on screen.
+   Their `!important`s are dropped (ASTER's unlayered rules already win
+   where they must), and `.glass-crystal` loses its two decorative
+   pseudo-element glows. */
+:root,
+[data-skin="midnight"],
+[data-skin="foundry"],
+[data-skin="graphite"],
+[data-skin="dusk"] {
+  --glass-bg: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(240, 248, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0.05) 75%,
+    rgba(230, 240, 255, 0.06) 100%);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-border-top: rgba(255, 255, 255, 0.22);
+  --glass-border-bottom: rgba(255, 255, 255, 0.08);
+  --glass-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.15),
+    0 0 0 0.5px rgba(255, 255, 255, 0.12) inset,
+    0 0 12px rgba(255, 255, 255, 0.15) inset;
+  --glass-shadow-lg:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 0.5px rgba(255, 255, 255, 0.15) inset,
+    0 0 20px rgba(255, 255, 255, 0.18) inset;
+  --glass-shadow-sm:
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    0 0 0 0.5px rgba(255, 255, 255, 0.1) inset,
+    0 0 8px rgba(255, 255, 255, 0.12) inset;
+  --glass-frosted-bg: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(240, 248, 255, 0.13) 50%,
+    rgba(255, 255, 255, 0.11) 75%,
+    rgba(230, 240, 255, 0.12) 100%);
+  --glass-frosted-border: rgba(255, 255, 255, 0.25);
+  --glass-frosted-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(255, 255, 255, 0.2) inset,
+    0 0 20px rgba(255, 255, 255, 0.22) inset;
+  --glass-crystal-bg: rgba(255, 255, 255, 0.1);
+  --glass-crystal-border: rgba(255, 255, 255, 0.3);
+  --glass-crystal-shadow: 0 0 20px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 255, 255, 0.15);
+  --glass-crystal-shadow-hover: 0 0 25px rgba(0, 0, 0, 0.5), 0 0 35px rgba(255, 255, 255, 0.2);
+  /* inner glow alone, for surfaces that bring their own drop shadow */
+  --glass-glow: inset 0 0 12px rgba(255, 255, 255, 0.15);
+  --glass-glow-lg: inset 0 0 20px rgba(255, 255, 255, 0.18);
+  --blur: 10px;
+  --blur-sm: 10px;
+  --blur-lg: 10px;
+  --blur-frosted: 25px;
+  --blur-crystal: 2px;
+}
+
+[data-skin="atelier"],
+[data-skin="lagoon"],
+[data-skin="linen"],
+[data-skin="daylight"] {
+  --glass-bg: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.55) 25%,
+    rgba(245, 250, 255, 0.58) 50%,
+    rgba(255, 255, 255, 0.52) 75%,
+    rgba(240, 248, 255, 0.55) 100%);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-top: rgba(255, 255, 255, 0.7);
+  --glass-border-bottom: rgba(0, 0, 0, 0.06);
+  --glass-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
+    0 0 12px rgba(255, 255, 255, 0.1) inset;
+  --glass-shadow-lg:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 0 0 0.5px rgba(255, 255, 255, 0.1) inset,
+    0 0 20px rgba(255, 255, 255, 0.12) inset;
+  --glass-shadow-sm:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 0 0 0.5px rgba(255, 255, 255, 0.06) inset,
+    0 0 8px rgba(255, 255, 255, 0.08) inset;
+  --glass-frosted-bg: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.22) 25%,
+    rgba(240, 248, 255, 0.23) 50%,
+    rgba(255, 255, 255, 0.21) 75%,
+    rgba(230, 240, 255, 0.22) 100%);
+  --glass-frosted-border: rgba(255, 255, 255, 0.3);
+  --glass-frosted-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 0 0 0.5px rgba(255, 255, 255, 0.15) inset,
+    0 0 20px rgba(255, 255, 255, 0.18) inset;
+  --glass-crystal-bg: rgba(255, 255, 255, 0.3);
+  --glass-crystal-border: rgba(255, 255, 255, 0.3);
+  --glass-crystal-shadow: 0 0 20px rgba(0, 0, 0, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
+  --glass-crystal-shadow-hover: 0 0 25px rgba(0, 0, 0, 0.3), 0 0 35px rgba(255, 255, 255, 0.15);
+  --glass-glow: inset 0 0 12px rgba(255, 255, 255, 0.1);
+  --glass-glow-lg: inset 0 0 20px rgba(255, 255, 255, 0.12);
+}
+
+@layer utilities {
+  .glass-bg {
+    background-image: var(--glass-bg);
+    background-color: transparent;
+    backdrop-filter: blur(var(--blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+    border-top: 0.5px solid var(--glass-border-top);
+    border-left: 0.5px solid var(--glass-border-top);
+    border-right: 0.5px solid var(--glass-border-bottom);
+    border-bottom: 0.5px solid var(--glass-border-bottom);
+    box-shadow: var(--glass-shadow);
+  }
+  .glass-frosted {
+    background-image: var(--glass-frosted-bg);
+    background-color: transparent;
+    backdrop-filter: blur(var(--blur-frosted)) saturate(200%);
+    -webkit-backdrop-filter: blur(var(--blur-frosted)) saturate(200%);
+    border: 0.5px solid var(--glass-frosted-border);
+    box-shadow: var(--glass-frosted-shadow);
+  }
+  .glass-crystal {
+    position: relative;
+    background-color: var(--glass-crystal-bg);
+    background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.15), transparent 50%);
+    backdrop-filter: blur(var(--blur-crystal));
+    -webkit-backdrop-filter: blur(var(--blur-crystal));
+    border: 1px solid var(--glass-crystal-border);
+    box-shadow: var(--glass-crystal-shadow);
+    transition: box-shadow 0.3s ease;
+  }
+  .glass-crystal:hover {
+    box-shadow: var(--glass-crystal-shadow-hover);
+  }
+}
+
+/* The vendored Button and Badge ask for shadcn's `ring` token, which ASTER
+   doesn't define, so their focus ring would be invisible. */
+:is([data-slot="button"], [data-slot="card"]):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* No backdrop-filter, or the person asked for less transparency: every
+   floor goes to 1, so each surface is its skin's opaque tone again. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  [data-skin] {
+    --glass-floor-tile: 1;
+    --glass-floor: 1;
+    --glass-floor-rail: 1;
+    --glass-floor-bar: 1;
+    --glass-floor-panel: 1;
+    --glass-floor-dialog: 1;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-skin] {
+    --glass-floor-tile: 1;
+    --glass-floor: 1;
+    --glass-floor-rail: 1;
+    --glass-floor-bar: 1;
+    --glass-floor-panel: 1;
+    --glass-floor-dialog: 1;
+  }
+}
+
+/* The ground everything sits on — the web stand-in for the desktop picture
+   behind a macOS window, modelled on the macOS 26 default wallpaper: a
+   deep field with one broad, lighter wave sweeping across the upper right.
+   Glin's note on its glass sidebar applies to all of this: glass "needs a
+   rich backdrop". Built from the skin's accent, so Midnight gets Apple's
+   blue, Foundry a brass dusk, Lagoon a teal morning.
+
+   Static gradients only, painted once. Glass UI's own backgrounds animate
+   on a canvas or put `filter: blur()` on a full-window layer; both cost
+   frames, and every backdrop-filter above would re-sample them. */
+:root {
+  --wallpaper-url: url("/WallpaperWavy.jpg");
+}
+:root.dark,
+[data-skin="midnight"],
+[data-skin="foundry"],
+[data-skin="graphite"],
+[data-skin="dusk"] {
+  --wallpaper-url: url("/DarkModeWallpaper.jpg");
+}
+[data-skin="atelier"],
+[data-skin="lagoon"],
+[data-skin="linen"],
+[data-skin="daylight"] {
+  --wallpaper-url: url("/WallpaperWavy.jpg");
+}
+.glass-ground {
+  /* The sidebar can't be its own stacking context (below), so its glass
+     layer joins this one: painted over the ground, under everything else. */
+  isolation: isolate;
+  background-color: var(--color-app);
+  background-image: var(--wallpaper-url);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-ground { background-image: none; background-color: var(--color-app); }
+}
+
+/* ── Shared mechanism ────────────────────────────────────────────────── */
+:is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet) {
+  --glass-tint: var(--color-panel);
+  --glass-alpha: var(--glass-floor);
+  --glass-blur: 16px;
+  --gx-shadow: var(--gx-shadow-sm);
+  --glass-edge: var(--glass-highlight);
+  --glass-top: transparent;
+  /* Glass UI's white frost, layered over the skin tint. */
+  --gx-fill: var(--glass-bg);
+  --gx-glow: var(--glass-glow);
+
+  /* The layer below sits at z-index -1, so each surface is its own stacking
+     context and the layer stays behind its content, not behind the page. */
+  isolation: isolate;
+  background: transparent;
+}
+
+:is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: color-mix(
+    in oklab,
+    var(--glass-tint) calc(var(--glass-alpha) * 100%),
+    transparent
+  );
+  background-image: linear-gradient(180deg, var(--glass-top), transparent 55%), var(--gx-fill);
+  /* Inset shadows go here, not on the element: an element's own box-shadow
+     paints under its negative-z children, so this layer would hide it. */
+  box-shadow: var(--glass-edge), var(--glass-hl), var(--gx-glow), var(--gx-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  transition:
+    background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ── Fills inside glass: the skins paint rows, fields and chips in opaque
+   greys (raised, inset, control, card). On a glass surface those read as
+   grey stickers, so inside one they become a wash of the skin's ink — the
+   way a selected row in a macOS sidebar is a tint of the glass, not a
+   slab. Hover fills get the same treatment, one step stronger. */
+:is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-composer)
+  :is(.bg-raised, .bg-raised-hover, .bg-inset, .bg-control, .bg-card,
+    /* and their opacity-modifier forms (bg-control/60); a leading space or
+       start-of-string keeps hover:bg-…/… out */
+    [class^="bg-raised/"], [class*=" bg-raised/"], [class^="bg-raised-hover/"], [class*=" bg-raised-hover/"], [class^="bg-inset/"], [class*=" bg-inset/"], [class^="bg-control/"], [class*=" bg-control/"], [class^="bg-card/"], [class*=" bg-card/"]):not([data-model-picker-content], [data-model-picker-content] *, [role="dialog"], [role="dialog"] *, [role="menu"], [role="menu"] *) {
+  background-color: color-mix(in oklab, var(--color-ink) 9%, transparent);
+}
+:is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-composer)
+  :is([class~="hover:bg-raised"], [class~="hover:bg-raised-hover"], [class~="hover:bg-control"]):not([data-model-picker-content] *, [role="dialog"] *, [role="menu"] *):hover {
+  background-color: color-mix(in oklab, var(--color-ink) 13%, transparent);
+}
+
+/* ── Specular rim: the bright ring Apple draws around floating glass. A
+   1px gradient band on an ::after, cut out of the middle with a mask so
+   only the edge shows. It replaces the flat border colour on the surfaces
+   that float (the rail and sheet are docked, so they keep a plain edge). */
+:is(.glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog)::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: var(--glass-rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* ── Navigation rail: the lightest bar. Glin navbar floor, one step down,
+   blur-md; its right edge carries the refraction line, facing the stage. */
+.glass-rail {
+  --glass-alpha: var(--glass-floor-rail);
+  --glass-blur: 16px;
+  --gx-shadow: none;
+  --glass-edge: inset -1px 0 0 var(--glass-refraction-top);
+  position: relative;
+  border-right: 1px solid var(--gx-border);
+}
+
+/* ── Agent Chats sidebar: Glin sidebar `glass` — 84% floor, blur-xl. Denser
+   than the rail so the two read as separate layers rather than one slab. */
+.glass-sidebar {
+  --glass-alpha: var(--glass-floor-bar);
+  --glass-blur: 20px;
+  --gx-fill: var(--glass-frosted-bg);
+  --gx-glow: var(--glass-glow-lg);
+  --gx-shadow: none;
+  --glass-edge: inset -1px 0 0 var(--glass-refraction-top), var(--glass-highlight);
+  /* Not isolated: a stacking context here would trap the sidebar's fixed
+     menus and NewRoomPanel's full-window overlay under the chat's z-indexed
+     layers. Its glass layer lands in .glass-ground's context instead. */
+  isolation: auto;
+  /* A pane floating inside the window, as in macOS 26: inset from the
+     edges with corners concentric to the window's, and a shadow that
+     lifts it off the stage. */
+  margin: 8px 0 8px 8px;
+  height: calc(100% - 16px);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  --gx-shadow: var(--gx-shadow-md);
+}
+
+/* ── Toolbar cluster: a light floating lozenge (Glin glass-2: blur 12px,
+   glass-sm shadow) holding the chat header controls. */
+.glass-toolbar {
+  --glass-alpha: var(--glass-floor-tile);
+  --glass-blur: var(--blur);
+  --glass-top: var(--glass-sheen);
+  position: relative;
+  /* Isolating it would otherwise trap the export menu (z-40) under the
+     thread's own z-10 layers; 20 stays under the z-30 call overlay. */
+  z-index: 20;
+  border: 1px solid transparent; /* the rim (::after) draws the edge */
+}
+
+/* ── Status chips: Glin glass-1 (blur 8px). No sheen; it's a label. */
+.glass-chip {
+  --glass-alpha: var(--glass-floor-tile);
+  --glass-blur: var(--blur);
+  position: relative;
+  border: 1px solid transparent; /* the rim (::after) draws the edge */
+}
+
+/* ── Composer: Glin PromptInput `glass` — readable floor, blur-xl,
+   saturate 180%, refraction top, plus the sheen and a deeper drop so the
+   pill floats over the thread scrolling beneath it. */
+.glass-composer {
+  --glass-tint: var(--color-composer);
+  --glass-blur: 16px;
+  --gx-fill: var(--glass-frosted-bg);
+  --glass-top: var(--glass-sheen);
+  --gx-shadow: var(--gx-shadow-md);
+  border: 1px solid transparent; /* the rim (::after) draws the edge */
+}
+.glass-composer:focus-within {
+  --gx-shadow: 0 0 0 1px color-mix(in oklab, var(--color-focus) 40%, transparent), var(--gx-shadow-lg);
+}
+
+/* ── Starter cards: GlassCard — glass surface, 2px hover lift, Glin's
+   interactive glass states. */
+.glass-card {
+  --glass-alpha: var(--glass-floor-tile);
+  --glass-blur: var(--blur);
+  position: relative;
+  border: 1px solid transparent; /* the rim (::after) draws the edge */
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.glass-card:hover {
+  --gx-shadow: var(--gx-shadow-md);
+  transform: translateY(-2px);
+}
+.glass-card:hover::before {
+  background-image: linear-gradient(var(--glass-wash), var(--glass-wash));
+}
+.glass-card:active {
+  transform: translateY(0) scale(0.98);
+}
+.glass-card:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ── Menus and popovers: frosted glass with high opacity so content is readable. */
+.glass-panel {
+  --glass-tint: var(--color-menu);
+  --glass-alpha: 0.94;
+  --glass-blur: 24px;
+  --gx-fill: var(--glass-frosted-bg);
+  --gx-glow: var(--glass-glow-lg);
+  --gx-shadow: var(--gx-shadow-lg);
+  background-color: color-mix(in oklab, var(--color-menu, var(--color-panel)) 94%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.15));
+}
+
+/* ── Dialogs: dense, frosted glass surface — settings text and controls stay crisp and clear. */
+.glass-dialog {
+  --glass-alpha: 0.95;
+  --glass-blur: 28px;
+  --gx-fill: var(--glass-frosted-bg);
+  --gx-glow: var(--glass-glow-lg);
+  --gx-shadow: var(--gx-shadow-lg);
+  background-color: color-mix(in oklab, var(--color-panel) 95%, transparent);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* ── Side sheets (bot settings): dense frosted glass docked to the right edge. */
+.glass-sheet {
+  --glass-alpha: 0.95;
+  --glass-blur: 28px;
+  --gx-fill: var(--glass-frosted-bg);
+  --gx-shadow: none;
+  --glass-edge: inset 1px 0 0 var(--glass-refraction-top);
+  background-color: color-mix(in oklab, var(--color-panel) 95%, transparent);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-left: 1px solid var(--gx-border);
+}
+
+/* ── Model Picker Popover Menu: dedicated frosted surface and stacking ── */
+[data-model-picker-content] {
+  z-index: 50 !important;
+  background-color: color-mix(in oklab, var(--color-card, var(--color-panel)) 95%, transparent) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.15)) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+}
+
+[data-model-picker-content] .bg-card {
+  background-color: transparent !important;
+}
+
+/* Glass UI's utilities are 8–25% white with nothing under them: without a
+   working blur, give them the skin's solid panel so text keeps contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :is(.glass-bg, .glass-frosted, .glass-crystal) { background-color: var(--color-panel); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :is(.glass-bg, .glass-frosted, .glass-crystal) {
+    background-color: var(--color-panel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet)::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet)::before {
+    background: Canvas;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* The mascot's idle bob. */
+@keyframes mascot-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-mascot-float {
+  animation: mascot-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-mascot-float { animation: none; }
+  .glass-card,
+  .glass-card:hover,
+  .glass-card:active { transform: none; }
+  :is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet),
+  :is(.glass-rail, .glass-sidebar, .glass-toolbar, .glass-chip, .glass-composer, .glass-card, .glass-panel, .glass-dialog, .glass-sheet)::before { transition: none; }
+}

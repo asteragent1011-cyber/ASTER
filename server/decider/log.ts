@@ -15,7 +15,7 @@ import { appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { boundRetentionDays, pruneMonthFiles } from "../decision-log.ts";
-import type { DeciderFailure, DeciderProvider, DeciderSeam } from "./types.ts";
+import type { BackendTiming, DeciderFailure, DeciderProvider, DeciderSeam } from "./types.ts";
 
 export const DECIDER_LOG_DIR = "decider-log";
 const PRUNE_EVERY_MS = 60 * 60_000;
@@ -33,6 +33,8 @@ export interface DeciderLogRow {
   margin: number | null;
   latencyMs: number;
   inputTokens?: number;
+  /** Phase durations from the backend, when it reports them (Clef-Flash). */
+  timing?: BackendTiming;
   /** First 16 hex characters of sha256(state): enough to spot repeats. */
   stateHash: string;
 }

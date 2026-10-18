@@ -579,11 +579,11 @@ import { createDeciderRoutes } from "./routes/decider.ts";
 import { createAntigravityLeftoverRoutes } from "./routes/antigravity-leftovers.ts";
 import { findAntigravityLeftovers, removeAntigravityLeftovers } from "./drivers/antigravity-temp.ts";
 
-const PORT = Number(process.env.OMB_PORT || process.env.OGB_PORT || 8799);
-const WEBHOOK_PORT = Number(process.env.OMB_WEBHOOK_PORT || PORT + 1);
+const PORT = Number(process.env.ASTER_PORT || process.env.OMB_PORT || process.env.OGB_PORT || 8799);
+const WEBHOOK_PORT = Number(process.env.ASTER_WEBHOOK_PORT || process.env.OMB_WEBHOOK_PORT || PORT + 1);
 // Behind a proxy or tunnel, the base URL senders should use (docs/self-hosting.md).
-const WEBHOOK_PUBLIC_URL = process.env.OMB_WEBHOOK_PUBLIC_URL || undefined;
-const STATIC_DIR = process.env.OMB_STATIC_DIR || null;
+const WEBHOOK_PUBLIC_URL = process.env.ASTER_WEBHOOK_PUBLIC_URL || process.env.OMB_WEBHOOK_PUBLIC_URL || undefined;
+const STATIC_DIR = process.env.ASTER_STATIC_DIR || process.env.OMB_STATIC_DIR || null;
 const MIME: Record<string, string> = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -12875,7 +12875,7 @@ function startGroupTurn(
             : [];
         if (picked.length && route.kind !== "fallback") {
           round = picked;
-          routedBy = { provider: "jev", probability: Math.round(route.probability * 100) / 100 };
+          routedBy = { provider: route.provider ?? "jev", probability: Math.round(route.probability * 100) / 100 };
         }
         // What a routed round holds from the start, like any other round.
         for (const responder of round) operation.botIds.add(responder.id);

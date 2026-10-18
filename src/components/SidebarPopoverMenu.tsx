@@ -155,7 +155,7 @@ export function SidebarPopoverMenu({
           aria-label={ariaLabel}
           {...motion.exitProps}
           className={cn(
-            "absolute bottom-full left-0 right-0 z-40 mb-1 overflow-hidden rounded-xl border border-hairline/50 bg-menu py-1.5 shadow-2xl shadow-black/50",
+            "absolute bottom-full left-0 right-0 z-40 mb-1 overflow-hidden rounded-xl glass-panel py-1.5",
             motion.className,
           )}
         >

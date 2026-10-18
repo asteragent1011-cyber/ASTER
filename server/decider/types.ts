@@ -3,7 +3,7 @@
 // Nothing here names a vendor: `jev` is one backend, and another (a local
 // Jev-compatible server, an LLM) plugs in behind the same types.
 
-export type DeciderProvider = "jev";
+export type DeciderProvider = "jev" | "clef-flash";
 
 /** Jobs a person can switch on or off one by one in Settings. */
 export type DeciderJob = "roomRouting";
@@ -112,15 +112,25 @@ export interface AskOptions {
 export interface BackendRequest {
   key: string;
   baseUrl?: string;
+  accountId?: string;
   state: unknown;
   questions: Record<string, DeciderQuestion>;
   signal: AbortSignal;
   fetch: typeof fetch;
 }
 
+/** Where a backend call's time went, in whole ms. `requestMs`: send to
+ * response headers (connection, upload, model, first byte); `responseMs`:
+ * reading the body; `parseMs`: validating the answers. */
+export interface BackendTiming {
+  requestMs: number;
+  responseMs?: number;
+  parseMs?: number;
+}
+
 export type BackendResult =
-  | { ok: true; answers: Record<string, DeciderAnswer>; inputTokens?: number; model?: string }
-  | { ok: false; reason: DeciderFailure; status?: number };
+  | { ok: true; answers: Record<string, DeciderAnswer>; inputTokens?: number; model?: string; timing?: BackendTiming }
+  | { ok: false; reason: DeciderFailure; status?: number; timing?: BackendTiming };
 
 export interface DeciderBackend {
   id: DeciderProvider;

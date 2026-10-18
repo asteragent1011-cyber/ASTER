@@ -18,8 +18,9 @@
 // ever with the relay's URL and only for the requests the relay accepts
 // (relay.ts), and the switch counts as on until turned off.
 import type { AppConfig } from "../config.ts";
-import { deciderCredential, type ServiceCredential } from "../included-services.ts";
+import { deciderCredential } from "../included-services.ts";
 import { jevBackend } from "./jev.ts";
+import { clefBackend, warmClefConnection } from "./clef.ts";
 import { appendDeciderLog, stateHash } from "./log.ts";
 import { KEY_CHECK_QUESTION, KEY_CHECK_STATE, relayAccepts, relaySeam } from "./relay.ts";
 import type {
@@ -41,13 +42,22 @@ const offBackend: { id: "off"; decide(): Promise<BackendResult> } = {
   id: "off",
   decide: async () => ({ ok: false, reason: "disabled" }),
 };
-const BACKENDS: Record<DeciderProvider, DeciderBackend> = { jev: jevBackend };
+const BACKENDS: Record<DeciderProvider, DeciderBackend> = { jev: jevBackend, "clef-flash": clefBackend };
 
 type DeciderConfig = NonNullable<AppConfig["decider"]>;
 
 export function deciderProvider(cfg: AppConfig): DeciderProvider | "off" {
-  const provider = cfg.decider?.provider ?? "jev";
+  const env = process.env.DECIDER_PROVIDER?.trim() || process.env.OMB_DECIDER_PROVIDER?.trim();
+  const raw = env || cfg.decider?.provider || "jev";
+  const provider = raw === "clef" || raw === "clef-flash" || raw === "cloudflare" ? "clef-flash" : raw;
   return provider in BACKENDS ? (provider as DeciderProvider) : "off";
+}
+
+export interface DeciderAccountResolved {
+  token: string;
+  api: string;
+  accountId?: string;
+  included: boolean;
 }
 
 /** The key a call uses and the one base URL it goes to: the person's own
@@ -56,8 +66,22 @@ export function deciderProvider(cfg: AppConfig): DeciderProvider | "off" {
  * Pro's included token with the Admin's relay, but only where the relay
  * accepts that seam: any other job has only an own key. Resolved on every
  * call. */
-function deciderAccount(cfg: AppConfig, seam?: DeciderSeam, draft?: string): ServiceCredential | null {
-  const account = deciderCredential(draft?.trim() || cfg.decider?.key, cfg.decider?.baseUrl);
+export function deciderAccount(
+  cfg: AppConfig,
+  seam?: DeciderSeam,
+  draft?: string,
+  explicitProvider?: DeciderProvider,
+  draftAccountId?: string,
+): DeciderAccountResolved | null {
+  const provider = explicitProvider ?? deciderProvider(cfg);
+  if (provider === "clef-flash") {
+    const token = draft?.trim() || cfg.decider?.cloudflareToken || (cfg.decider?.provider === "clef-flash" ? cfg.decider?.key : undefined) || process.env.CLOUDFLARE_API_TOKEN;
+    const accountId = draftAccountId?.trim() || cfg.decider?.cloudflareAccountId || cfg.decider?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID;
+    if (!token || !accountId) return null;
+    const api = cfg.decider?.baseUrl || process.env.CLOUDFLARE_BASE_URL || "https://api.cloudflare.com";
+    return { token: token.trim(), accountId: accountId.trim(), api, included: false };
+  }
+  const account = deciderCredential(draft?.trim() || (cfg.decider?.provider === "clef-flash" ? undefined : cfg.decider?.key), cfg.decider?.baseUrl);
   return account?.included && seam && !relaySeam(seam) ? null : account;
 }
 
@@ -98,12 +122,19 @@ export function deciderReady(cfg: AppConfig, job: DeciderJob): boolean {
  * not a saved key. */
 export function describeDecider(cfg: AppConfig) {
   const account = deciderAccount(cfg);
+  const provider = deciderProvider(cfg);
+  const jevAccount = deciderAccount(cfg, undefined, undefined, "jev");
+  const clefAccount = deciderAccount(cfg, undefined, undefined, "clef-flash");
+  const clefAccountId = cfg.decider?.cloudflareAccountId || cfg.decider?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID;
   return {
-    provider: "jev" as const,
+    provider: provider === "off" ? ("off" as const) : provider,
     configured: Boolean(account),
     ...(account?.included ? { included: true as const } : {}),
     enabled: deciderEnabled(cfg),
     jobs: { roomRouting: deciderJobOn(cfg, "roomRouting") },
+    ...(clefAccount ? { clefConfigured: true } : {}),
+    ...(clefAccountId ? { clefAccountId } : {}),
+    ...(clefAccount && jevAccount ? { jevConfigured: true } : {}),
   };
 }
 
@@ -122,20 +153,50 @@ export function deciderSavePatch(
   included = false,
 ): { ok: true; patch: Partial<DeciderConfig> } | { ok: false; error: string } {
   const next: Partial<DeciderConfig> = { ...patch };
-  const savingKey = typeof patch.key === "string" && Boolean(patch.key.trim());
-  const clearingKey = typeof patch.key === "string" && !patch.key.trim();
   if (typeof patch.key === "string") next.key = patch.key.trim();
-  if (savingKey) {
+  if (typeof patch.cloudflareToken === "string") next.cloudflareToken = patch.cloudflareToken.trim();
+  if (typeof patch.cloudflareAccountId === "string") next.cloudflareAccountId = patch.cloudflareAccountId.trim();
+  if (typeof patch.accountId === "string") next.accountId = patch.accountId.trim();
+  if (patch.provider !== undefined) next.provider = patch.provider;
+
+  const savingJevKey = typeof patch.key === "string" && Boolean(patch.key.trim());
+  const clearingJevKey = typeof patch.key === "string" && !patch.key.trim();
+  const savingClefToken = typeof patch.cloudflareToken === "string" && Boolean(patch.cloudflareToken.trim());
+  const clearingClefToken = typeof patch.cloudflareToken === "string" && !patch.cloudflareToken.trim();
+  const savingClefAccount = (typeof patch.cloudflareAccountId === "string" && Boolean(patch.cloudflareAccountId.trim()))
+    || (typeof patch.accountId === "string" && Boolean(patch.accountId.trim()));
+
+  const provider = patch.provider ?? current?.provider ?? "jev";
+
+  if (savingJevKey && provider === "jev") {
     next.enabled = patch.enabled ?? true;
     next.jobs = { ...current?.jobs, roomRouting: true, ...patch.jobs };
-  } else if (clearingKey) {
+  } else if ((savingClefToken || savingClefAccount) && provider === "clef-flash") {
+    next.enabled = patch.enabled ?? true;
+    next.jobs = { ...current?.jobs, roomRouting: true, ...patch.jobs };
+  } else if (clearingJevKey && provider === "jev") {
     if (!included) next.enabled = false;
+  } else if (clearingClefToken && provider === "clef-flash") {
+    next.enabled = false;
   } else if (patch.jobs) {
     next.jobs = { ...current?.jobs, ...patch.jobs };
   }
-  if (next.enabled === true && !savingKey && !current?.key?.trim() && !included) {
-    return { ok: false, error: "Save a Jev API key before turning on fast decisions." };
+
+  if (next.enabled === true) {
+    if (provider === "clef-flash") {
+      const hasToken = Boolean(next.cloudflareToken || current?.cloudflareToken || (current?.provider === "clef-flash" && current?.key) || process.env.CLOUDFLARE_API_TOKEN);
+      const hasAccount = Boolean(next.cloudflareAccountId || next.accountId || current?.cloudflareAccountId || current?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID);
+      if (!hasToken || !hasAccount) {
+        return { ok: false, error: "Save a Cloudflare Account ID and API token before turning on Clef-Flash." };
+      }
+    } else if (provider === "jev") {
+      const hasJev = Boolean(next.key || current?.key || included || process.env.OMB_JEV_API_KEY);
+      if (!hasJev) {
+        return { ok: false, error: "Save a Jev API key before turning on fast decisions." };
+      }
+    }
   }
+
   return { ok: true, patch: next };
 }
 
@@ -172,12 +233,25 @@ export interface Decider {
   /** One tiny yes/no call with a draft key or the saved one (with neither,
    * Cloud Pro's included decisions through the relay), whatever the switches
    * say: the Settings Test button, and the check on save. */
-  testKey(input?: { key?: string }, options?: AskOptions): Promise<DeciderResult<YesNoAnswer>>;
+  testKey(input?: { key?: string; accountId?: string; provider?: DeciderProvider }, options?: AskOptions): Promise<DeciderResult<YesNoAnswer>>;
 }
 
 export function createDecider(deps: DeciderDeps): Decider {
   const fetchImpl = deps.fetch ?? fetch;
   const now = deps.now ?? (() => performance.now());
+  // Clef-Flash: open the pooled connection now, so the first room message
+  // doesn't pay a cold handshake (measured 3–15s on a lossy path, against
+  // ~0.9s warm). Production only — a test that injects fetch makes no
+  // network calls. Never blocks or throws.
+  if (!deps.fetch) {
+    try {
+      const cfg = deps.config();
+      const account = deciderProvider(cfg) === "clef-flash" && deciderEnabled(cfg) ? deciderAccount(cfg, "roomRouting") : null;
+      if (account) warmClefConnection(account.api);
+    } catch {
+      /* warming is best-effort */
+    }
+  }
 
   function gate(cfg: AppConfig, seam: DeciderSeam): DeciderFailure | null {
     if (deciderProvider(cfg) === "off") return "disabled";
@@ -193,7 +267,7 @@ export function createDecider(deps: DeciderDeps): Decider {
   async function call<Qs extends Record<string, DeciderQuestion>>(
     seam: DeciderSeam,
     backend: DeciderBackend | typeof offBackend,
-    request: { key: string; baseUrl?: string; state: unknown; questions: Qs },
+    request: { key: string; baseUrl?: string; accountId?: string; state: unknown; questions: Qs },
     options: AskOptions,
   ): Promise<DeciderResult<Answers<Qs>>> {
     const provider = backend.id === "off" ? undefined : backend.id;
@@ -237,6 +311,7 @@ export function createDecider(deps: DeciderDeps): Decider {
         margin: first?.margin ?? null,
         latencyMs,
         ...(outcome.ok && outcome.inputTokens !== undefined ? { inputTokens: outcome.inputTokens } : {}),
+        ...(outcome.timing ? { timing: outcome.timing } : {}),
         stateHash: stateHash(request.state),
       });
     }
@@ -266,7 +341,7 @@ export function createDecider(deps: DeciderDeps): Decider {
       const account = deciderAccount(cfg, seam)!;
       // Through the included token, only the exact requests the relay takes.
       if (account.included && !relayAccepts(seam, state, questions)) return { ok: false, reason: "misconfigured" };
-      return await call(seam, backend, { key: account.token, baseUrl: account.api, state, questions }, options);
+      return await call(seam, backend, { key: account.token, baseUrl: account.api, accountId: account.accountId, state, questions }, options);
     } catch {
       return { ok: false, reason: "malformed" };
     }
@@ -295,17 +370,17 @@ export function createDecider(deps: DeciderDeps): Decider {
     async testKey(input = {}, options = {}) {
       try {
         const cfg = deps.config();
-        // A draft or saved own key goes to Jev (or decider.baseUrl); with
-        // neither, Cloud Pro's included token goes to its relay.
-        const account = deciderAccount(cfg, "keyCheck", input.key);
+        const chosenProvider = input.provider ?? deciderProvider(cfg);
+        const provider = chosenProvider === "off" ? "jev" : chosenProvider;
+        const account = deciderAccount(cfg, "keyCheck", input.key, provider, input.accountId);
         if (!account) return { ok: false, reason: "no_key" };
-        const provider = deciderProvider(cfg);
-        const backend = provider === "off" ? offBackend : BACKENDS[provider];
+        const backend = BACKENDS[provider];
         const questions = { answer: { type: "yesno" as const, instructions: KEY_CHECK_QUESTION } };
         if (account.included && !relayAccepts("keyCheck", KEY_CHECK_STATE, questions)) return { ok: false, reason: "misconfigured" };
         return single(await call("keyCheck", backend, {
           key: account.token,
           baseUrl: account.api,
+          accountId: account.accountId,
           state: KEY_CHECK_STATE,
           questions,
         }, { timeoutMs: KEY_CHECK_TIMEOUT_MS, ...options }));

@@ -557,15 +557,15 @@ export function controlResultSucceeded(command: string, result: unknown): boolea
 
 /** pnpm swallows Ctrl-C; a launcher that owns processes must get the signal itself. */
 function requireForegroundTerminal(command: string): void {
-  if (process.env.npm_lifecycle_event === "control:omb") {
+  if (process.env.npm_lifecycle_event === "control:omb" || process.env.npm_lifecycle_event === "control:aster") {
     throw new ControlOmbError(
       `${command} must own the terminal directly so Ctrl-C can clean up its children`,
-      `run \`node --experimental-strip-types scripts/control-omb.ts ${command}\``,
+      `run \`node --experimental-strip-types scripts/control-aster.ts ${command}\``,
     );
   }
 }
 
-async function main() {
+export async function main() {
   const command = process.argv[2] ?? "help";
   if (command === "ui" && process.argv[3] === "launch") {
     requireForegroundTerminal("ui launch");

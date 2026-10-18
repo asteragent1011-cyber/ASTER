@@ -63,12 +63,12 @@ describe("room routing request", () => {
 describe("decideRoomResponder", () => {
   it("a confident pick answers alone", async () => {
     const decider = answering(picked("bot-theo", 0.94));
-    await expect(decideRoomResponder(decider, INPUT)).resolves.toEqual({ kind: "member", botId: "bot-theo", probability: 0.94 });
+    await expect(decideRoomResponder(decider, INPUT)).resolves.toEqual({ kind: "member", botId: "bot-theo", probability: 0.94, provider: "jev" });
     expect(decider.choose).toHaveBeenCalledWith("roomRouting", expect.any(Object), expect.any(Object), expect.objectContaining({ timeoutMs: ROOM_ROUTING_TIMEOUT_MS }));
   });
 
   it("__everyone__ at 0.6 or above sends it to everyone", async () => {
-    await expect(decideRoomResponder(answering(picked(EVERYONE_OPTION, 0.72)), INPUT)).resolves.toEqual({ kind: "everyone", probability: 0.72 });
+    await expect(decideRoomResponder(answering(picked(EVERYONE_OPTION, 0.72)), INPUT)).resolves.toEqual({ kind: "everyone", probability: 0.72, provider: "jev" });
   });
 
   it("exactly 0.6 is confident enough; below falls back", async () => {

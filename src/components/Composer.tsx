@@ -786,7 +786,7 @@ export function Composer({
           {speechError}
         </div>
       )}
-      <div className="pointer-events-auto relative w-full">
+      <div className="pointer-events-auto relative mx-auto w-full max-w-3xl">
         {failedSends.map((failed) => (
           <div
             key={failed.id}
@@ -947,17 +947,21 @@ export function Composer({
           onEdit={locked ? undefined : editQueued}
         />
         <div className="relative">
-          {/* App-ground from the pill midline down, full-bleed. Bubbles may
-              tuck into the top half of the radius; they must not show below
-              center. End at the dock's pb-3 padding: a viewport-height
-              backdrop extends the document and lets focus scroll the header
-              away. Only the decoration is bounded; upward menus stay free. */}
+          {/* Bounds of the dock below the pill midline. It used to be painted
+              bg-app so bubbles never showed below center; over the glass
+              wallpaper that solid band showed, so it is unpainted: bubbles now
+              pass under the pill's frosted lower half. (A fade mask on the
+              scroller would also work, but a mask makes the scroller a
+              backdrop root and the glass inside the transcript would blur
+              nothing.) End at the dock's pb-3 padding: a
+              viewport-height backdrop extends the document and lets focus
+              scroll the header away. Upward menus stay free. */}
           <div
             aria-hidden
             data-composer-backdrop
-            className="pointer-events-none absolute -left-5 -right-5 -bottom-3 top-1/2 bg-app"
+            className="pointer-events-none absolute -left-5 -right-5 -bottom-3 top-1/2"
           />
-        <div data-tour="composer" className="relative z-[1] rounded-3xl bg-composer px-2 py-1.5 ring-1 ring-composer-ring">
+        <div data-tour="composer" className="glass-composer relative z-[1] rounded-3xl px-3 py-2">
         <div className="flex items-end gap-1">
           <input
             ref={fileInput}

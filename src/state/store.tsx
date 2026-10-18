@@ -638,11 +638,14 @@ export interface ConfigStatus {
    * (off while no key is saved). `included`: Cloud Pro's decisions, no key
    * saved. */
   decider?: {
-    provider: "jev";
+    provider: "jev" | "clef-flash" | "off";
     configured: boolean;
     included?: boolean;
     enabled: boolean;
     jobs: { roomRouting: boolean };
+    jevConfigured?: boolean;
+    clefConfigured?: boolean;
+    clefAccountId?: string;
   };
   /** Shared write-only credential for on-demand GPT Image avatars. */
   imageGen?: {

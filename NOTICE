@@ -22,3 +22,18 @@ under the MIT License. Its cache and refresh logic is adapted from OpenCode,
 https://github.com/anomalyco/opencode, Copyright (c) 2025 opencode, used under
 the MIT License. The full license texts are in third_party/models-dev/LICENSE
 and third_party/opencode/LICENSE.
+
+ASTER
+Copyright 2026 ASTER contributors
+
+ASTER is a fork of and derived from OpenMausBot (Copyright 2026 Milind Soni and OpenMausBot contributors).
+
+The liquid glass surfaces in src/styles.css adapt the glass tokens and
+surface recipes of Glin UI, https://github.com/glincker/glinui, Copyright
+(c) 2026 Glincker LLC, used under the MIT License
+(third_party/glinui/LICENSE).
+
+The glass Button, Card and Badge in src/components/glass-ui and the glass
+tokens and utilities they use in src/styles.css are from Glass UI,
+https://github.com/crenspire/glass-ui, Crenspire Technologies, used under the
+MIT License (third_party/glass-ui/NOTICE).

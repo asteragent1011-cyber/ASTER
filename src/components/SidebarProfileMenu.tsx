@@ -187,7 +187,7 @@ function useUpdateItem(): UpdateEntry | null {
   };
 }
 
-export function SidebarProfileMenu() {
+export function SidebarProfileMenu({ compact = false }: { compact?: boolean } = {}) {
   const { state, dispatch } = useStore();
   const phone = useSidebarPhoneStatus();
   const update = useUpdateItem();
@@ -256,12 +256,14 @@ export function SidebarProfileMenu() {
           <span
             ref={triggerRef}
             className={cn(
-              "flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors",
+              compact
+                ? "flex size-9 items-center justify-center rounded-full transition-all hover:ring-1 hover:ring-hairline/40"
+                : "flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors",
               open ? "bg-raised" : "hover:bg-raised/50",
             )}
           >
-            <InitialsAvatar initials={profileInitials(profile)} size={28} />
-            <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{name}</span>
+            <InitialsAvatar initials={profileInitials(profile)} size={compact ? 28 : 28} />
+            {!compact && <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{name}</span>}
             {/* an update is the one thing worth interrupting the name for, so
               * it sits on the row rather than waiting to be found in the menu */}
             {update && updateNoteworthy(update.phase, update.pending) && (

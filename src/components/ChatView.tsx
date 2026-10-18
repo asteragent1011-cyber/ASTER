@@ -15,10 +15,12 @@ import {
   PinOff,
   RefreshCw,
   Search,
+  Settings,
   Square,
   Webhook,
   X,
 } from "lucide-react";
+import { MascotCentrepiece, MascotCompanionHeader } from "./MascotCentrepiece";
 import { WorkingDots } from "@/components/WorkingIndicator";
 import { MessageActions, messageActionClass } from "@/components/MessageActions";
 import { useSpeech } from "@/lib/tts/useSpeech";
@@ -704,31 +706,25 @@ const MessagesList = memo(function MessagesList({
   // row out of the DOM, and there is nothing for the scroll to land on.
   const focus = state.focusMessage;
   const focusedId = focus && !focus.consumed && focus.threadId === bot.threadId ? focus.messageId : null;
+  const isIdle = !bot.busy && messages.every((m) => m.role !== "user");
   return (
     <>
-      {messages.length === 0 && !bot.busy && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
-          <BotAvatar bot={bot} state="idle" size={64} motion="none" motionKey={0} />
-          <RenameTitle
-            value={bot.name}
-            onCommit={(name) => {
-              if (window.ogb?.remoteClient?.active) {
-                void api(`/api/bots/${bot.id}/profile`, { method: "PATCH", body: JSON.stringify({ name }) })
-                  .then(({ bot: updated }) => dispatch({ type: "botPatched", bot: updated }))
-                  .catch((cause) => dispatch({ type: "error", message: cause instanceof Error ? cause.message : String(cause) }));
-              } else {
-                dispatch({ type: "updateBot", botId: bot.id, patch: { name } });
-              }
-            }}
-            className="text-[17px] font-semibold text-ink"
-            inputClassName="rounded bg-inset px-1.5 py-0.5 text-center text-[17px] font-semibold"
-          />
-          <div className="max-w-[360px] text-[14px] text-ink-secondary">
-            {bot.description || t("chat.emptyPrompt")}
-          </div>
-        </div>
+      {isIdle ? (
+        <MascotCentrepiece
+          bot={bot}
+          messages={messages}
+          onSuggestionClick={(prompt) => {
+            appendComposerDraft(`bot:${bot.id}:${bot.threadId}`, prompt);
+            document.querySelector<HTMLTextAreaElement>("textarea[data-composer-input], textarea")?.focus();
+          }}
+        />
+      ) : (
+        <MascotCompanionHeader
+          bot={bot}
+          messages={messages}
+        />
       )}
-      {items.map((item, i) => {
+      {!isIdle && items.map((item, i) => {
         const previous = items[i - 1];
         const prev = previous && (previous.kind === "message" ? previous.message : previous.messages.at(-1));
         const first = item.kind === "message" ? item.message : item.messages[0];
@@ -1238,7 +1234,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   const canOpenResults = resultsThreadId && [...state.bots, ...state.groups].some((owner) => owner.threadId === resultsThreadId || owner.tasks?.some((task) => task.threadId === resultsThreadId));
 
   return (
-    <main className="relative flex h-full min-w-0 flex-1 flex-col bg-app">
+    <main className="relative flex h-full min-w-0 flex-1 flex-col">
       {/* Call mode covers the thread while the bot is on the line */}
       <CallOverlay bot={bot} />
       {/* Header */}
@@ -1303,7 +1299,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         </div>
         <div
           data-chathead-controls
-          className="flex shrink-0 items-center gap-2 @max-[30rem]/chathead:ml-auto @max-[30rem]/chathead:flex-wrap @max-[30rem]/chathead:justify-end"
+          className="glass-toolbar flex shrink-0 items-center gap-1 rounded-2xl px-1 py-0.5 @max-[30rem]/chathead:ml-auto @max-[30rem]/chathead:flex-wrap @max-[30rem]/chathead:justify-end"
           // The caption buttons sit over the header's right end; drop this
           // icon row 16px (visual only — the header keeps its height) so the
           // buttons clear the 26px overlay while the rest of the layout stays.
@@ -1366,6 +1362,14 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
           >
             <Bug size={18} />
           </button>}
+          <button
+            onClick={() => dispatch({ type: "toggleAppSettings", open: true })}
+            aria-label="Settings"
+            className="rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink transition-colors"
+            title="Settings (⌘,)"
+          >
+            <Settings size={18} />
+          </button>
         </div>
         </div>
       </div>

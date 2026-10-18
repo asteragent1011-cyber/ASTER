@@ -3034,6 +3034,7 @@ const CREDENTIAL_PATCH = {
   ttsKey: (value) => ({ tts: { key: value } }),
   fishAudioKey: (value) => ({ tts: { fishKey: value } }),
   jevApiKey: (value) => ({ decider: { key: value } }),
+  cloudflareApiToken: (value) => ({ decider: { cloudflareToken: value } }),
   openaiImageApiKey: (value) => ({ imageGen: { key: value } }),
   customImageApiKey: (value) => ({ imageGen: { customApiKey: value } }),
 };
