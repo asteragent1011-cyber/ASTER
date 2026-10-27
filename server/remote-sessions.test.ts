@@ -207,6 +207,13 @@ describe("before pairing", () => {
     expect(refused.body.error).toMatch(/pair this device/);
   });
 
+  it("serves the same descriptor at the ASTER path the dev proxy forwards", async () => {
+    const legacy = await call("/.well-known/openmausbot/environment", { headers: remote("10.0.0.1") });
+    const aster = await call("/.well-known/aster/environment", { headers: remote("10.0.0.1") });
+    expect(aster.status).toBe(200);
+    expect(aster.body).toEqual(legacy.body);
+  });
+
   it("serves the UI shell to a remote browser so it can reach the pair page", async () => {
     const res = await call("/pair", { headers: remote("10.0.0.1") });
     expect(res.status).toBe(200);

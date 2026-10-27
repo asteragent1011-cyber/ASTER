@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AppConfig } from "../config.ts";
-import { createDecider, deciderProvider, deciderReady } from "./index.ts";
+import { createDecider, deciderProvider, deciderReady, describeDecider } from "./index.ts";
 import { decideRoomResponder } from "./room-routing.ts";
 import { CLEF_FLASH_MODEL } from "./clef.ts";
 
@@ -249,5 +249,58 @@ describe("end-to-end Clef-Flash execution", () => {
 
     const [url] = fetchMock.mock.calls[0]!;
     expect(String(url)).toBe("https://api.typesafe.ai/v1/systemone");
+  });
+});
+
+describe("Jev and Clef-Flash status are independent", () => {
+  const JEV_ONLY: AppConfig = { decider: { enabled: true, key: JEV_KEY, jobs: { roomRouting: true } } };
+  const CLEF_ONLY: AppConfig = {
+    decider: { enabled: true, provider: "clef-flash", cloudflareAccountId: ACCOUNT_ID, cloudflareToken: CF_TOKEN, jobs: { roomRouting: true } },
+  };
+  const BOTH: AppConfig = {
+    decider: { enabled: true, key: JEV_KEY, cloudflareAccountId: ACCOUNT_ID, cloudflareToken: CF_TOKEN, jobs: { roomRouting: true } },
+  };
+
+  it("Jev only: Jev reports configured and routes rooms with no Clef account", () => {
+    const status = describeDecider(JEV_ONLY);
+    expect(status).toMatchObject({ provider: "jev", configured: true, enabled: true, jevConfigured: true });
+    expect(status).not.toHaveProperty("clefConfigured");
+    expect(deciderReady(JEV_ONLY, "roomRouting")).toBe(true);
+  });
+
+  it("Clef only: Clef reports configured, Jev does not", () => {
+    const status = describeDecider(CLEF_ONLY);
+    expect(status).toMatchObject({ provider: "clef-flash", configured: true, enabled: true, clefConfigured: true, clefAccountId: ACCOUNT_ID });
+    expect(status).not.toHaveProperty("jevConfigured");
+    expect(deciderReady(CLEF_ONLY, "roomRouting")).toBe(true);
+  });
+
+  it("both: each reports configured, and the selected provider still routes", async () => {
+    expect(describeDecider(BOTH)).toMatchObject({ provider: "jev", jevConfigured: true, clefConfigured: true });
+    const both = { decider: { ...BOTH.decider, provider: "clef-flash" as const } };
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ success: true, result: { answers: { answer: { type: "choice", choice: "bob", probabilities: { alice: 0.1, bob: 0.9 } } } } }),
+    );
+    const result = await createDecider({ config: () => both, fetch: fetchMock as unknown as typeof fetch }).choose("roomRouting", STATE, QUESTION);
+    expect(result).toMatchObject({ ok: true, provider: "clef-flash" });
+    expect(String(fetchMock.mock.calls[0]![0])).toContain(`/ai/run/${CLEF_FLASH_MODEL}`);
+  });
+
+  it("neither: nothing reports configured and room routing is not asked", () => {
+    const status = describeDecider({});
+    expect(status).toMatchObject({ provider: "jev", configured: false, enabled: false });
+    expect(status).not.toHaveProperty("jevConfigured");
+    expect(status).not.toHaveProperty("clefConfigured");
+    expect(deciderReady({}, "roomRouting")).toBe(false);
+  });
+
+  it("incomplete Jev credentials: a base URL with a blank key is not configured", async () => {
+    const incomplete: AppConfig = { decider: { enabled: true, key: "   ", baseUrl: "http://127.0.0.1:9", jobs: { roomRouting: true } } };
+    expect(describeDecider(incomplete)).not.toHaveProperty("jevConfigured");
+    expect(deciderReady(incomplete, "roomRouting")).toBe(false);
+    const fetchMock = vi.fn<typeof fetch>();
+    const result = await createDecider({ config: () => incomplete, fetch: fetchMock as unknown as typeof fetch }).choose("roomRouting", STATE, QUESTION);
+    expect(result).toEqual({ ok: false, reason: "no_key" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

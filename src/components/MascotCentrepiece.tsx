@@ -3,12 +3,11 @@ import { type Bot, type Message } from "@/state/store";
 import { BotAvatar } from "./Avatar";
 import { stateForBot, type MausState, type MausMotion } from "@/lib/mascot";
 import { cn } from "@/lib/cn";
-import { RenameTitle } from "./RenameTitle";
-import { api, useStore } from "@/state/store";
-import { Code2, Compass, Lightbulb, FileText } from "lucide-react";
+import { Grip } from "lucide-react";
+import { companionMood, greetingFor } from "@/lib/aster-companion";
 import { Badge } from "./glass-ui/badge";
-import { Button } from "./glass-ui/button";
 import { Card } from "./glass-ui/card";
+import { AsterMascot } from "./aster/AsterMascot";
 
 export interface MascotCentrepieceProps {
   bot: Bot;
@@ -17,41 +16,18 @@ export interface MascotCentrepieceProps {
   toolInFlight?: boolean;
   speaking?: boolean;
   hasError?: boolean;
-  onSuggestionClick?: (text: string) => void;
-  motion?: MausMotion;
-  motionKey?: number;
 }
 
-const DEFAULT_SUGGESTIONS = [
-  { icon: Code2, label: "Review or debug code", prompt: "Can you help review or debug some code with me?" },
-  { icon: Lightbulb, label: "Brainstorm ideas", prompt: "Let's brainstorm some innovative ideas for my project." },
-  { icon: Compass, label: "Explore a topic", prompt: "Explain the architecture and best practices for this." },
-  { icon: FileText, label: "Draft a plan", prompt: "Help me create a detailed step-by-step implementation plan." },
-];
-
+/** The home screen of an empty conversation: a greeting and headline on
+ * the left, the ASTER companion floating on the right. The quick actions
+ * live in the composer below (Composer's `hero`). */
 export const MascotCentrepiece = memo(function MascotCentrepiece({
   bot,
-  messages,
   isTyping = false,
   toolInFlight = false,
   speaking = false,
   hasError = false,
-  onSuggestionClick,
-  motion = "none",
-  motionKey = 0,
 }: MascotCentrepieceProps) {
-  const { dispatch } = useStore();
-
-  // Derive contextual mascot mood / expression
-  const currentState: MausState = useMemo(() => {
-    if (hasError) return "alerting";
-    if (speaking) return "dictating";
-    if (toolInFlight) return "working";
-    if (bot.busy) return "thinking";
-    if (isTyping) return "listening";
-    return stateForBot({ ...bot, messages });
-  }, [hasError, speaking, toolInFlight, bot, isTyping, messages]);
-
   const statusLabel = useMemo(() => {
     if (hasError) return "Needs attention";
     if (speaking) return "Speaking...";
@@ -60,95 +36,36 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
     if (isTyping) return "Listening...";
     return "Here with you";
   }, [hasError, speaking, toolInFlight, bot.busy, isTyping]);
+  const greeting = greetingFor(new Date().getHours());
+  const mood = companionMood({ busy: bot.busy, typing: isTyping, streaming: speaking });
 
   return (
-    <div data-mascot-centrepiece className="flex flex-1 flex-col items-center justify-center px-4 py-8 text-center select-none animate-in fade-in duration-500">
-      {/* Floating Mascot Aura & Figure */}
-      <div className="group relative flex flex-col items-center">
-        {/* Subtle ambient light behind mascot */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -inset-8 rounded-full bg-accent/5 blur-3xl transition-all duration-700 group-hover:bg-accent/10"
-        />
-
-        {/* Mascot Avatar with gentle floating idle animation */}
-        <div className="animate-mascot-float relative transition-transform duration-300 hover:scale-[1.03]">
-          <BotAvatar
-            bot={bot}
-            state={currentState}
-            size={160}
-            motion={motion}
-            motionKey={motionKey}
-            trackPointer={true}
-          />
+    <div data-mascot-centrepiece className="aster-hero flex flex-1 select-none items-center px-6 pb-6 pt-2 animate-in fade-in duration-500 md:px-10">
+      <div className="mx-auto grid w-full max-w-[62rem] grid-cols-[minmax(0,1fr)] items-center gap-2 md:grid-cols-[minmax(0,1.15fr)_auto]">
+        <div className="order-2 text-center md:order-1 md:text-left">
+          <p className="flex items-center justify-center gap-2 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary md:justify-start">
+            <Grip size={13} aria-hidden />
+            Good {greeting},
+          </p>
+          <h1 className="aster-headline mt-4 text-[clamp(2rem,3.4vw,2.9rem)] font-light leading-[1.08] tracking-[-0.02em] text-ink">
+            Let&rsquo;s create <br className="hidden md:block" />
+            something amazing <span className="aster-gradient-text">today.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-[26rem] text-[14px] leading-relaxed text-ink-secondary md:mx-0">
+            I&rsquo;m {bot.name} &mdash; your AI companion. Ask me anything, plan, build, or just have a chat.
+          </p>
+          <Badge variant="glass" className="mt-5 gap-2 px-3 py-1 text-[12px] font-medium text-ink-secondary">
+            <span
+              className={cn(
+                "size-1.5 rounded-full transition-colors",
+                bot.busy ? "bg-accent animate-pulse" : hasError ? "bg-danger" : "bg-success",
+              )}
+            />
+            <span>{statusLabel}</span>
+          </Badge>
         </div>
-
-        {/* Live Status Chip */}
-        <Badge variant="glass" className="mt-4 gap-2 px-3 py-1 text-[12px] font-medium text-ink-secondary">
-          <span
-            className={cn(
-              "size-1.5 rounded-full transition-colors",
-              bot.busy ? "bg-accent animate-pulse" : hasError ? "bg-danger" : "bg-success",
-            )}
-          />
-          <span>{statusLabel}</span>
-        </Badge>
+        <AsterMascot mood={mood} size={300} className="order-1 mx-auto md:order-2" />
       </div>
-
-      {/* Bot Name and Description */}
-      <div className="mt-3.5 flex flex-col items-center">
-        <RenameTitle
-          value={bot.name}
-          onCommit={(name) => {
-            if (window.ogb?.remoteClient?.active) {
-              void api(`/api/bots/${bot.id}/profile`, { method: "PATCH", body: JSON.stringify({ name }) })
-                .then(({ bot: updated }) => dispatch({ type: "botPatched", bot: updated }))
-                .catch((cause) => dispatch({ type: "error", message: cause instanceof Error ? cause.message : String(cause) }));
-            } else {
-              dispatch({ type: "updateBot", botId: bot.id, patch: { name } });
-            }
-          }}
-          className="text-2xl font-bold tracking-tight text-ink hover:text-accent transition-colors"
-          inputClassName="rounded-lg bg-inset px-2.5 py-1 text-center text-2xl font-bold"
-        />
-
-        <p className="mt-1.5 max-w-md text-[13.5px] leading-relaxed text-ink-secondary">
-          {bot.description || "Your dedicated AI companion. Ask anything or collaborate on complex tasks."}
-        </p>
-      </div>
-
-      {/* Starter Suggestions in Apple-style Glass Cards */}
-      {onSuggestionClick && (
-        <div className="mt-7 grid w-full max-w-xl grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {DEFAULT_SUGGESTIONS.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              // Glass UI's Button in its `glass` variant, shaped as a macOS
-              // Control Center tile: a large rounded square with the icon in
-              // a round crystal well.
-              <Button
-                key={index}
-                type="button"
-                variant="glass"
-                onClick={() => onSuggestionClick(item.prompt)}
-                className="group h-auto w-full justify-start gap-3 rounded-[22px] p-3 text-left font-normal transition-[transform,opacity] duration-150 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
-              >
-                <div className="glass-crystal flex size-9 shrink-0 items-center justify-center rounded-full text-ink transition-colors group-hover:text-accent">
-                  <Icon size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-ink transition-colors group-hover:text-accent">
-                    {item.label}
-                  </div>
-                  <div className="truncate text-[11.5px] text-ink-tertiary">
-                    {item.prompt}
-                  </div>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 });

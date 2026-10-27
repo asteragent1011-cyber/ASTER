@@ -134,7 +134,7 @@ export function describeDecider(cfg: AppConfig) {
     jobs: { roomRouting: deciderJobOn(cfg, "roomRouting") },
     ...(clefAccount ? { clefConfigured: true } : {}),
     ...(clefAccountId ? { clefAccountId } : {}),
-    ...(clefAccount && jevAccount ? { jevConfigured: true } : {}),
+    ...(jevAccount ? { jevConfigured: true } : {}),
   };
 }
 

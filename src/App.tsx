@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { NavigationRail } from "@/components/NavigationRail";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatView } from "@/components/ChatView";
+import { AsterContextPanel } from "@/components/aster/AsterContextPanel";
 import { GroupView } from "@/components/GroupView";
 import { BotSettingsDialog } from "@/components/BotSettingsDialog";
 import { RemoteAgentSettingsPanel } from "@/components/RemoteAgentSettingsPanel";
@@ -313,6 +314,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       )}
       {!calendarFocus && (
         <div
+          hidden={!sidebarExpanded && !drawerOpen}
           className={cn(
             // w-auto, not a fixed 300px: the sidebar sizes itself (320px, or
             // its resized width, plus the floating pane's inset), and a fixed
@@ -351,7 +353,19 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       ) : group ? (
         <GroupView key={group.id} group={group} />
       ) : bot ? (
-        <ChatView bot={bot} />
+        <>
+          <ChatView bot={bot} />
+          {/* ASTER's companion column, on wide windows only, and out of the
+              way while a side panel or the chat list is open. */}
+          {!sidebarExpanded && !state.settingsOpen && !state.computerOpen && !state.inspectorOpen && (
+            <AsterContextPanel
+              bot={bot}
+              unreadCount={unreadCount}
+              onOpenSearch={() => setPaletteOpen(true)}
+              onOpenChats={toggleSidebarExpanded}
+            />
+          )}
+        </>
       ) : (
         <main className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-app text-ink-secondary">
           <Loader2 size={20} className="animate-spin" />

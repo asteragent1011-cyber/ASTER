@@ -1,6 +1,6 @@
 import { track } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { ArrowUp, BookOpen, Clock, Mic, Paperclip, Square, Target, Users, X } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpen, Clock, Code2, FileText, Lightbulb, Mic, Paperclip, Sparkles, Square, Target, Users, X } from "lucide-react";
 import { useStore, visibleMessages, currentTaskBot, type Bot, type Group, type Message } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { useMenuMotion } from "./MenuMotion";
@@ -25,6 +25,7 @@ import {
   type FailedComposerSend,
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
+import { AsterMark } from "./aster/AsterMark";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -92,6 +93,13 @@ interface ComposerDraftSnapshot extends ComposerSendSnapshot {
 }
 
 /** Renders the editable message composer and its pending attachments. */
+const QUICK_ACTIONS: { icon: typeof Lightbulb; label: string; prompt: string; attach?: boolean }[] = [
+  { icon: Lightbulb, label: "Plan a project", prompt: "Help me plan a project: " },
+  { icon: Code2, label: "Write code", prompt: "Help me write code that " },
+  { icon: FileText, label: "Analyze a file", prompt: "Analyze the attached file and tell me what stands out.", attach: true },
+  { icon: Sparkles, label: "Explore ideas", prompt: "Let's explore some ideas about " },
+];
+
 export function Composer({
   bot: profile,
   group,
@@ -102,6 +110,7 @@ export function Composer({
   onConsumeReply,
   onRestoreReply,
   locked: setupLocked = false,
+  hero = false,
 }: {
   bot?: Bot;
   group?: Group;
@@ -113,6 +122,9 @@ export function Composer({
   onRestoreReply?: (message: Message, threadId: string) => void;
   /** New rooms keep the composer inert until their setup is saved or skipped. */
   locked?: boolean;
+  /** ASTER's home (an empty conversation): a larger card, the prompt on its
+   * own line and the quick actions beneath it. Same composer, same send. */
+  hero?: boolean;
 }) {
   const bot = profile ? currentTaskBot(profile) : undefined;
   const locked = setupLocked || Boolean(bot?.awaitingThreadSnapshot);
@@ -786,7 +798,7 @@ export function Composer({
           {speechError}
         </div>
       )}
-      <div className="pointer-events-auto relative mx-auto w-full max-w-3xl">
+      <div className={cn("pointer-events-auto relative mx-auto w-full", hero ? "max-w-[52rem]" : "max-w-3xl")}>
         {failedSends.map((failed) => (
           <div
             key={failed.id}
@@ -961,8 +973,35 @@ export function Composer({
             data-composer-backdrop
             className="pointer-events-none absolute -left-5 -right-5 -bottom-3 top-1/2"
           />
-        <div data-tour="composer" className="glass-composer relative z-[1] rounded-3xl px-3 py-2">
-        <div className="flex items-end gap-1">
+        <div data-tour="composer" className={cn("glass-composer relative z-[1]", hero ? "aster-composer-hero @container/composer rounded-[26px] px-4 pb-3.5 pt-3" : "rounded-3xl px-3 py-2")}>
+        {/* In hero mode the row wraps: star and prompt first, then (by
+            flex order) the quick actions, the tools and the send. */}
+        <div className={cn("flex", hero ? "flex-wrap items-center gap-x-1.5 gap-y-3" : "items-end gap-1")}>
+          {hero && <AsterMark size={22} className="ml-0.5 mr-1.5 shrink-0" />}
+          {hero && <span aria-hidden className="order-1 h-0 basis-full" />}
+          {hero && !locked && (
+            <div className="order-2 mr-auto flex flex-wrap gap-2 @max-[44rem]/composer:basis-full">
+              {QUICK_ACTIONS.map(({ icon: Icon, label, prompt, attach }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    editText(text.trim() ? `${text.trimEnd()} ${prompt}` : prompt);
+                    if (attach) fileInput.current?.click();
+                    requestAnimationFrame(() => {
+                      const input = inputRef.current;
+                      input?.focus();
+                      input?.setSelectionRange(input.value.length, input.value.length);
+                    });
+                  }}
+                  className="aster-quick-action flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[13px] text-ink-secondary transition-colors hover:text-ink"
+                >
+                  <Icon size={15} aria-hidden />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             ref={fileInput}
             type="file"
@@ -975,7 +1014,7 @@ export function Composer({
             }}
           />
           {!locked && (
-            <div className="flex items-center gap-1">
+            <div className={cn("flex items-center gap-1", hero && "order-3 ml-auto")}>
               <button
                 type="button"
                 onClick={() => fileInput.current?.click()}
@@ -1150,12 +1189,14 @@ export function Composer({
                         name: group.name,
                         hint: groupComposerHint(group, members ?? [], { jevOn: jevRoomRoutingOn(state.config) }),
                       })
-                  : t("composer.placeholder.bot", { name: bot?.name ?? "" })
+                  : hero
+                    ? "What would you like to do today?"
+                    : t("composer.placeholder.bot", { name: bot?.name ?? "" })
           }
           aria-label={t("composer.placeholder.bot", { name: group ? group.name : (bot?.name ?? "") })}
             className="block max-h-[9rem] min-h-6 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-[15px] leading-6 placeholder:text-ink-secondary focus:outline-none"
           />
-          <div className="flex items-center gap-1">
+          <div className={cn("flex items-center gap-1", hero && "order-4", hero && locked && "ml-auto")}>
           {/* Stop stays a stop. Stop-then-steer is named beside the queued
               message above, where its effect is visible before activation. */}
           {busy && !locked && (
@@ -1183,10 +1224,10 @@ export function Composer({
             <Mic size={18} />
           </button>
         )}
-        {hasContent && !locked && (
+        {(hasContent || hero) && !locked && (
           <button
             onClick={send}
-            disabled={attachmentPending}
+            disabled={attachmentPending || !hasContent}
             aria-label={
               busy && canSteer
                   ? t("composer.send.steer")
@@ -1202,13 +1243,14 @@ export function Composer({
                     : t("chat.send")
             }
             className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-full text-white",
+              "flex shrink-0 items-center justify-center rounded-full text-white",
+              hero ? "aster-send size-10" : "size-8",
               busy && !canSteer
                   ? "bg-raised text-ink-secondary hover:bg-raised-hover"
-                  : "bg-accent hover:brightness-110",
+                  : !hero && "bg-accent hover:brightness-110",
             )}
           >
-            {busy && !canSteer ? <Clock size={15} /> : <ArrowUp size={17} />}
+            {busy && !canSteer ? <Clock size={15} /> : hero ? <ArrowRight size={18} /> : <ArrowUp size={17} />}
           </button>
           )}
           </div>

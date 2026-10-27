@@ -15,7 +15,6 @@ import {
   PinOff,
   RefreshCw,
   Search,
-  Settings,
   Square,
   Webhook,
   X,
@@ -706,17 +705,13 @@ const MessagesList = memo(function MessagesList({
   // row out of the DOM, and there is nothing for the scroll to land on.
   const focus = state.focusMessage;
   const focusedId = focus && !focus.consumed && focus.threadId === bot.threadId ? focus.messageId : null;
-  const isIdle = !bot.busy && messages.every((m) => m.role !== "user");
+  const isIdle = !bot.busy && messages.length === 0;
   return (
     <>
       {isIdle ? (
         <MascotCentrepiece
           bot={bot}
           messages={messages}
-          onSuggestionClick={(prompt) => {
-            appendComposerDraft(`bot:${bot.id}:${bot.threadId}`, prompt);
-            document.querySelector<HTMLTextAreaElement>("textarea[data-composer-input], textarea")?.focus();
-          }}
         />
       ) : (
         <MascotCompanionHeader
@@ -1362,14 +1357,6 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
           >
             <Bug size={18} />
           </button>}
-          <button
-            onClick={() => dispatch({ type: "toggleAppSettings", open: true })}
-            aria-label="Settings"
-            className="rounded-md p-1.5 text-ink-secondary hover:bg-raised hover:text-ink transition-colors"
-            title="Settings (⌘,)"
-          >
-            <Settings size={18} />
-          </button>
         </div>
         </div>
       </div>
@@ -1580,6 +1567,9 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       <Composer
         key={bot.threadId}
         bot={profile}
+        // The empty conversation is ASTER's home: a larger composer with
+        // the quick actions, the same one as in any thread.
+        hero={!bot.busy && messages.length === 0}
         replyTo={replyTo}
         onClearReply={clearReply}
         onConsumeReply={consumeReply}

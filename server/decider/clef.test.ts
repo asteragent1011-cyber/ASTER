@@ -313,6 +313,14 @@ describe("clefBackend.decide", () => {
     expect(result).toEqual({ ok: false, reason: "overloaded", status: 503, timing: { requestMs: expect.any(Number) } });
   });
 
+  it("maps an unknown model (404 from Workers AI) to http_error without throwing", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ success: false, errors: [{ code: 5007, message: "No such model" }] }, 404),
+    );
+    const result = await clefBackend.decide(makeReq({ fetch: fetchMock as unknown as typeof fetch }));
+    expect(result).toEqual({ ok: false, reason: "http_error", status: 404, timing: { requestMs: expect.any(Number) } });
+  });
+
   it("maps network errors to unreachable", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(new Error("Network drop"));
     const result = await clefBackend.decide(makeReq({ fetch: fetchMock as unknown as typeof fetch }));

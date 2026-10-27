@@ -292,7 +292,7 @@ describe("settings rules", () => {
   });
 
   it("status is booleans only and the switch reads off while no key is saved", () => {
-    expect(describeDecider(ON)).toEqual({ provider: "jev", configured: true, enabled: true, jobs: { roomRouting: true } });
+    expect(describeDecider(ON)).toEqual({ provider: "jev", configured: true, enabled: true, jevConfigured: true, jobs: { roomRouting: true } });
     expect(JSON.stringify(describeDecider({ decider: { ...ON.decider, baseUrl: "https://internal.example" } }))).not.toMatch(/tsk_|internal/);
     expect(describeDecider({ decider: { enabled: true } })).toMatchObject({ configured: false, enabled: false });
     expect(deciderReady(ON, "roomRouting")).toBe(true);
@@ -346,7 +346,7 @@ describe("Cloud Pro's included decisions", () => {
     await route(decider({ decider: { ...ON.decider, baseUrl: "http://127.0.0.1:9" } }, fetchImpl));
     expect(sent(fetchImpl, 1)).toEqual({ url: "http://127.0.0.1:9/v1/systemone", auth: `Bearer ${KEY}` });
     expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain(INCLUDED);
-    expect(describeDecider(ON)).toEqual({ provider: "jev", configured: true, enabled: true, jobs: { roomRouting: true } });
+    expect(describeDecider(ON)).toEqual({ provider: "jev", configured: true, enabled: true, jevConfigured: true, jobs: { roomRouting: true } });
   });
 
   it("an own key is on only once switched on, as without Cloud Pro", async () => {
@@ -362,7 +362,7 @@ describe("Cloud Pro's included decisions", () => {
     cloudPro();
     const fetchImpl = theo();
     const off: AppConfig = { decider: { enabled: false } };
-    expect(describeDecider(off)).toEqual({ provider: "jev", configured: true, included: true, enabled: false, jobs: { roomRouting: true } });
+    expect(describeDecider(off)).toEqual({ provider: "jev", configured: true, included: true, enabled: false, jevConfigured: true, jobs: { roomRouting: true } });
     expect(deciderReady(off, "roomRouting")).toBe(false);
     await expect(route(decider(off, fetchImpl))).resolves.toEqual({ ok: false, reason: "disabled" });
     const jobOff: AppConfig = { decider: { jobs: { roomRouting: false } } };
@@ -388,7 +388,7 @@ describe("Cloud Pro's included decisions", () => {
   it("Settings sees it as included and never sees the token", () => {
     cloudPro();
     const status = describeDecider({});
-    expect(status).toEqual({ provider: "jev", configured: true, included: true, enabled: true, jobs: { roomRouting: true } });
+    expect(status).toEqual({ provider: "jev", configured: true, included: true, enabled: true, jevConfigured: true, jobs: { roomRouting: true } });
     expect(JSON.stringify(status)).not.toContain(INCLUDED);
   });
 

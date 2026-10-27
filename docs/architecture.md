@@ -193,13 +193,13 @@ member) answers. Timeout: 1.5 s. Background: `docs/decision-model.md`.
 - **Backends** (`server/decider/index.ts:45`):
   `BACKENDS = { jev, "clef-flash": clefBackend }`.
   - **Jev** (`jev.ts`, default): TypeSafe, `POST https://api.typesafe.ai/v1/systemone`, model `jev-latest`, Bearer key (`OMB_JEV_API_KEY` / desktop credential `jevApiKey`). Cloud Pro can supply it through an admin relay (`relay.ts`).
-  - **Clef-Flash** (`clef.ts`, **new, untracked**): Cloudflare Workers AI, `POST {base}/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/clef-flash`.
+  - **Clef-Flash** (`clef.ts`, the `clef-flash` backend: request building, response validation, keep-alive connection pool): Cloudflare Workers AI, `POST {base}/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/clef-flash`.
     - Auth: Bearer token, `redirect: "error"`.
     - The base URL must be https (plain http is allowed only to loopback); the account id must match `^[a-zA-Z0-9_-]+$`.
     - Body: `{state, model:"clef-flash", questions}`. Choice questions take 2–255 options; score questions take 2–10 levels.
     - Accepts the Cloudflare envelope or a bare `{answers}`; anything else is `malformed`.
     - Never uses the Cloud Pro relay (`included:false`).
-    - ⚠ The model id `@cf/cloudflare/clef-flash` has not been confirmed against Cloudflare's published catalog.
+    - The model id `@cf/cloudflare/clef-flash` is confirmed by Cloudflare's Workers AI model page (developers.cloudflare.com/workers-ai/models/clef-flash/) and by successful key checks against a real account.
 - **Clef-Flash latency**: model work is ~100–150 ms; the rest is network.
   Calls share one undici `Agent` with a 120 s idle keep-alive (Node's default
   pool keeps idle sockets for only 4 s, so calls more than 4 s apart needed a
