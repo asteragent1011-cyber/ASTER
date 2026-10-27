@@ -121,8 +121,12 @@ describe("CI concurrency", () => {
     expect(workflow.jobs.static.steps.some((step: { run?: string }) =>
       step.run === "pnpm exec vitest run scripts/ci-scope.test.ts scripts/ci-workflow.test.ts scripts/testing/verification-docs.test.ts",
     )).toBe(true);
+    // The broker deploy chains off control-plane (itself gated on static) and
+    // must only ever run for a push to main, never a PR or merge-queue run.
+    expect(workflow.jobs["deploy-composio-broker"].needs).toEqual(["control-plane"]);
+    expect(workflow.jobs["deploy-composio-broker"].if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/main'");
     for (const [name, job] of Object.entries(workflow.jobs) as [string, { needs?: string; if?: string }][]) {
-      if (["static", "gate"].includes(name)) continue;
+      if (["static", "gate", "deploy-composio-broker"].includes(name)) continue;
       expect(job.needs).toBe("static");
       expect(job.if).toBe(`needs.static.outputs.${["ios", "android"].includes(name) ? "mobile" : "runtime"} == 'true'`);
     }
