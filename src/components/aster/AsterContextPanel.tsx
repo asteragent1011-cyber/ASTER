@@ -78,7 +78,7 @@ export const AsterContextPanel = memo(function AsterContextPanel({
   const reached = GROWTH_STAGES.indexOf(stage);
 
   return (
-    <aside aria-label="ASTER companion panel" className="aster-context relative z-10 hidden w-[312px] shrink-0 flex-col gap-3 overflow-y-auto py-5 pr-5 xl:flex">
+    <aside aria-label="ASTER companion panel" className="aster-context relative z-10 hidden w-[312px] shrink-0 flex-col gap-3 overflow-y-auto py-5 pr-5 2xl:flex">
       <div className="flex items-center gap-3">
         <button
           type="button"

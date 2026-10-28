@@ -1733,20 +1733,20 @@ button:disabled.bg-danger {
    on a canvas or put `filter: blur()` on a full-window layer; both cost
    frames, and every backdrop-filter above would re-sample them. */
 :root {
-  --wallpaper-url: url("/WallpaperWavy.jpg");
+  --wallpaper-url: url("/wallpapers/light.jpg");
 }
 :root.dark,
 [data-skin="midnight"],
 [data-skin="foundry"],
 [data-skin="graphite"],
 [data-skin="dusk"] {
-  --wallpaper-url: url("/DarkModeWallpaper.jpg");
+  --wallpaper-url: url("/wallpapers/dark.jpg");
 }
 [data-skin="atelier"],
 [data-skin="lagoon"],
 [data-skin="linen"],
 [data-skin="daylight"] {
-  --wallpaper-url: url("/WallpaperWavy.jpg");
+  --wallpaper-url: url("/wallpapers/light.jpg");
 }
 .glass-ground {
   /* The sidebar can't be its own stacking context (below), so its glass

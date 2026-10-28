@@ -545,7 +545,7 @@ describe("OpenAICompatDriver", () => {
     ]);
     expect(messages.at(-1)).toEqual({
       role: "user",
-      content: "Context from OpenMausBot updated since this conversation started; it replaces any earlier copy:\n\nMemory: likes quiet hours.\n\nhello",
+      content: "Context from ASTER updated since this conversation started; it replaces any earlier copy:\n\nMemory: likes quiet hours.\n\nhello",
     });
 
     // A turn without the split keeps the legacy single-block shape.

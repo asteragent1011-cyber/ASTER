@@ -611,7 +611,7 @@ export async function listManagedBoats(
     try {
       recoveries = boatCreateRecoverySnapshot();
     } catch {
-      return invalidInventory("OpenMausBot could not safely read its cloud computer recovery records");
+      return invalidInventory("ASTER could not safely read its cloud computer recovery records");
     }
     for (const recovery of recoveries) {
       if (!recovery.resolved || !recovery.boxId) continue;
@@ -625,7 +625,7 @@ export async function listManagedBoats(
       if (matchingRows.length === 1) {
         const listedName = typeof matchingRows[0]?.name === "string" ? matchingRows[0].name : "";
         if (listedName !== namedOwner.currentName && listedName !== namedOwner.legacyName) {
-          return invalidInventory("A remembered cloud computer no longer has its OpenMausBot owner name — repair it in boat.dev before continuing");
+          return invalidInventory("A remembered cloud computer no longer has its ASTER owner name — repair it in boat.dev before continuing");
         }
         continue;
       }
@@ -644,7 +644,7 @@ export async function listManagedBoats(
         inspected.identity.name !== namedOwner.currentName
         && inspected.identity.name !== namedOwner.legacyName
       ) {
-        return invalidInventory("A remembered cloud computer no longer has its OpenMausBot owner name — repair it in boat.dev before continuing");
+        return invalidInventory("A remembered cloud computer no longer has its ASTER owner name — repair it in boat.dev before continuing");
       }
       const directCandidate = {
         id: inspected.identity.boxId,
@@ -658,7 +658,7 @@ export async function listManagedBoats(
     try {
       deletions = boatDeletionSnapshot();
     } catch {
-      return invalidInventory("OpenMausBot could not safely read its cloud computer deletion records");
+      return invalidInventory("ASTER could not safely read its cloud computer deletion records");
     }
     for (const deletion of deletions) {
       let state: BoatDeletionReconciliation;
@@ -769,7 +769,7 @@ export async function listManagedBoats(
       try {
         adoptResolvedBoat(owner.botId, boxId);
       } catch {
-        return invalidInventory("OpenMausBot could not safely remember this legacy cloud computer's owner — repair it in boat.dev before continuing");
+        return invalidInventory("ASTER could not safely remember this legacy cloud computer's owner — repair it in boat.dev before continuing");
       }
     }
     seenBoatIds.add(boxId);

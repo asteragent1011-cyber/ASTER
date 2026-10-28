@@ -180,7 +180,7 @@ export function managedCodexArgs(config: NonNullable<CodexConfig["managed"]>): s
 }
 
 const DENY_TIMEOUT_NOTE =
-  "OpenMausBot: nobody answered this permission request in time. Skip this action and finish what you can without it.";
+  "ASTER: nobody answered this permission request in time. Skip this action and finish what you can without it.";
 
 const skippedSseServers = new Set<string>();
 const renamedMcpServers = new Set<string>();
@@ -931,7 +931,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
       const settle = async (ok: boolean, stopReason: string | null) => {
         if (state.settled) return;
         state.settled = true;
-        for (const finish of Array.from(asks.values())) finish("deny", "OpenMausBot: the turn ended", "system");
+        for (const finish of Array.from(asks.values())) finish("deny", "ASTER: the turn ended", "system");
         for (const p of rpcPending.values()) p.reject(new Error("turn settled"));
         rpcPending.clear();
         const complete = () => {
@@ -1475,7 +1475,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
       // nothing streamed yet, and never for auth/shape errors or interrupts
       try {
         await request("initialize", {
-          clientInfo: { name: "openmausbot", title: "OpenMausBot", version: serverVersion() },
+          clientInfo: { name: "openmausbot", title: "ASTER", version: serverVersion() },
           // Named permission profiles are an experimental app-server field in
           // Codex 0.151. Negotiate them explicitly; older servers ignore this
           // capability and remain on the legacy Custom fallback below.

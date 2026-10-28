@@ -39,6 +39,7 @@ function NavItem({
   badge,
   expandedState,
   title,
+  ariaLabel,
 }: {
   icon: ReactNode;
   label: string;
@@ -47,6 +48,8 @@ function NavItem({
   badge?: number;
   expandedState?: boolean;
   title?: string;
+  /** When the visible label alone would collide with another control. */
+  ariaLabel?: string;
 }) {
   return (
     <button
@@ -54,6 +57,7 @@ function NavItem({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       aria-expanded={expandedState}
+      aria-label={ariaLabel}
       title={title ?? label}
       className={cn(
         "aster-nav-item relative flex size-10 items-center justify-center rounded-xl text-ink-secondary transition-colors duration-150 hover:text-ink active:scale-[0.98]",
@@ -157,6 +161,8 @@ export const NavigationRail = memo(function NavigationRail({
         <NavItem
           icon={<Settings size={18} />}
           label="Settings"
+          // The profile menu has a "Settings" item; keep the rail's own name.
+          ariaLabel="Open settings"
           title="Settings (⌘,)"
           active={state.appSettingsOpen}
           onClick={() => dispatch({ type: "toggleAppSettings", open: true })}

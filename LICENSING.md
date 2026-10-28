@@ -1,7 +1,8 @@
 # Licensing
 
-OpenMausBot is open source under the [Apache License 2.0](LICENSE), with one
-carve-out and a few notes.
+ASTER is a fork of OpenMausBot and, like upstream, is open source under the
+[Apache License 2.0](LICENSE), with one carve-out and a few notes. The upstream
+copyright and attribution notices are preserved in [NOTICE](NOTICE).
 
 ## The carve-out: `enterprise/`
 

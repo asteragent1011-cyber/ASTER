@@ -3,10 +3,10 @@ import { macCuaPermissionMessage, missingMacCuaPermissions } from "./mac-cua-per
 
 describe("macOS CUA permission recovery", () => {
   it("names only the grants the host reported missing", () => {
-    expect(missingMacCuaPermissions("embedded host failed: Screen Recording required; restart OpenMausBot")).toEqual(["screen"]);
+    expect(missingMacCuaPermissions("embedded host failed: Screen Recording required; restart ASTER")).toEqual(["screen"]);
     expect(missingMacCuaPermissions("Accessibility and Screen Recording required")).toEqual(["screen", "accessibility"]);
-    expect(macCuaPermissionMessage(["accessibility"])).toContain("Accessibility is required for OpenMausBot");
-    expect(macCuaPermissionMessage(["screen"])).toContain("relaunch OpenMausBot");
+    expect(macCuaPermissionMessage(["accessibility"])).toContain("Accessibility is required for ASTER");
+    expect(macCuaPermissionMessage(["screen"])).toContain("relaunch ASTER");
   });
 
   it("does not diagnose missing or malformed status as a grant failure", () => {

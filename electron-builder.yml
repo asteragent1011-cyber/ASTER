@@ -165,8 +165,8 @@ nsis:
   perMachine: false
   shortcutName: ASTER
   # Versioned, like the .dmg. The README's /latest/download/ button needs a
-  # STABLE filename, so ship a second copy named OpenMausBot-setup.exe on the
-  # release — the same trick as OpenMausBot.dmg beside OpenMausBot-${version}.dmg.
+  # STABLE filename, so ship a second copy named ASTER-setup.exe on the
+  # release — the same trick as ASTER.dmg beside ASTER-${version}-${arch}.dmg.
   artifactName: ASTER-${version}-setup.${ext}
 
 linux:

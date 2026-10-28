@@ -40,3 +40,15 @@ deploy/podman/.env
 deploy/podman/.env.*
 !deploy/podman/.env.example
 /.env
+/.env.*
+!/.env.example
+
+# Logs, coverage and editor/OS clutter
+*.log
+coverage/
+.idea/
+Thumbs.db
+
+# Personal Claude Code project memory (local only, never commit)
+CLAUDE.local.md
+.claude/settings.local.json

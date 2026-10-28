@@ -10,7 +10,6 @@ export function baseOptions(): BaseLayoutProps {
       transparentMode: 'none',
     },
     links: [
-      { text: 'Website', url: 'https://www.openmausbot.com', external: true },
       { text: 'Changelog', url: '/docs/changelog' },
       { type: 'button', text: 'Download', url: `https://github.com/${gitConfig.user}/${gitConfig.repo}/releases/latest`, external: true },
     ],

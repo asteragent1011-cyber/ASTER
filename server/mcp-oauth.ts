@@ -239,7 +239,7 @@ export class McpOAuthManager {
       const response = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "OpenMausBot", version: "1" } } }),
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "ASTER", version: "1" } } }),
         redirect: "error",
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
@@ -255,13 +255,13 @@ export class McpOAuthManager {
    * which every sign-in would fail at its authorize page. */
   private async register(meta: McpAuthMetadata, redirectUri: string): Promise<string> {
     if (!meta.registrationEndpoint) {
-      throw new McpOAuthError("no-registration", "This server needs an app registration OpenMausBot doesn't have yet.");
+      throw new McpOAuthError("no-registration", "This server needs an app registration ASTER doesn't have yet.");
     }
     const response = await fetch(meta.registrationEndpoint, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({
-        client_name: "OpenMausBot",
+        client_name: "ASTER",
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code", "refresh_token"],
         response_types: ["code"],
@@ -272,7 +272,7 @@ export class McpOAuthManager {
     });
     const body = await response.json().catch(() => ({})) as { client_id?: unknown };
     if (!response.ok || typeof body.client_id !== "string" || !body.client_id) {
-      throw new Error("This server would not register OpenMausBot for sign-in. Try again later.");
+      throw new Error("This server would not register ASTER for sign-in. Try again later.");
     }
     return body.client_id;
   }
@@ -339,7 +339,7 @@ export class McpOAuthManager {
       if (request.headers.host !== expected.host || !request.url?.startsWith("/")) throw new Error("host");
       callback = new URL(request.url, flow.redirectUri);
     } catch {
-      response.writeHead(400).end("Invalid sign-in callback. Return to OpenMausBot and try again.");
+      response.writeHead(400).end("Invalid sign-in callback. Return to ASTER and try again.");
       return;
     }
     const params = callback.searchParams;
@@ -347,7 +347,7 @@ export class McpOAuthManager {
       || this.flows.get(flow.name) !== flow
       || [...params.keys()].some((key) => params.getAll(key).length !== 1)
       || !sameSecret(params.get("state") ?? "", flow.state)) {
-      response.writeHead(400).end("Invalid or expired sign-in. Return to OpenMausBot and try again.");
+      response.writeHead(400).end("Invalid or expired sign-in. Return to ASTER and try again.");
       return;
     }
     flow.consumed = true;
@@ -355,7 +355,7 @@ export class McpOAuthManager {
     clearTimeout(flow.expiry);
     const failure = await this.complete(flow, params);
     if (failure === DISCARDED) {
-      response.writeHead(409).end("This sign-in was cancelled in OpenMausBot. You can close this tab.");
+      response.writeHead(409).end("This sign-in was cancelled in ASTER. You can close this tab.");
       return;
     }
     if (failure) {
@@ -364,7 +364,7 @@ export class McpOAuthManager {
       return;
     }
     this.finish(flow, "succeeded");
-    response.end("Signed in. You can close this tab and return to OpenMausBot.");
+    response.end("Signed in. You can close this tab and return to ASTER.");
   }
 
   /** Spend the code; the error message on failure, null on success. */
