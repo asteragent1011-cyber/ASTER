@@ -2315,3 +2315,93 @@ button:disabled.bg-danger {
   .aster-mascot *,
   .aster-mascot-body { animation: none !important; }
 }
+
+/* The ASTER companions (aster/AsterBlobAvatar.tsx): Luma, Nova, Orbit, Echo.
+   Every movement is a transform or opacity on an SVG group, so a roster of
+   them stays on the compositor. Per-bot phases (--aster-blob-*) keep a roster
+   from bobbing and blinking in step. */
+.aster-blob { position: relative; }
+.aster-blob svg { display: block; overflow: visible; }
+.aster-blob__enter, .aster-blob__lift, .aster-blob__float, .aster-blob__squish, .aster-blob__look, .aster-blob__eyes,
+.aster-blob__nudge, .aster-blob__particle { transform-box: fill-box; transform-origin: 50% 60%; }
+.aster-blob__enter { animation: aster-blob-enter 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--aster-blob-enter, 0ms) both; }
+.aster-blob__float { animation: aster-blob-float 4.6s ease-in-out var(--aster-blob-float, 0s) infinite; }
+.aster-blob__lift { transition: transform 180ms ease-out; }
+.aster-blob:hover .aster-blob__lift { transform: translateY(-3px) scale(1.04); }
+.aster-blob__eyes { transform-origin: 50% 50%; animation: aster-blob-blink 6.2s ease-in-out var(--aster-blob-blink, 0s) infinite; }
+.aster-blob__look { transition: transform 260ms ease-out; }
+.aster-blob__happy { opacity: 0; transition: opacity 160ms ease-out; }
+.aster-blob__eyes { transition: opacity 160ms ease-out; }
+.aster-blob__particle { animation: aster-blob-twinkle 3.4s ease-in-out infinite; }
+.aster-blob__nudge { transform-origin: 50% 50%; }
+
+/* moods */
+.aster-blob[data-state="happy"] .aster-blob__eyes { opacity: 0; }
+.aster-blob[data-state="happy"] .aster-blob__happy { opacity: 1; }
+.aster-blob[data-state="sleepy"] .aster-blob__eyes { animation: none; transform: scaleY(0.3); }
+.aster-blob[data-state="thinking"] .aster-blob__look { transform: translate(4px, -4px); }
+.aster-blob[data-state="thinking"] .aster-blob__float { animation-duration: 2.8s; }
+.aster-blob[data-state="thinking"] .aster-blob__particle { animation-duration: 1.6s; }
+.aster-blob[data-state="alert"] .aster-blob__eyes { transform: scale(1.18); animation: none; }
+.aster-blob[data-state="selected"] .aster-blob__lift { transform: scale(1.05); }
+.aster-blob[data-state="selected"] .aster-blob__rim { stroke-opacity: 0.7; }
+
+/* one-shot beats */
+.aster-blob[data-motion="blink"] .aster-blob__eyes { animation: aster-blob-blink-once 320ms ease-in-out; }
+.aster-blob[data-motion="message-sent"] .aster-blob__squish { transform-origin: 50% 100%; animation: aster-blob-sent 700ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+.aster-blob[data-motion="message-sent"] .aster-blob__nudge { animation: aster-blob-ring-nudge 700ms ease-out; }
+.aster-blob[data-motion="message-received"] .aster-blob__squish { animation: aster-blob-received 900ms ease-out; }
+.aster-blob[data-motion="message-received"] .aster-blob__eyes { opacity: 0; }
+.aster-blob[data-motion="message-received"] .aster-blob__happy { opacity: 1; }
+.aster-blob[data-motion="message-received"] .aster-blob__nudge { animation: aster-blob-ring-nudge 900ms ease-out reverse; }
+.aster-blob[data-motion="message-received"] .aster-blob__particle { animation-duration: 0.9s; }
+
+@keyframes aster-blob-enter {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes aster-blob-float {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-5px) scale(1.012, 0.99); }
+}
+@keyframes aster-blob-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95.5% { transform: scaleY(0.12); }
+}
+@keyframes aster-blob-blink-once {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.12); }
+}
+@keyframes aster-blob-sent {
+  0% { transform: scale(1, 1); }
+  18% { transform: scale(1.1, 0.86); }
+  45% { transform: translateY(-9px) scale(0.94, 1.08); }
+  75% { transform: translateY(0) scale(1.03, 0.97); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes aster-blob-received {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+@keyframes aster-blob-ring-nudge {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(9deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes aster-blob-twinkle {
+  0%, 100% { opacity: 0.85; transform: translateY(0); }
+  50% { opacity: 0.35; transform: translateY(-3px); }
+}
+
+/* still: lists that ask for no animation, and reduced motion */
+.aster-blob--still .aster-blob__enter,
+.aster-blob--still .aster-blob__float,
+.aster-blob--still .aster-blob__eyes,
+.aster-blob--still .aster-blob__particle { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .aster-blob *,
+  .aster-blob[data-motion] * { animation: none !important; transition: none !important; }
+  .aster-blob:hover .aster-blob__lift { transform: none; }
+}

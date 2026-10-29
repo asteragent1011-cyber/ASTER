@@ -21,8 +21,8 @@ describe("the generated Kotlin catalog", () => {
     }
   });
 
-  it("defaults to the ASTER Mochi blob, matching the web catalog", () => {
-    expect(kotlin).toContain('const val DEFAULT_ID: String = "mochi"');
+  it("defaults to the ASTER Luma companion, matching the web catalog", () => {
+    expect(kotlin).toContain('const val DEFAULT_ID: String = "luma"');
   });
 
   it("carries the same anchors as the TypeScript catalog", () => {

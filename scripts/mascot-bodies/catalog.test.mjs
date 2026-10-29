@@ -9,13 +9,13 @@ import {
 } from "../../shared/mascot-bodies.ts";
 
 describe("the generated catalog", () => {
-  it("carries all fifteen bodies", () => {
-    expect(MASCOT_BODY_IDS).toHaveLength(15);
+  it("carries all nineteen bodies", () => {
+    expect(MASCOT_BODY_IDS).toHaveLength(19);
     for (const id of MASCOT_BODY_IDS) expect(MASCOT_BODIES[id].id).toBe(id);
   });
 
-  it("defaults to the ASTER Mochi blob", () => {
-    expect(DEFAULT_MASCOT_BODY).toBe("mochi");
+  it("defaults to the ASTER Luma companion", () => {
+    expect(DEFAULT_MASCOT_BODY).toBe("luma");
   });
 
   it("gives every body the markup the renderer expects", () => {
@@ -49,11 +49,11 @@ describe("botMascotBody", () => {
     expect(botMascotBody("blob")).toBe("blob");
   });
 
-  it("falls back to the default Mochi for anything else", () => {
-    expect(botMascotBody("hexagram")).toBe("mochi");
-    expect(botMascotBody(undefined)).toBe("mochi");
-    expect(botMascotBody(null)).toBe("mochi");
-    expect(botMascotBody(42)).toBe("mochi");
+  it("falls back to the default Luma for anything else", () => {
+    expect(botMascotBody("hexagram")).toBe("luma");
+    expect(botMascotBody(undefined)).toBe("luma");
+    expect(botMascotBody(null)).toBe("luma");
+    expect(botMascotBody(42)).toBe("luma");
     expect(botMascotBody("cursor")).toBe("cursor");
   });
 

@@ -20,8 +20,8 @@ const renderBot = (bot: Partial<BotAvatarProps["bot"]>) =>
   );
 
 describe("MausAvatar body", () => {
-  it("wears the ASTER Mochi blob when no body is given", () => {
-    expect(render({})).toContain(MASCOT_BODIES.mochi.fit);
+  it("wears the ASTER Luma companion when no body is given", () => {
+    expect(render({})).toContain(MASCOT_BODIES.luma.fit);
   });
 
   it("still wears the cursor when a bot chose it", () => {
@@ -33,13 +33,13 @@ describe("MausAvatar body", () => {
     expect(markup).toContain(MASCOT_BODIES.star.fit);
   });
 
-  it("falls back to the default Mochi for an unknown body", () => {
+  it("falls back to the default Luma for an unknown body", () => {
     // SAFETY: "hexagram" is deliberately not a valid MascotBodyId — this
     // exercises the runtime schema fallback for a value that could arrive
     // from persisted/streamed data, which the type system would otherwise
     // rule out at this call site.
     expect(render({ bodyId: "hexagram" as MausAvatarProps["bodyId"] })).toContain(
-      MASCOT_BODIES.mochi.fit,
+      MASCOT_BODIES.luma.fit,
     );
   });
 

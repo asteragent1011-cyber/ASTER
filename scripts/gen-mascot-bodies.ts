@@ -53,8 +53,8 @@ import { maskFromPolylines } from "./mascot-bodies/raster.ts"
 import { fieldFromMask, largestInscribedCircle, type Sdf } from "./mascot-bodies/sdf.ts"
 import { buildClouds, maxScaleAt, report } from "./mascot-bodies/solve.ts"
 
-/** The id the catalog falls back to: a bot with no body of its own is an ASTER blob. */
-const DEFAULT_ID = "mochi"
+/** The id the catalog falls back to: a bot with no body of its own is an ASTER companion (Luma). */
+const DEFAULT_ID = "luma"
 
 /** The body whose face size sets the floor. Kept on the original cursor so adding
  * or re-defaulting bodies can never shrink the face every bot already has. */

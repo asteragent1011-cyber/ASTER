@@ -362,6 +362,38 @@ const buildSparkle = (): string =>
     return [Math.cos(a) * r, Math.sin(a) * r]
   }, 72)
 
+/*
+ * The ASTER companions from the brand sheet (Luma, Nova, Orbit, Echo): glossy
+ * space blobs. These are their silhouettes only; the gloss, visor face, rings,
+ * moons and particles are drawn over them by `AsterBlobAvatar`.
+ */
+
+/** Luma, the illuminator: a wide, soft oval resting a little low. */
+const buildLuma = (): string =>
+  buildSmoothClosed((a) => {
+    const s = Math.sin(a)
+    return tilt([Math.cos(a) * 104, s * (s > 0 ? 80 : 86)], -5)
+  }, 48)
+
+/** Nova, the explorer: an energetic five-lobed blob, lobes uneven. */
+const buildNova = (): string =>
+  buildSmoothClosed((a) => {
+    const r = 86 * (1 + 0.15 * Math.cos(5 * (a + 0.35)) + 0.04 * Math.cos(2 * a + 1))
+    return [Math.cos(a) * r, Math.sin(a) * r]
+  }, 80)
+
+/** Orbit, the organizer: a calm, balanced sphere. */
+const buildOrbit = (): string =>
+  buildSmoothClosed((a) => [Math.cos(a) * 95, Math.sin(a) * 93], 48)
+
+/** Echo, the listener: a soft blob with a gentle fold at its upper right. */
+const buildEcho = (): string =>
+  buildSmoothClosed((a) => {
+    const fold = 0.06 * Math.exp(-((Math.atan2(Math.sin(a + 0.9), Math.cos(a + 0.9))) ** 2) / 0.09)
+    const r = 92 * (1 + 0.07 * Math.cos(2 * a - 0.8) + 0.05 * Math.cos(3 * a + 1.2) - fold)
+    return tilt([Math.cos(a) * r, Math.sin(a) * r * 0.94], 6)
+  }, 72)
+
 /** Ten outlines, in the order the catalog persists them. `cursor` is the default, so it leads. */
 export const BODY_DEFS: BodyDef[] = [
   { id: "cursor", name: "Cursor", d: CURSOR_D, viewBox: [0, 0, 512, 512] },
@@ -389,6 +421,11 @@ export const BODY_DEFS: BodyDef[] = [
   { id: "bean", name: "Bean", d: buildBean(), viewBox: [-10, -10, 220, 220] },
   { id: "pebble", name: "Pebble", d: buildPebble(), viewBox: [-10, -10, 220, 220] },
   { id: "sparkle", name: "Sparkle", d: buildSparkle(), viewBox: [-10, -10, 220, 220] },
+  // The ASTER companions (the brand sheet's Luma, Nova, Orbit and Echo).
+  { id: "luma", name: "Luma", d: buildLuma(), viewBox: [-10, -10, 220, 220] },
+  { id: "nova", name: "Nova", d: buildNova(), viewBox: [-10, -10, 220, 220] },
+  { id: "orbit", name: "Orbit", d: buildOrbit(), viewBox: [-10, -10, 220, 220] },
+  { id: "echo", name: "Echo", d: buildEcho(), viewBox: [-10, -10, 220, 220] },
 ]
 
 export const BODY_IDS: string[] = BODY_DEFS.map(s => s.id)

@@ -43,10 +43,10 @@ class MausBodiesTest {
     }
 
     @Test
-    fun `an unknown body falls back to the ASTER Mochi default`() {
-        assertEquals("mochi", MausBodies.body("hexagram").id)
-        assertEquals("mochi", MausBodies.body(null).id)
-        assertEquals("mochi", MausBodies.body("").id)
+    fun `an unknown body falls back to the ASTER Luma default`() {
+        assertEquals("luma", MausBodies.body("hexagram").id)
+        assertEquals("luma", MausBodies.body(null).id)
+        assertEquals("luma", MausBodies.body("").id)
         assertEquals(MausBodies.DEFAULT_ID, MausSilhouette.defaultBody)
     }
 
@@ -57,10 +57,10 @@ class MausBodiesTest {
      */
     @Test
     fun `an unknown body draws the default`() {
-        assertEquals(MausSilhouette.faceBoxBounds("mochi"), MausSilhouette.faceBoxBounds("hexagram"))
-        assertEquals(MausSilhouette.faceBoxBounds("mochi"), MausSilhouette.faceBoxBounds(null))
-        assertEquals(MausSilhouette.anchor("mochi"), MausSilhouette.anchor("hexagram"))
-        assertSame(MausSilhouette.inFaceBox("mochi"), MausSilhouette.inFaceBox(null))
+        assertEquals(MausSilhouette.faceBoxBounds("luma"), MausSilhouette.faceBoxBounds("hexagram"))
+        assertEquals(MausSilhouette.faceBoxBounds("luma"), MausSilhouette.faceBoxBounds(null))
+        assertEquals(MausSilhouette.anchor("luma"), MausSilhouette.anchor("hexagram"))
+        assertSame(MausSilhouette.inFaceBox("luma"), MausSilhouette.inFaceBox(null))
     }
 
     @Test

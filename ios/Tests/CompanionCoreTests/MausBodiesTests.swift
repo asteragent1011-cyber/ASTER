@@ -29,9 +29,9 @@ final class MausBodiesTests: XCTestCase {
     }
 
     func testUnknownBodyFallsBackToTheDefault() {
-        XCTAssertEqual(MausBodies.body("hexagram").id, "mochi")
-        XCTAssertEqual(MausBodies.body(nil).id, "mochi")
-        XCTAssertEqual(MausBodies.body("").id, "mochi")
+        XCTAssertEqual(MausBodies.body("hexagram").id, "luma")
+        XCTAssertEqual(MausBodies.body(nil).id, "luma")
+        XCTAssertEqual(MausBodies.body("").id, "luma")
     }
 
     /// An unrecognised id must reach the *drawn* geometry as the default body too,
@@ -39,11 +39,11 @@ final class MausBodiesTests: XCTestCase {
     /// path honours it.
     func testAnUnknownBodyDrawsTheDefault() {
         XCTAssertEqual(
-            MausSilhouette.faceBoxBounds("hexagram"), MausSilhouette.faceBoxBounds("mochi"))
-        XCTAssertEqual(MausSilhouette.faceBoxBounds(nil), MausSilhouette.faceBoxBounds("mochi"))
+            MausSilhouette.faceBoxBounds("hexagram"), MausSilhouette.faceBoxBounds("luma"))
+        XCTAssertEqual(MausSilhouette.faceBoxBounds(nil), MausSilhouette.faceBoxBounds("luma"))
 
         let unknown = MausSilhouette.anchor("hexagram")
-        let fallback = MausSilhouette.anchor("mochi")
+        let fallback = MausSilhouette.anchor("luma")
         XCTAssertEqual(unknown.x, fallback.x)
         XCTAssertEqual(unknown.y, fallback.y)
         XCTAssertEqual(unknown.scale, fallback.scale)
