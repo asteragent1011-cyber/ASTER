@@ -105,6 +105,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 127.0.0.1 explicitly — vite binds IPv4; a bare "localhost" here can
 // resolve to ::1 and paint a black window
 const DEV_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:5199";
+// OpenMausBot's hosted cloud (OMB Cloud account and Pro offer, lending, Move
+// to Cloud, the organization portal and company backups) runs on upstream's
+// servers and billing, so ASTER leaves those bridges out of the renderer.
+// ASTER_UPSTREAM_CLOUD=1 restores them.
+const ASTER_UPSTREAM_CLOUD = process.env.ASTER_UPSTREAM_CLOUD === "1";
 const DEFAULT_COMPOSIO_BROKER_URL = "https://openmausbot-composio.milindsoni201.workers.dev";
 let SERVER_PORT = 8799;
 const APP_ICON = path.join(__dirname, "resources/app-icon.png");
@@ -2159,7 +2164,7 @@ function createWindow({ deferNavigation = false } = {}) {
       // renderer's remote-only feature gates. Keep the two facts independent:
       // upstream's origin boundary must not erase the client-mode marker.
       additionalArguments: [...desktopCompanionRendererArguments(rendererOrigin(), desktopRemoteAccess),
-        ...(app.isPackaged && !desktopRemoteAccess ? ["--omb-company-desktop=1"] : [])],
+        ...(app.isPackaged && !desktopRemoteAccess && ASTER_UPSTREAM_CLOUD ? ["--omb-company-desktop=1"] : [])],
     },
   });
   mainWindow = win;
