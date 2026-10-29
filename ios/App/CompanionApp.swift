@@ -126,7 +126,7 @@ struct RootView: View {
                 )
             }
         }
-        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+        .asterBackground()
         .onValueChange(of: session.pairingInvite) { invite in
             guard invite != nil else { return }
             hasSeenWelcome = true

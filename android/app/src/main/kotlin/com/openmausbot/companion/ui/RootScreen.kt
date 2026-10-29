@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.openmausbot.companion.core.Connection
@@ -198,7 +199,15 @@ fun CompanionRoot(
         // screen wants the same answer — keep content clear of the status bar,
         // the gesture bar, and the keyboard.
         Box(modifier = Modifier.fillMaxSize()) {
-            Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            // The ASTER skins lay their atmosphere under every screen, edge to
+            // edge; the surface over it goes clear. Other skins are unchanged.
+            val asterLook = LocalAsterLook.current
+            asterLook?.let { AsterBackdrop(it, Modifier.fillMaxSize()) }
+            Surface(
+                modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                color = if (asterLook != null) Color.Transparent else MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (route) {
                         OnboardingRoute.WELCOME -> WelcomeScreen(

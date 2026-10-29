@@ -4,6 +4,7 @@ import android.view.KeyCharacterMap
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -925,6 +926,18 @@ private fun LoadedChat(
                     }
                 }
 
+                if (transcript.isEmpty() && liveCount == 0 && !hasMore) {
+                    AsterHero(
+                        name = chat.name,
+                        mood = asterMood(busy = chat.busy, typing = draft.isNotEmpty(), streaming = liveText != null),
+                        hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = HEADER_CLEARANCE)
+                            .verticalScroll(rememberScrollState()),
+                    )
+                }
+
                 ChatHeader(
                     chat = chat,
                     face = remember(chat, rawTranscript) {
@@ -1147,7 +1160,7 @@ private fun ChatHeader(
     onOpenThreads: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val surface = MaterialTheme.colorScheme.surface
+    val surface = LocalAsterLook.current?.ground?.copy(alpha = 0.92f) ?: MaterialTheme.colorScheme.surface
     Box(modifier = modifier.fillMaxWidth()) {
         Spacer(
             modifier = Modifier
@@ -1744,19 +1757,27 @@ private fun Composer(
                 }
 
                 TouchTarget(onClick = onSend, enabled = canSend) {
+                    val asterLook = LocalAsterLook.current
                     Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .background(
-                                if (canSend) BubbleColor.mine else secondaryTint.copy(alpha = 0.18f),
-                                CircleShape,
+                            .then(
+                                when {
+                                    !canSend -> Modifier.background(secondaryTint.copy(alpha = 0.18f), CircleShape)
+                                    asterLook != null -> Modifier.background(asterLook.accentBrush, CircleShape)
+                                    else -> Modifier.background(BubbleColor.mine, CircleShape)
+                                },
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
-                            tint = if (canSend) BubbleColor.mineText else secondaryTint,
+                            tint = when {
+                                !canSend -> secondaryTint
+                                asterLook != null -> Color.White
+                                else -> BubbleColor.mineText
+                            },
                             modifier = Modifier.size(16.dp),
                         )
                     }

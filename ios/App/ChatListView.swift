@@ -121,6 +121,7 @@ struct ChatListView: View {
                 }
             }
             }
+            .asterBackground()
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Chat.self) { ChatView(chat: $0) }
             .onValueChange(of: session.notificationChat) { chat in
@@ -224,9 +225,12 @@ struct ChatListView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 2) {
-                Text("Threads")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.primary)
+                HStack(spacing: 6) {
+                    AsterMark(size: 16)
+                    Text("Threads")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                }
                 Text(headerSubtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(Color.secondary)

@@ -64,9 +64,14 @@ internal fun Modifier.chromeSheet(cornerRadius: Dp = 28.dp, elevation: Dp = 6.dp
     chrome(RoundedCornerShape(cornerRadius), elevation)
 
 @Composable
-internal fun Modifier.chrome(shape: Shape, elevation: Dp = CHROME_ELEVATION): Modifier = this
-    .shadow(elevation, shape, clip = false)
-    .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape)
+internal fun Modifier.chrome(shape: Shape, elevation: Dp = CHROME_ELEVATION): Modifier =
+    when (val look = LocalAsterLook.current) {
+        // The ASTER skins float the same shapes on frosted ASTER glass.
+        null -> this
+            .shadow(elevation, shape, clip = false)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape)
+        else -> asterGlass(look, shape, elevation)
+    }
 
 /**
  * A round chrome button with one glyph — the shape of every action in the chrome

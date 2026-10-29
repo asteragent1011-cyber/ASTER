@@ -647,7 +647,13 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (LocalAsterLook.current != null) AsterMark(size = 16.dp)
+                Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            }
             Text(
                 text = RosterLayout.headerSubtitle(name, status),
                 fontSize = 13.sp,

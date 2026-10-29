@@ -5,6 +5,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
@@ -135,15 +136,18 @@ fun CompanionTheme(
     darkTheme: Boolean? = null,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = when (darkTheme) {
-            true -> AppearanceSkin.MIDNIGHT.colorScheme()
-            false -> AppearanceSkin.LINEN.colorScheme()
-            null -> skin.colorScheme()
-        },
-        typography = ContentDirectedTypography,
-        content = content,
-    )
+    val resolved = when (darkTheme) {
+        true -> AppearanceSkin.MIDNIGHT
+        false -> AppearanceSkin.LINEN
+        null -> skin
+    }
+    CompositionLocalProvider(LocalAsterLook provides resolved.asterLook()) {
+        MaterialTheme(
+            colorScheme = resolved.colorScheme(),
+            typography = ContentDirectedTypography,
+            content = content,
+        )
+    }
 }
 
 /** SwiftUI's `Color.secondary` — the muted foreground everything quiet uses. */
