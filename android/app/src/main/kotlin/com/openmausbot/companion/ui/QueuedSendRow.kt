@@ -144,9 +144,12 @@ object ComposerPromise {
         engineCanSteer: Boolean,
         sending: Boolean,
         listening: Boolean,
+        /** The ASTER home: invite the first message the way the desktop does. */
+        home: Boolean = false,
     ): String = when {
         sending -> "Sending…"
         listening -> "Listening…"
+        home && !busy -> AsterCompanion.HOME_PLACEHOLDER
         !busy -> "Ask $name"
         engineCanSteer -> "Sends into this turn"
         else -> "Sends after this turn"

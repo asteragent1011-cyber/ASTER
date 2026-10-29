@@ -63,7 +63,7 @@ class AlwaysOnConnectionService : Service() {
 
     private fun buildNotification(): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_maus_mark)
+            .setSmallIcon(R.drawable.ic_aster_mark)
             .setContentTitle(getString(R.string.always_on_notification_title))
             .setContentText(getString(R.string.always_on_notification_text))
             .setPriority(NotificationCompat.PRIORITY_LOW)

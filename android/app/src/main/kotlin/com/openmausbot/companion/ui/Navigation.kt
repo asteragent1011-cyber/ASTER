@@ -61,6 +61,23 @@ sealed interface Destination {
     data class Thread(val threadId: String) : Conversation
 }
 
+/**
+ * The phone's top-level places: the desktop's navigation rail (NavigationRail.tsx),
+ * adapted. The rail's Home and Chat keep their meaning; Routines and Connected
+ * Apps stand where Projects and Knowledge sit on the desktop, which the phone
+ * cannot reach yet (the companion allowlist does not expose them).
+ */
+enum class AsterTab { HOME, CHATS, ROUTINES, APPS, SETTINGS }
+
+/** The tab a top-level screen is; null for screens that cover the tab bar. */
+fun Destination.asterTab(): AsterTab? = when (this) {
+    Destination.Roster -> AsterTab.CHATS
+    Destination.Routines -> AsterTab.ROUTINES
+    Destination.ConnectedApps -> AsterTab.APPS
+    Destination.Settings -> AsterTab.SETTINGS
+    else -> null
+}
+
 @Stable
 class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)) {
     var stack: List<Destination> by mutableStateOf(initial.ifEmpty { listOf(Destination.Roster) })
@@ -69,9 +86,32 @@ class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)
     val current: Destination get() = stack.last()
     val canGoBack: Boolean get() = stack.size > 1
 
+    /** The bot conversation opened most recently: where the Home tab returns. */
+    var lastBotChat: Destination.Chat? by mutableStateOf(
+        initial.lastOrNull { it is Destination.Chat && it.target is ChatTarget.Bot } as Destination.Chat?,
+    )
+        private set
+
+    /**
+     * Switch to a top-level tab. The roster stays at the bottom of every stack,
+     * so Back from any tab lands on Chats, as Back always has. Home opens the
+     * companion: the last bot conversation, else [fallbackHome]'s.
+     */
+    fun showTab(tab: AsterTab, fallbackHome: () -> Destination.Chat?) {
+        stack = when (tab) {
+            AsterTab.CHATS -> listOf(Destination.Roster)
+            AsterTab.ROUTINES -> listOf(Destination.Roster, Destination.Routines)
+            AsterTab.APPS -> listOf(Destination.Roster, Destination.ConnectedApps)
+            AsterTab.SETTINGS -> listOf(Destination.Roster, Destination.Settings)
+            AsterTab.HOME -> listOfNotNull(Destination.Roster, lastBotChat ?: fallbackHome())
+        }
+        (stack.last() as? Destination.Chat)?.let { if (it.target is ChatTarget.Bot) lastBotChat = it }
+    }
+
     fun push(destination: Destination) {
         if (stack.last() == destination) return
         stack = stack + destination
+        if (destination is Destination.Chat && destination.target is ChatTarget.Bot) lastBotChat = destination
     }
 
     /** The chat behind [chat], addressed by its owner. */

@@ -438,14 +438,22 @@ private fun LoadedChat(
     // The source transcript stays intact for approvals, mascot state and
     // pagination. Only the rendered rows fold activity according to the local
     // preference, so changing the choice never mutates server state.
-    val transcript = remember(rawTranscript, activityDetail) {
-        transcriptRows(rawTranscript, activityDetail)
+    // The ASTER home (the desktop's `isCompanionHome`): a thread holding nothing
+    // but the bot's seeded greeting is still at its start, so the hero stands in
+    // for that row. Read from the raw transcript, before any folding.
+    val companionHome = AsterCompanion.isHome(busy = chat.busy, messages = rawTranscript) &&
+        state.hasMore[threadId] != true
+    val transcript = remember(rawTranscript, activityDetail, companionHome) {
+        if (companionHome) emptyList() else transcriptRows(rawTranscript, activityDetail)
     }
     var expandedTurns by remember(threadId) { mutableStateOf(emptySet<String>()) }
     var revealedTurnMessageId by remember(threadId) { mutableStateOf<String?>(null) }
     val predictiveChips = remember(quickReplies) {
         quickReplies.map { PredictiveChip(title = it.title, prompt = it.prompt, icon = it.icon) }
     }
+    // The home composer offers the desktop's quick actions; a conversation keeps
+    // the reader's own quick replies.
+    val composerChips = if (companionHome) AsterCompanion.QUICK_ACTION_CHIPS else predictiveChips
     val streaming = state.streaming[threadId]
     val reasoning = state.reasoning[threadId]
     // Stream, then reasoning, then the bare fact of being busy — the order in
@@ -985,11 +993,12 @@ private fun LoadedChat(
                     draft = draft,
                     busy = chat.busy,
                     pendingApproval = pendingApproval,
-                    hasQuickReplies = predictiveChips.isNotEmpty(),
+                    hasQuickReplies = composerChips.isNotEmpty(),
                     hasAttachments = attachments.isNotEmpty(),
                 ),
                 commands = commands,
-                chips = predictiveChips,
+                home = companionHome,
+                chips = composerChips,
                 plusOpen = showingPlus,
                 dictationListening = dictationListening,
                 dictationLocked = dictationLocked,
@@ -1061,7 +1070,18 @@ private fun LoadedChat(
                 },
                 onSelectCommand = { selectCommand(it) },
                 // A chip is the whole message, sent on the tap.
-                onSelectChip = { submit(it.prompt) },
+                onSelectChip = { chip ->
+                    val action = AsterCompanion.quickActionFor(chip)
+                    if (action == null) {
+                        submit(chip.prompt)
+                    } else {
+                        // A quick action starts the sentence, as on the desktop;
+                        // "Analyze a file" also opens the picker.
+                        composer.onTypedChange(AsterCompanion.draftAfter(action, composer.text))
+                        publishFrom(composer)
+                        if (action.attach) onAction(ChatActionId.FILES)
+                    }
+                },
             )
         }
 
@@ -1464,6 +1484,8 @@ private fun Composer(
     modifier: Modifier = Modifier,
     name: String,
     draft: String,
+    /** The ASTER home: the composer invites the first message. */
+    home: Boolean = false,
     accessory: ComposerAccessory,
     commands: List<SlashCommand>,
     plusOpen: Boolean,
@@ -1688,6 +1710,7 @@ private fun Composer(
                                 engineCanSteer = engineCanSteer,
                                 sending = sending,
                                 listening = dictationListening,
+                                home = home,
                             ),
                             fontSize = 17.sp,
                             color = secondaryTint,

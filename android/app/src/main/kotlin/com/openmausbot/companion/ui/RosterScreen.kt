@@ -1146,12 +1146,12 @@ private fun SearchHitRow(hit: SearchHit, onClick: () -> Unit) {
     ) {
         // Who said it. Two hits with the same words are otherwise identical.
         Icon(
-            // A person for what you said, the Maus mark for what a bot said —
+            // A person for what you said, the ASTER mark for what a bot said —
             // iOS makes the same split with person.fill and a speech bubble.
             painter = if (SearchHitRole.isFromUser(hit.role)) {
                 rememberVectorPainter(Icons.Filled.Person)
             } else {
-                painterResource(R.drawable.ic_maus_mark)
+                painterResource(R.drawable.ic_aster_mark)
             },
             contentDescription = SearchHitRole.contentDescription(hit.role, hit.name),
             tint = secondaryTint,

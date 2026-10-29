@@ -3,6 +3,13 @@ package com.openmausbot.companion.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import com.openmausbot.companion.core.target
+import com.openmausbot.companion.core.chatSummaries
+import com.openmausbot.companion.core.Chat
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -370,6 +377,26 @@ private fun PairedScreen(
 
     BackHandler(enabled = navigator.canGoBack) { navigator.pop() }
 
+    val environment = LocalCompanion.current
+    // Home with no bot conversation opened yet: the first bot in roster order,
+    // on the thread it was last left on, exactly as tapping its row would.
+    val fallbackHome: () -> Destination.Chat? = {
+        environment.session.state.value
+            .chatSummaries(environment.chatPreferences.activityDetail.value)
+            .firstOrNull { it.chat is Chat.BotChat }
+            ?.let { environment.chatPreferences.restoringThread(it.chat, environment.session.connection.value?.id) }
+            ?.let { Destination.Chat(it.target) }
+    }
+    val tab = navigator.current.asterTab()
+
+    Column(Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            // The tab bar sits on the system bar; the screen above it must not pad for it again.
+            .then(if (tab != null) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier),
+    ) {
     when (val destination = navigator.current) {
         Destination.Roster -> RosterScreen(navigator)
         Destination.Settings -> SettingsScreen(
@@ -407,6 +434,15 @@ private fun PairedScreen(
             botId = destination.botId,
             onBack = navigator::pop,
         )
+    }
+    }
+    if (tab != null) {
+        AsterTabBar(
+            current = tab,
+            onSelect = { next -> navigator.showTab(next, fallbackHome) },
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+    }
     }
 }
 
