@@ -38,6 +38,14 @@ const yamlEsmPlugin = {
   },
 };
 
+// undici (the decider's keep-alive dispatcher, server/decider/clef.ts) is
+// CommonJS and calls require("node:assert") and other builtins. Inlined into
+// ESM, esbuild's require shim throws "Dynamic require ... is not supported"
+// at startup unless a real `require` is in scope, so give the bundle one.
+const cjsRequireBanner = {
+  js: 'import { createRequire as __ombCreateRequire } from "node:module"; const require = __ombCreateRequire(import.meta.url);',
+};
+
 // Every file run as its own process. Keep in sync with the spawn sites above.
 const ENTRY_POINTS = [
   "index.ts",
@@ -83,6 +91,7 @@ await build({
   allowOverwrite: true,
   logLevel: "info",
   plugins: [yamlEsmPlugin],
+  banner: cjsRequireBanner,
 });
 
 // External MCP clients launch this as an independent stdio process. Keep its

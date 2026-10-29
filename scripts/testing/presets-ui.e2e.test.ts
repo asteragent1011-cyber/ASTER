@@ -38,6 +38,9 @@ describe("Preset bots in the real renderer", () => {
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
     const evaluate = async (js: string) => (await ui("eval", "--js", js)).result;
     const click = (name: string) => ui("click", "--name", name).catch((error: Error) => { throw new Error(`clicking "${name}": ${error.message}`); });
+    // ASTER keeps the chat list collapsed behind the rail (and Escape collapses
+    // it again), so open it before reaching for a button that lives in it.
+    const openChats = () => ui("eval", "--js", `(() => { if (document.querySelector('[aria-label="New or share"]')?.offsetParent) return true; document.querySelector('nav[aria-label="Application navigation rail"] button[aria-expanded="false"]')?.click(); return true; })()`);
     // A panel or dialog that just closed can still cover the sidebar for a
     // frame; agent-browser refuses a covered click without sending it, so
     // retrying is safe.
@@ -83,6 +86,7 @@ describe("Preset bots in the real renderer", () => {
     await click("Close settings");
 
     // Templates → Import the file: preset bots for New bot, no team.
+    await openChats();
     await clickWhenFree("New or share");
     await click("Templates");
     await click("Import");
@@ -107,6 +111,7 @@ describe("Preset bots in the real renderer", () => {
     writeFileSync(presetsFile, JSON.stringify(stored));
 
     // Share team: the defaults preset goes in only when ticked.
+    await openChats();
     await clickWhenFree("New or share");
     await click("Templates");
     await click("Share");
@@ -125,6 +130,7 @@ describe("Preset bots in the real renderer", () => {
     const bots = async () => (await api("/api/bots")).bots as Array<{ id: string; name: string; installedPackage?: Record<string, unknown> }>;
     const create = async (value: string, expected: string, shot: string) => {
       const before = await bots();
+      await openChats();
       await clickWhenFree("New or share");
       await click("New Bot");
       await expect.poll(async () => (await ui("eval", "--js", "[...document.querySelectorAll('[role=dialog] button')].find(button => button.textContent.trim() === 'Create bot')?.disabled")).result, { timeout: 20_000 }).toBe(false);

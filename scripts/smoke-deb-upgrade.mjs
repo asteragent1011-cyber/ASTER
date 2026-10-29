@@ -30,7 +30,7 @@ const temporary = fs.mkdtempSync(path.join(path.resolve(runnerTemp), "omb-deb-up
 if (path.dirname(temporary) !== path.resolve(runnerTemp)) fail("temporary fixture escaped RUNNER_TEMP");
 const legacyRoot = path.join(temporary, "legacy-package");
 const controlRoot = path.join(legacyRoot, "DEBIAN");
-const legacyApp = path.join(legacyRoot, "opt", "OpenMausBot");
+const legacyApp = path.join(legacyRoot, "opt", "ASTER");
 const legacyResources = path.join(legacyApp, "resources");
 const legacyDeb = path.join(temporary, "openmausbot_0.1.7_amd64.deb");
 
