@@ -44,6 +44,7 @@ import com.openmausbot.companion.core.OnboardingPairingState
 import com.openmausbot.companion.core.OnboardingRoute
 import com.openmausbot.companion.core.OnboardingRouter
 import com.openmausbot.companion.core.Session
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -386,6 +387,10 @@ private fun PairedScreen(
             .firstOrNull { it.chat is Chat.BotChat }
             ?.let { environment.chatPreferences.restoringThread(it.chat, environment.session.connection.value?.id) }
             ?.let { Destination.Chat(it.target) }
+    }
+    // A fresh launch opens on Home, the companion, once the fleet names a bot.
+    LaunchedEffect(navigator) {
+        environment.session.state.first { navigator.settleLaunchHome(fallbackHome) }
     }
     val tab = navigator.current.asterTab()
 

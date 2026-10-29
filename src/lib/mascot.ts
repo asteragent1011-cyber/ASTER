@@ -1,13 +1,17 @@
-import { CURSOR_STATES, type CursorState } from "@/components/CursorAvatar";
 import { botShowsUnread } from "./bot-unread";
 import { lastNonReceipt } from "./receipts";
 
-/** The mascot's behaviour vocabulary — CursorAvatar's 39 states, under the
- * app's historical names. */
-export type MausState = CursorState;
-export const MAUS_STATES = CURSOR_STATES;
+/** The mascot's behaviour vocabulary: 39 states, under the app's historical
+ * names. The companions (aster/AsterBlobAvatar.tsx) draw each as a mood. */
+export const MAUS_STATES = [
+  "sleeping", "waking", "idle", "listening", "thinking", "searching", "working",
+  "excited", "surprised", "suspicious", "angry", "drowsy", "happy", "curious", "confused", "bored", "proud", "shy", "sad", "laughing", "scared", "playful", "celebrate",
+  "orbit", "radar", "progress",
+  "spawning", "humming", "loading", "dictating", "sending", "receiving", "uploading", "writing", "notifying", "alerting", "bouncing", "dragging", "powering-down",
+] as const;
+export type MausState = (typeof MAUS_STATES)[number];
 
-/** CursorAvatar ships French group labels; the app shows these instead. The
+/** The states, grouped the way the Settings expression picker shows them. The
  * memberships mirror its STATE_GROUPS exactly. */
 export const STATE_GROUPS = {
   Lifecycle: ["sleeping", "waking", "idle", "listening", "thinking", "searching", "working"],

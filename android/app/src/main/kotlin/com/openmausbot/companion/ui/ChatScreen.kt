@@ -4,7 +4,6 @@ import android.view.KeyCharacterMap
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -941,8 +940,7 @@ private fun LoadedChat(
                         hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) },
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = HEADER_CLEARANCE)
-                            .verticalScroll(rememberScrollState()),
+                            .padding(top = HEADER_CLEARANCE),
                     )
                 }
 

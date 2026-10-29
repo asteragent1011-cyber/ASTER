@@ -22,13 +22,13 @@ import {
   clampAvatarZoom,
   type BotAvatarCrop,
 } from "../../shared/bot-avatar";
-import { MASCOT_BODIES, MASCOT_BODY_IDS } from "../../shared/mascot-bodies";
 import { BotAvatar, MausAvatar } from "./Avatar";
+import { botBodyFor } from "@/lib/aster-blobs";
 import { AvatarImageGenerator } from "./AvatarImageGenerator";
 import { useOrganizationBranding } from "@/lib/use-organization-branding";
 
 type AvatarPatch = Partial<
-  Pick<Bot, "avatarCrop" | "avatarUrl" | "avatarZoom" | "avatarFocusX" | "avatarFocusY" | "color" | "mascotExpression" | "mascotBody">
+  Pick<Bot, "avatarCrop" | "avatarUrl" | "avatarZoom" | "avatarFocusX" | "avatarFocusY" | "color" | "mascotExpression">
 >;
 
 const FRAME_SIZE = 168;
@@ -223,7 +223,7 @@ export function BotProfileAvatarCard({
         <span className="rounded-lg bg-control px-3 py-1.5 text-[14px] font-medium text-ink">Avatar</span>
         <button
           disabled={busy}
-          onClick={() => onPatch({ avatarCrop: "mascot", color: "green", mascotExpression: null, mascotBody: "cursor" })}
+          onClick={() => onPatch({ avatarCrop: "mascot", color: "green", mascotExpression: null })}
           className="rounded-md px-2 py-1.5 text-[13px] text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-50"
         >
           Reset mascot
@@ -328,7 +328,7 @@ export function BotProfileAvatarCard({
                   title={expression}
                   aria-label={`Use ${expression} expression`}
                 >
-                  <MausAvatar color={bot.color} bodyId={bot.mascotBody ?? undefined} state={expression} size={42} animated={false} />
+                  <MausAvatar bodyId={botBodyFor(bot)} identity={bot.id} state={expression} size={42} animated={false} />
                 </button>
               ))}
             </div>
@@ -355,29 +355,6 @@ export function BotProfileAvatarCard({
               ))}
             </div>
 
-            <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
-              Body
-            </div>
-            <div className="grid grid-cols-5 gap-1.5">
-              {MASCOT_BODY_IDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={busy}
-                  aria-pressed={(bot.mascotBody ?? "cursor") === id}
-                  aria-label={`Use the ${MASCOT_BODIES[id].name} body`}
-                  onClick={() => onPatch({ mascotBody: id })}
-                  className={cn(
-                    "flex items-center justify-center rounded-lg py-1.5 disabled:opacity-50",
-                    (bot.mascotBody ?? "cursor") === id
-                      ? "bg-control text-ink"
-                      : "text-ink-secondary hover:bg-control/60",
-                  )}
-                >
-                  <MausAvatar color={bot.color} bodyId={id} size={34} animated={false} trackPointer={false} />
-                </button>
-              ))}
-            </div>
           </>
         )}
 

@@ -29,11 +29,24 @@ export function asterBlobFor(identity: string): AsterBlobId {
   return ASTER_BLOB_IDS[hash(identity) % ASTER_BLOB_IDS.length]!;
 }
 
-/** The body to draw: a chosen body is kept; otherwise the bot's companion. */
-export function botBodyFor(bot: { id?: string; name?: string; mascotBody?: MascotBodyId | null }): MascotBodyId | undefined {
-  if (bot.mascotBody) return bot.mascotBody;
+/** The default companion, for an avatar that stands for no bot in particular. */
+export const DEFAULT_COMPANION: AsterBlobId = "luma";
+
+/** A companion id as given, or the default for anything else: an unknown
+ * value, or a body from the retired geometric catalog (cursor, hexagon...). */
+export function companionBody(value: string | null | undefined): AsterBlobId {
+  return isAsterBlob(value) ? value : DEFAULT_COMPANION;
+}
+
+/**
+ * The companion a bot wears. A saved companion id is honoured; anything else
+ * saved (a retired geometric body such as hexagon or drop) is ignored, never
+ * migrated or deleted, and the bot wears the companion its id picks.
+ */
+export function botBodyFor(bot: { id?: string; name?: string; mascotBody?: string | null }): AsterBlobId {
+  if (isAsterBlob(bot.mascotBody)) return bot.mascotBody;
   const identity = bot.id || bot.name;
-  return identity ? asterBlobFor(identity) : undefined;
+  return identity ? asterBlobFor(identity) : DEFAULT_COMPANION;
 }
 
 /** The moods the companions draw, the reusable animation API's states. */

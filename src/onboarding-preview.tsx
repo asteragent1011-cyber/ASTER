@@ -1,4 +1,4 @@
-// Dev gallery for the welcome flow, like mascot-preview.html for the mascot:
+// Dev gallery for the welcome flow:
 // every beat, in every skin, with reduced motion on or off, without touching
 // the workspace's real onboarding record. Served by Vite in dev at
 // /onboarding-preview.html; not part of the packaged app.

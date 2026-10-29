@@ -78,9 +78,22 @@ fun Destination.asterTab(): AsterTab? = when (this) {
     else -> null
 }
 
+/**
+ * @param opensHome a fresh launch: the app opens on Home, the companion, as the
+ *   desktop opens on its chat view, once the fleet names a bot to open
+ *   ([settleLaunchHome]). A restored stack, a notification tap or anything the
+ *   reader does first wins over it.
+ */
 @Stable
-class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)) {
+class CompanionNavigator(
+    initial: List<Destination> = listOf(Destination.Roster),
+    opensHome: Boolean = false,
+) {
     var stack: List<Destination> by mutableStateOf(initial.ifEmpty { listOf(Destination.Roster) })
+        private set
+
+    /** Still waiting to open Home for a fresh launch; see [settleLaunchHome]. */
+    var launchHomePending: Boolean = opensHome
         private set
 
     val current: Destination get() = stack.last()
@@ -98,6 +111,7 @@ class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)
      * companion: the last bot conversation, else [fallbackHome]'s.
      */
     fun showTab(tab: AsterTab, fallbackHome: () -> Destination.Chat?) {
+        launchHomePending = false
         stack = when (tab) {
             AsterTab.CHATS -> listOf(Destination.Roster)
             AsterTab.ROUTINES -> listOf(Destination.Roster, Destination.Routines)
@@ -109,6 +123,7 @@ class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)
     }
 
     fun push(destination: Destination) {
+        launchHomePending = false
         if (stack.last() == destination) return
         stack = stack + destination
         if (destination is Destination.Chat && destination.target is ChatTarget.Bot) lastBotChat = destination
@@ -121,6 +136,26 @@ class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)
 
     fun pop() {
         if (canGoBack) stack = stack.dropLast(1)
+    }
+
+    /**
+     * Open Home for a fresh launch, the moment [fallbackHome] can name a bot.
+     * The stack starts on the roster only because the fleet has not arrived
+     * yet; left there, the app opened on Chats and the companion never showed.
+     * Gives up for good once anything else has moved the stack: a notification
+     * tap, or the reader choosing a place first. True once settled either way.
+     */
+    fun settleLaunchHome(fallbackHome: () -> Destination.Chat?): Boolean {
+        if (!launchHomePending) return true
+        if (stack != listOf(Destination.Roster)) {
+            launchHomePending = false
+            return true
+        }
+        val home = fallbackHome() ?: return false
+        stack = listOf(Destination.Roster, home)
+        lastBotChat = home
+        launchHomePending = false
+        return true
     }
 
     /**
@@ -284,5 +319,5 @@ class CompanionNavigator(initial: List<Destination> = listOf(Destination.Roster)
 @Composable
 fun rememberCompanionNavigator(bondGeneration: Int = 0): CompanionNavigator =
     rememberSaveable(bondGeneration, saver = CompanionNavigator.saver(bondGeneration)) {
-        CompanionNavigator()
+        CompanionNavigator(opensHome = true)
     }

@@ -114,6 +114,6 @@ class MausBodiesTest {
         for (id in MausBodies.order) {
             assertSame(MausSilhouette.inFaceBox(id), MausSilhouette.inFaceBox(id), "$id was parsed twice")
         }
-        assertNotSame(MausSilhouette.inFaceBox("cursor"), MausSilhouette.inFaceBox("star"))
+        assertNotSame(MausSilhouette.inFaceBox("luma"), MausSilhouette.inFaceBox("orbit"))
     }
 }

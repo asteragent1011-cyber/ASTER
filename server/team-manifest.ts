@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { schemaIssue, type JsonValue } from "./schema.ts";
 import type { MausColor } from "./store.ts";
-import { botMascotBody, type MascotBodyId } from "../shared/mascot-bodies.ts";
+import { mascotBodySchema, type MascotBodyId } from "../shared/mascot-bodies.ts";
 import { takeImportName } from "../shared/import-name.ts";
 import { BOT_PROFILE_LIMITS } from "../shared/bot-profile.ts";
 
@@ -279,8 +279,10 @@ export function importedMemberProfile(
   // bounds its length); an untrusted or stale value must never reach a
   // BotRecord unvalidated, so it is safe-parsed here — the one point where
   // an imported member becomes bot fields — falling back to the default
-  // body rather than rejecting the whole import over a cosmetic field.
-  if (member.appearance.mascotBody) profile.mascotBody = botMascotBody(member.appearance.mascotBody);
+  // body rather than rejecting the whole import over a cosmetic field. A
+  // retired body is dropped, so the bot wears the companion its id picks.
+  const body = mascotBodySchema.safeParse(member.appearance.mascotBody).data;
+  if (body) profile.mascotBody = body;
   return profile;
 }
 

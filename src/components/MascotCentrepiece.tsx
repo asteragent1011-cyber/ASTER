@@ -4,10 +4,9 @@ import { BotAvatar } from "./Avatar";
 import { stateForBot, type MausState, type MausMotion } from "@/lib/mascot";
 import { cn } from "@/lib/cn";
 import { Grip } from "lucide-react";
-import { companionMood, greetingFor } from "@/lib/aster-companion";
+import { greetingFor } from "@/lib/aster-companion";
 import { Badge } from "./glass-ui/badge";
 import { Card } from "./glass-ui/card";
-import { AsterMascot } from "./aster/AsterMascot";
 
 export interface MascotCentrepieceProps {
   bot: Bot;
@@ -37,7 +36,6 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
     return "Here with you";
   }, [hasError, speaking, toolInFlight, bot.busy, isTyping]);
   const greeting = greetingFor(new Date().getHours());
-  const mood = companionMood({ busy: bot.busy, typing: isTyping, streaming: speaking });
 
   return (
     <div data-mascot-centrepiece className="aster-hero flex flex-1 select-none items-center px-6 pb-6 pt-2 animate-in fade-in duration-500 md:px-10">
@@ -64,7 +62,11 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
             <span>{statusLabel}</span>
           </Badge>
         </div>
-        <AsterMascot mood={mood} size={300} className="order-1 mx-auto md:order-2" />
+        {/* The open bot's own companion, drawn by the same renderer as its
+            sidebar avatar; keyed so switching bots replays its entrance. */}
+        <div className="order-1 mx-auto md:order-2" data-mascot-companion>
+          <BotAvatar key={bot.id} bot={bot} size={250} state={speaking ? "writing" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
+        </div>
       </div>
     </div>
   );

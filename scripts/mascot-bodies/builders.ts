@@ -121,155 +121,11 @@ class Path {
   }
 }
 
-/* ------------------------------------------------------------------ builders */
-
-/** Blob Studio's `circle`, as four KAPPA quarters instead of two `A` halves. */
-function buildEllipse(w: number, h: number): string {
-  const rx = w / 2
-  const ry = h / 2
-  return new Path()
-    .moveTo(100 + rx, 100)
-    .quarterTo(100 + rx, 100 + ry, 100, 100 + ry)
-    .quarterTo(100 - rx, 100 + ry, 100 - rx, 100)
-    .quarterTo(100 - rx, 100 - ry, 100, 100 - ry)
-    .quarterTo(100 + rx, 100 - ry, 100 + rx, 100)
-    .close()
-}
-
-/**
- * Blob Studio's `roundedBox`, with its quadratic corners promoted to KAPPA arcs.
- * Quadratics bulge visibly at a 75-unit radius, and the capsule's caps are meant
- * to be circles.
- */
-function buildRoundedBox(w: number, h: number, radius: number): string {
-  const x = 100 - w / 2
-  const y = 100 - h / 2
-  const k = Math.min(radius, w / 2, h / 2)
-  // A cap that eats the whole side leaves a zero-length run; skip it rather than
-  // emit a degenerate cubic the rasteriser would have to special-case.
-  const wide = w - 2 * k > 1e-9
-  const tall = h - 2 * k > 1e-9
-  const p = new Path().moveTo(x + k, y)
-  if (wide) p.lineTo(x + w - k, y)
-  p.quarterTo(x + w, y, x + w, y + k)
-  if (tall) p.lineTo(x + w, y + h - k)
-  p.quarterTo(x + w, y + h, x + w - k, y + h)
-  if (wide) p.lineTo(x + k, y + h)
-  p.quarterTo(x, y + h, x, y + h - k)
-  if (tall) p.lineTo(x, y + k)
-  p.quarterTo(x, y, x + k, y)
-  return p.close()
-}
-
-/**
- * Blob Studio's `blob`: a circle whose radius breathes around the turn, drawn as
- * quadratics through the midpoints between successive samples. Each quadratic
- * becomes its exact cubic, so the curve is unchanged, not re-fitted.
- */
-function buildBlob(w: number, h: number, wobble: number): string {
-  const STEPS = 24
-  const pts: [number, number][] = []
-  for (let i = 0; i < STEPS; i++) {
-    const a = (i / STEPS) * Math.PI * 2
-    const r = 1 + Math.sin(a * 3 + 0.6) * 0.07 * wobble + Math.sin(a * 2 - 1.1) * 0.05 * wobble
-    pts.push([100 + Math.cos(a) * (w / 2) * r, 100 + Math.sin(a) * (h / 2) * r])
-  }
-  const mid = (i: number): [number, number] => {
-    const c = pts[i]
-    const n = pts[(i + 1) % STEPS]
-    return [(c[0] + n[0]) / 2, (c[1] + n[1]) / 2]
-  }
-  const p = new Path().moveTo(mid(0)[0], mid(0)[1])
-  for (let i = 1; i < STEPS; i++) {
-    const m = mid(i)
-    p.quadTo(pts[i][0], pts[i][1], m[0], m[1])
-  }
-  const first = mid(0)
-  p.quadTo(pts[0][0], pts[0][1], first[0], first[1])
-  return p.close()
-}
-
-/**
- * Blob Studio's `drop`. Its two `C` segments carry over untouched; its one `A`
- * — a semicircle of radius `hw` across the bottom — becomes two KAPPA quarters.
- */
-function buildDrop(w: number, h: number, belly: number): string {
-  const hw = w / 2
-  const top = 100 - h / 2
-  const b = h * (0.3 + belly * 0.35)
-  const waist = 100 + h / 2 - hw
-  return new Path()
-    .moveTo(100, top)
-    .curveTo([100 + hw * 0.78, top + b * 0.75, 100 + hw, top + b, 100 + hw, waist])
-    .quarterTo(100 + hw, waist + hw, 100, waist + hw)
-    .quarterTo(100 - hw, waist + hw, 100 - hw, waist)
-    .curveTo([100 - hw, top + b, 100 - hw * 0.78, top + b * 0.75, 100, top])
-    .close()
-}
-
-/** Blob Studio's `cone`: quadratics via `quadToCubic`, straight runs via `lineToCubic`. */
-function buildCone(w: number, h: number, tip: number, base: number): string {
-  const hw = w / 2
-  const hh = h / 2
-  const t = hw * tip
-  const b = hw * base * 0.55
-  return new Path()
-    .moveTo(100 - t, 100 - hh + t * 0.9)
-    .quadTo(100, 100 - hh, 100 + t, 100 - hh + t * 0.9)
-    .lineTo(100 + hw - b * 0.4, 100 + hh - b)
-    .quadTo(100 + hw, 100 + hh, 100 + hw - b, 100 + hh)
-    .lineTo(100 - hw + b, 100 + hh)
-    .quadTo(100 - hw, 100 + hh, 100 - hw + b * 0.4, 100 + hh - b)
-    .close()
-}
-
-const lerp = (a: [number, number], b: [number, number], t: number): [number, number] => [
-  a[0] + (b[0] - a[0]) * t,
-  a[1] + (b[1] - a[1]) * t,
-]
-
-/** Blob Studio's `hex`: each vertex cut back along both its edges and arced across. */
-function buildPolygon(w: number, h: number, sides: number, round: number): string {
-  const n = Math.max(3, Math.round(sides))
-  const pts: [number, number][] = []
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 - Math.PI / 2
-    pts.push([100 + Math.cos(a) * (w / 2), 100 + Math.sin(a) * (h / 2)])
-  }
-  const p = new Path()
-  for (let i = 0; i < n; i++) {
-    const prev = pts[(i - 1 + n) % n]
-    const cur = pts[i]
-    const next = pts[(i + 1) % n]
-    const a = lerp(cur, prev, round * 0.5)
-    const b = lerp(cur, next, round * 0.5)
-    if (i === 0) p.moveTo(a[0], a[1])
-    else p.lineTo(a[0], a[1])
-    p.quadTo(cur[0], cur[1], b[0], b[1])
-  }
-  return p.close()
-}
-
-/** Blob Studio's `star`. It emits only lines, so every edge is a `lineToCubic`. */
-function buildStar(w: number, h: number, points: number, inner: number): string {
-  const n = Math.max(3, Math.round(points))
-  const p = new Path()
-  for (let i = 0; i < n * 2; i++) {
-    const a = (i / (n * 2)) * Math.PI * 2 - Math.PI / 2
-    const k = i % 2 === 0 ? 1 : inner
-    const x = 100 + Math.cos(a) * (w / 2) * k
-    const y = 100 + Math.sin(a) * (h / 2) * k
-    if (i === 0) p.moveTo(x, y)
-    else p.lineTo(x, y)
-  }
-  return p.close()
-}
-
 /* ------------------------------------------------------------------ catalog */
 
 /**
  * The shipped maus artwork, copied verbatim out of `DEFAULT_SILHOUETTE.body` in
- * src/components/CursorAvatar.tsx. It is already cubics-only, so it is carried
+ * the original Maus artwork. It is already cubics-only, so it is carried
  * across byte-for-byte rather than regenerated — the artwork is the spec here.
  *
  * Drawn pre-transform, which is why the raw coordinates below run negative: the
@@ -284,7 +140,7 @@ const CURSOR_D = "M0 0 C1.12815992 0.94880479 2.25705591 1.89673511 3.38671875 2
 
 /**
  * A smooth closed outline through `steps` samples of a polar radius function
- * around the stage centre, drawn like `buildBlob`: quadratics through the
+ * around the stage centre: quadratics through the
  * midpoints between successive samples, each converted to its exact cubic.
  * `shape(a)` returns the [x, y] offset from centre for angle `a`.
  */
@@ -314,53 +170,6 @@ function tilt([x, y]: [number, number], deg: number): [number, number] {
   const r = (deg * Math.PI) / 180
   return [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)]
 }
-
-/*
- * ASTER's companions. Soft, rounded blobs in the family of the home-screen
- * mascot: no corners, no points, a little asymmetry so each reads as a
- * character at 24px. Each keeps the whole face's room (checked by the solver
- * against the cursor's floor) so the shared face size never shrinks.
- */
-
-/** Mochi: a squashed dome, rounder on top and settled on a softer, wider base. */
-const buildMochi = (): string =>
-  buildSmoothClosed((a) => {
-    const c = Math.cos(a)
-    const s = Math.sin(a)
-    const x = Math.sign(c) * Math.abs(c) ** 0.82 * 104
-    const y = Math.sign(s) * Math.abs(s) ** (s > 0 ? 0.6 : 0.95) * (s > 0 ? 82 : 92)
-    return [x, y + 4]
-  })
-
-/** Puff: a cloud of seven soft bumps with gentle dips between them. */
-const buildPuff = (): string =>
-  buildSmoothClosed((a) => {
-    const r = 90 * (1 + 0.09 * Math.abs(Math.cos(3.5 * (a + Math.PI / 2))))
-    return [Math.cos(a) * r * 1.04, Math.sin(a) * r * 0.94]
-  }, 84)
-
-/** Bean: a wide oval leaning left, with a shallow dent on its upper right. */
-const buildBean = (): string =>
-  buildSmoothClosed((a) => {
-    const dent = 0.09 * Math.exp(-((Math.atan2(Math.sin(a + Math.PI / 3), Math.cos(a + Math.PI / 3))) ** 2) / 0.22)
-    const r = 1 - dent
-    return tilt([Math.cos(a) * 106 * r, Math.sin(a) * 86 * r], -10)
-  }, 48)
-
-/** Pebble: an egg, fuller at the bottom, tipped slightly to the right. */
-const buildPebble = (): string =>
-  buildSmoothClosed((a) => {
-    const s = Math.sin(a)
-    return tilt([Math.cos(a) * 92 * (1 + 0.1 * s), s * 100], 7)
-  })
-
-/** Sparkle: the ASTER star (AsterMark) softened into a four-lobed blob, lobes
- * up, down and to the sides like the mark itself. */
-const buildSparkle = (): string =>
-  buildSmoothClosed((a) => {
-    const r = 88 * (1 + 0.14 * Math.cos(4 * a))
-    return [Math.cos(a) * r, Math.sin(a) * r]
-  }, 72)
 
 /*
  * The ASTER companions from the brand sheet (Luma, Nova, Orbit, Echo): glossy
@@ -394,34 +203,14 @@ const buildEcho = (): string =>
     return tilt([Math.cos(a) * r, Math.sin(a) * r * 0.94], 6)
   }, 72)
 
-/** Ten outlines, in the order the catalog persists them. `cursor` is the default, so it leads. */
+/**
+ * The outlines the generator solves. `cursor` is not a body any more: it is the
+ * face-size anchor only (gen-mascot-bodies.ts never emits it), kept so the face
+ * every platform draws keeps its size. The catalog is the four ASTER companions.
+ * Their outlines reach a few units past the 200x200 stage, so each box is padded.
+ */
 export const BODY_DEFS: BodyDef[] = [
   { id: "cursor", name: "Cursor", d: CURSOR_D, viewBox: [0, 0, 512, 512] },
-  // The wobble pushes lobes past the nominal 200x200 stage — its radius factor peaks at
-  // 1.042, so the outline reaches 4.2 units outside. Its box is padded to hold that: a
-  // 200x200 viewBox here would let the scanline pass silently shave the top lobe flat.
-  { id: "blob", name: "Blob", d: buildBlob(200, 200, 0.35), viewBox: [-5, -5, 210, 210] },
-  { id: "circle", name: "Circle", d: buildEllipse(200, 200), viewBox: [0, 0, 200, 200] },
-  { id: "squircle", name: "Squircle", d: buildRoundedBox(200, 200, (Math.min(200, 200) / 2) * 0.5), viewBox: [0, 0, 200, 200] },
-  { id: "capsule", name: "Capsule", d: buildRoundedBox(150, 200, Math.min(150, 200) / 2), viewBox: [0, 0, 200, 200] },
-  { id: "drop", name: "Drop", d: buildDrop(156, 194, 0.62), viewBox: [0, 0, 200, 200] },
-  { id: "shield", name: "Shield", d: buildCone(190, 200, 0.45, 0.9), viewBox: [0, 0, 200, 200] },
-  { id: "hexagon", name: "Hexagon", d: buildPolygon(196, 196, 6, 0.12), viewBox: [0, 0, 200, 200] },
-  { id: "diamond", name: "Diamond", d: buildPolygon(196, 196, 4, 0.12), viewBox: [0, 0, 200, 200] },
-  // The inner-radius factor is a face-fit constraint, not a taste knob: at the classic
-  // 0.42 the notches between the points pinch the silhouette down to a 50-unit inscribed
-  // circle, and since the catalog clamps every body to the smallest face any one body can
-  // hold, that one number would shrink the mascot everywhere. 0.55 lets the star hold a
-  // 0.831 face — clear headroom over the cursor's 0.791, which is what sets the clamp.
-  { id: "star", name: "Star", d: buildStar(196, 196, 5, 0.55), viewBox: [0, 0, 200, 200] },
-  // ASTER's companion blobs, appended so every earlier id keeps its place.
-  // Their outlines reach a few units past the 200x200 stage, so each box is padded.
-  { id: "mochi", name: "Mochi", d: buildMochi(), viewBox: [-10, -10, 220, 220] },
-  { id: "puff", name: "Puff", d: buildPuff(), viewBox: [-10, -10, 220, 220] },
-  { id: "bean", name: "Bean", d: buildBean(), viewBox: [-10, -10, 220, 220] },
-  { id: "pebble", name: "Pebble", d: buildPebble(), viewBox: [-10, -10, 220, 220] },
-  { id: "sparkle", name: "Sparkle", d: buildSparkle(), viewBox: [-10, -10, 220, 220] },
-  // The ASTER companions (the brand sheet's Luma, Nova, Orbit and Echo).
   { id: "luma", name: "Luma", d: buildLuma(), viewBox: [-10, -10, 220, 220] },
   { id: "nova", name: "Nova", d: buildNova(), viewBox: [-10, -10, 220, 220] },
   { id: "orbit", name: "Orbit", d: buildOrbit(), viewBox: [-10, -10, 220, 220] },

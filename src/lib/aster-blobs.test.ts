@@ -14,13 +14,19 @@ describe("which companion a bot wears", () => {
     expect([...worn].sort()).toEqual([...ASTER_BLOB_IDS].sort());
   });
 
-  it("keeps a body the bot chose, and only fills in when it has none", () => {
-    expect(botBodyFor({ id: "koda", mascotBody: "star" })).toBe("star");
-    expect(botBodyFor({ id: "koda", mascotBody: "cursor" })).toBe("cursor");
-    expect(isAsterBlob(botBodyFor({ id: "koda" }))).toBe(true);
+  it("ignores a retired geometric body: the bot wears the companion its id picks", () => {
+    // The live bots: Yuki saved hexagon, Moss blob, Comet drop. None of it shows.
+    for (const legacy of ["hexagon", "blob", "drop", "cursor", "star", "mochi", "nonsense"]) {
+      expect(botBodyFor({ id: "koda", mascotBody: legacy })).toBe(asterBlobFor("koda"));
+    }
     expect(botBodyFor({ id: "koda", mascotBody: null })).toBe(asterBlobFor("koda"));
     expect(botBodyFor({ name: "Koda" })).toBe(asterBlobFor("Koda"));
-    expect(botBodyFor({})).toBeUndefined();
+    expect(botBodyFor({})).toBe("luma");
+  });
+
+  it("honours a saved companion id, the only body that still means anything", () => {
+    expect(botBodyFor({ id: "koda", mascotBody: "echo" })).toBe("echo");
+    expect(isAsterBlob(botBodyFor({ id: "anything" }))).toBe(true);
   });
 
   it("every companion is a real catalog body, so the picker and the phones know it", () => {
@@ -86,12 +92,11 @@ describe("AsterBlobAvatar", () => {
 });
 
 describe("bots wear their companion everywhere BotAvatar draws them", () => {
-  it("an unbodied bot gets its companion; a chosen body and an uploaded image are untouched", () => {
+  it("an unbodied bot and a bot with a retired body both get their companion; an uploaded image is kept", () => {
     const unbodied = renderToStaticMarkup(createElement(BotAvatar, { bot: { id: "koda", name: "Koda", color: "green" }, animated: false }));
     expect(unbodied).toContain(`data-body="${asterBlobFor("koda")}"`);
-    const chose = renderToStaticMarkup(createElement(BotAvatar, { bot: { id: "koda", name: "Koda", color: "green", mascotBody: "star" }, animated: false }));
-    expect(chose).not.toContain("aster-blob");
-    expect(chose).toContain(MASCOT_BODIES.star.fit);
+    const legacy = renderToStaticMarkup(createElement(BotAvatar, { bot: { id: "koda", name: "Koda", color: "green", mascotBody: "hexagon" }, animated: false }));
+    expect(legacy).toContain(`data-body="${asterBlobFor("koda")}"`);
     const photo = renderToStaticMarkup(createElement(BotAvatar, { bot: { id: "koda", name: "Koda", color: "green", avatarUrl: "/api/attachments/koda.webp", avatarCrop: "circle" } }));
     expect(photo).toContain("<img");
     expect(photo).not.toContain("aster-blob");
@@ -100,5 +105,27 @@ describe("bots wear their companion everywhere BotAvatar draws them", () => {
   it("a busy bot thinks; a selected one shows it", () => {
     expect(renderToStaticMarkup(createElement(BotAvatar, { bot: { id: "koda", color: "green", busy: true } }))).toContain('data-state="thinking"');
     expect(renderToStaticMarkup(createElement(MausAvatar, { color: "green", bodyId: "luma", selected: true }))).toContain('data-state="selected"');
+  });
+});
+
+describe("the home's central mascot is the open bot's companion", () => {
+  // MascotCentrepiece reads the bot ChatView is showing, so switching chats is
+  // switching this prop; no mascot state of its own to get stuck.
+  const hero = async (bot: { id: string; name: string; mascotBody?: string }) => {
+    const { MascotCentrepiece } = await import("@/components/MascotCentrepiece");
+    const full = { threadId: `t-${bot.id}`, title: "", description: "", notifications: false, color: "green", unread: false,
+      modelSelection: { instanceId: "local", model: "m" }, messages: [], ...bot } as never;
+    const markup = renderToStaticMarkup(createElement(MascotCentrepiece, { bot: full, messages: [] }));
+    return /data-mascot-companion[\s\S]*?data-body="([a-z]+)"/.exec(markup)?.[1];
+  };
+
+  it("draws the bot's own companion, and switching bots switches it", async () => {
+    const bots = ["yuki-id", "moss-id", "comet-id", "koda-id"].map((id) => ({ id, name: id.split("-")[0]! }));
+    for (const bot of bots) expect(await hero(bot)).toBe(asterBlobFor(bot.id));
+    expect(new Set(await Promise.all(bots.map(hero))).size).toBeGreaterThan(1);
+  });
+
+  it("is the bot's companion even when the bot saved a retired body", async () => {
+    expect(await hero({ id: "yuki-id", name: "Yuki", mascotBody: "hexagon" })).toBe(asterBlobFor("yuki-id"));
   });
 });

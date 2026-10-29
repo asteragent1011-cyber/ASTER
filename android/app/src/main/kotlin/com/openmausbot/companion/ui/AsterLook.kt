@@ -14,6 +14,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -519,6 +524,11 @@ private fun blobPath(c: Offset, rx: Float, ry: Float, phase: Float): Path {
  * companion, a greeting, a headline, who is here, and how they are. Purely
  * presentation; it is drawn only while the transcript is empty and reads
  * nothing it is not handed.
+ *
+ * Drawn under every skin, as the desktop draws its hero: the skins the ASTER
+ * look does not cover borrow Midnight or Daylight for the companion's glass.
+ * It scrolls itself, inside its measured box, so the box keeps a finite height
+ * to centre the companion in and to tell a landscape phone apart.
  */
 @Composable
 fun AsterHero(
@@ -527,34 +537,55 @@ fun AsterHero(
     hour: Int,
     modifier: Modifier = Modifier,
 ) {
-    val look = LocalAsterLook.current ?: return
-    BoxWithConstraints(modifier = modifier.testTag("aster-hero"), contentAlignment = Alignment.Center) {
-        // Landscape on a phone: the companion beside the words, smaller.
-        val wide = maxWidth > maxHeight && maxHeight < 480.dp
-        val mascot = when {
-            wide -> (maxHeight * 0.5f).coerceIn(90.dp, 160.dp)
-            else -> (maxWidth * 0.42f).coerceIn(120.dp, 190.dp)
-        }
-        if (wide) {
+    val look = LocalAsterLook.current ?: asterLookFor(MaterialTheme.colorScheme.surface)
+    BoxWithConstraints(modifier = modifier.testTag("aster-hero")) {
+        val layout = asterHeroLayout(maxWidth, maxHeight)
+        val content = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxWidth()
+            .heightIn(min = maxHeight)
+            .padding(horizontal = 24.dp)
+        if (layout.wide) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 24.dp),
+                modifier = content,
             ) {
-                AsterMascot(mood = mood, size = mascot)
+                AsterMascot(mood = mood, size = layout.mascot)
                 AsterHeroWords(look, name, mood, hour, centered = false)
             }
         } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                modifier = content,
             ) {
-                AsterMascot(mood = mood, size = mascot)
+                AsterMascot(mood = mood, size = layout.mascot)
                 AsterHeroWords(look, name, mood, hour, centered = true)
             }
         }
     }
+}
+
+/** The ASTER look a skin without one borrows for the hero: by how dark it is. */
+internal fun asterLookFor(surface: Color): AsterLook =
+    if (surface.luminance() < 0.5f) AsterLook.Midnight else AsterLook.Daylight
+
+/** How the hero lays out in the space it is given. */
+internal data class AsterHeroLayout(val wide: Boolean, val mascot: Dp)
+
+/**
+ * Landscape on a phone puts the companion beside the words, smaller; upright,
+ * it stands above them at most half the space, so the words still fit.
+ */
+internal fun asterHeroLayout(maxWidth: Dp, maxHeight: Dp): AsterHeroLayout {
+    val wide = maxWidth > maxHeight && maxHeight < 480.dp
+    val mascot = if (wide) {
+        (maxHeight * 0.5f).coerceIn(90.dp, 160.dp)
+    } else {
+        minOf(maxWidth * 0.5f, maxHeight * 0.4f).coerceIn(120.dp, 220.dp)
+    }
+    return AsterHeroLayout(wide, mascot)
 }
 
 @Composable

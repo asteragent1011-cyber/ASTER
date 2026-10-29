@@ -2,6 +2,7 @@ package com.openmausbot.companion.ui
 
 import com.openmausbot.companion.core.ChatTarget
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -68,5 +69,41 @@ class AsterTabNavigationTest {
         assertNull(Destination.Computer("koda").asterTab())
         assertNull(Destination.Overview("koda").asterTab())
         assertTrue(AsterTab.entries.map { it.label } == listOf("Home", "Chats", "Routines", "Apps", "Settings"))
+    }
+
+    @Test
+    fun `a fresh launch opens on Home once the fleet names a bot`() {
+        val navigator = CompanionNavigator(opensHome = true)
+        // the fleet has not arrived: still on the roster, still waiting
+        assertFalse(navigator.settleLaunchHome { null })
+        assertEquals(listOf(Destination.Roster), navigator.stack)
+        assertTrue(navigator.settleLaunchHome { vega })
+        assertEquals(listOf(Destination.Roster, vega), navigator.stack)
+        assertEquals(vega, navigator.lastBotChat)
+        // once only: Back to Chats stays on Chats
+        navigator.pop()
+        assertTrue(navigator.settleLaunchHome { vega })
+        assertEquals(listOf(Destination.Roster), navigator.stack)
+    }
+
+    @Test
+    fun `a notification tap or the reader's own choice wins over the launch Home`() {
+        val tapped = CompanionNavigator(opensHome = true)
+        tapped.openThread("t-room")
+        assertTrue(tapped.settleLaunchHome { vega })
+        assertEquals(listOf(Destination.Roster, Destination.Thread("t-room")), tapped.stack)
+
+        val chose = CompanionNavigator(opensHome = true)
+        chose.showTab(AsterTab.CHATS) { null }
+        assertTrue(chose.settleLaunchHome { vega })
+        assertEquals(listOf(Destination.Roster), chose.stack)
+    }
+
+    @Test
+    fun `a restored stack is never moved to Home`() {
+        val saved = CompanionNavigator.encodeWithBond(listOf(Destination.Roster), 1)
+        val restored = CompanionNavigator.restoreForGeneration(saved, 1)!!
+        assertTrue(restored.settleLaunchHome { vega })
+        assertEquals(listOf(Destination.Roster), restored.stack)
     }
 }

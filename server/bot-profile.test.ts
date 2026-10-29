@@ -105,19 +105,20 @@ describe("parseBotProfilePatch (both modes)", () => {
 });
 
 describe("mascotBody", () => {
-  it("accepts a known body", () => {
-    expect(parseBotProfilePatch({ mascotBody: "blob" } as never, true)).toEqual({
+  it("accepts a companion", () => {
+    expect(parseBotProfilePatch({ mascotBody: "orbit" } as never, true)).toEqual({
       ok: true,
-      patch: { mascotBody: "blob" },
+      patch: { mascotBody: "orbit" },
     });
   });
 
-  it("maps an unknown body to a readable message", () => {
-    expect(parseBotProfilePatch({ mascotBody: "hexagram" } as never, true)).toEqual({
-      ok: false,
-      error:
-        "mascotBody must be cursor, blob, circle, squircle, capsule, drop, shield, hexagon, diamond, star, mochi, puff, bean, pebble, sparkle, luma, nova, orbit, or echo",
-    });
+  it("refuses a retired geometric body, naming the companions", () => {
+    for (const retired of ["blob", "hexagon", "drop", "cursor", "hexagram"]) {
+      expect(parseBotProfilePatch({ mascotBody: retired } as never, true)).toEqual({
+        ok: false,
+        error: "mascotBody must be luma, nova, orbit, or echo",
+      });
+    }
   });
 });
 

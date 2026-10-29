@@ -9,8 +9,9 @@ import {
 } from "../../shared/mascot-bodies.ts";
 
 describe("the generated catalog", () => {
-  it("carries all nineteen bodies", () => {
-    expect(MASCOT_BODY_IDS).toHaveLength(19);
+  it("carries exactly the four ASTER companions, no retired geometric body", () => {
+    expect([...MASCOT_BODY_IDS]).toEqual(["luma", "nova", "orbit", "echo"]);
+    for (const retired of ["cursor", "blob", "circle", "hexagon", "drop", "star", "mochi"]) expect(retired in MASCOT_BODIES).toBe(false);
     for (const id of MASCOT_BODY_IDS) expect(MASCOT_BODIES[id].id).toBe(id);
   });
 
@@ -46,7 +47,7 @@ describe("the generated catalog", () => {
 
 describe("botMascotBody", () => {
   it("accepts a known id", () => {
-    expect(botMascotBody("blob")).toBe("blob");
+    expect(botMascotBody("orbit")).toBe("orbit");
   });
 
   it("falls back to the default Luma for anything else", () => {
@@ -54,11 +55,12 @@ describe("botMascotBody", () => {
     expect(botMascotBody(undefined)).toBe("luma");
     expect(botMascotBody(null)).toBe("luma");
     expect(botMascotBody(42)).toBe("luma");
-    expect(botMascotBody("cursor")).toBe("cursor");
+    for (const retired of ["cursor", "hexagon", "drop", "blob"]) expect(botMascotBody(retired)).toBe("luma");
   });
 
   it("exposes a schema that rejects an unknown id", () => {
-    expect(mascotBodySchema.safeParse("star").success).toBe(true);
+    expect(mascotBodySchema.safeParse("echo").success).toBe(true);
+    expect(mascotBodySchema.safeParse("star").success).toBe(false);
     expect(mascotBodySchema.safeParse("nope").success).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { StoreProvider, type Bot } from "@/state/store";
-import { MASCOT_BODY_IDS, MASCOT_BODIES } from "../../shared/mascot-bodies";
+import { asterBlobFor } from "@/lib/aster-blobs";
 import { BotProfileAvatarCard } from "./BotProfileAvatarCard";
 
 function makeBot(overrides: Partial<Bot> = {}): Bot {
@@ -37,28 +37,21 @@ function renderCard(bot: Bot) {
   );
 }
 
-describe("BotProfileAvatarCard body picker", () => {
-  it("renders one option per body catalog entry, labeled by name", () => {
+describe("BotProfileAvatarCard and the companions", () => {
+  it("offers no body picker: a bot's body is its companion", () => {
     const markup = renderCard(makeBot());
+    expect(markup).not.toContain(">Body<");
+    expect(markup).not.toMatch(/aria-label="Use the [A-Za-z]+ body"/);
+  });
 
-    expect(markup).toContain(">Body<");
-    for (const id of MASCOT_BODY_IDS) {
-      expect(markup).toContain(`aria-label="Use the ${MASCOT_BODIES[id].name} body"`);
+  it("shows the bot's own companion everywhere in the card, whatever retired body it saved", () => {
+    const companion = asterBlobFor("bot-1");
+    for (const saved of [undefined, "hexagon", "drop", "cursor"]) {
+      const markup = renderCard(makeBot(saved ? { mascotBody: saved as Bot["mascotBody"] } : {}));
+      const bodies = [...markup.matchAll(/data-body="([a-z]+)"/g)].map((match) => match[1]);
+      expect(bodies.length).toBeGreaterThan(1);
+      expect(new Set(bodies)).toEqual(new Set([companion]));
     }
-  });
-
-  it("marks the current body pressed and the rest unpressed, defaulting to cursor", () => {
-    const markup = renderCard(makeBot());
-
-    expect(markup).toContain(`aria-pressed="true" aria-label="Use the ${MASCOT_BODIES.cursor.name} body"`);
-    expect(markup).toContain(`aria-pressed="false" aria-label="Use the ${MASCOT_BODIES.star.name} body"`);
-  });
-
-  it("reflects an explicitly chosen body", () => {
-    const markup = renderCard(makeBot({ mascotBody: "star" }));
-
-    expect(markup).toContain(`aria-pressed="true" aria-label="Use the ${MASCOT_BODIES.star.name} body"`);
-    expect(markup).toContain(`aria-pressed="false" aria-label="Use the ${MASCOT_BODIES.cursor.name} body"`);
   });
 
   it("offers zoom and drag framing for a custom image", () => {
@@ -78,18 +71,9 @@ describe("BotProfileAvatarCard body picker", () => {
     expect(markup).not.toContain('aria-label="Zoom avatar"');
   });
 
-  it("hides the body picker for flat crops that have no mascot to wear one", () => {
-    const markup = renderCard(makeBot({ avatarCrop: "circle" }));
-
+  it("keeps an uploaded image's framing controls, on purpose: a photo is the person's own", () => {
+    const markup = renderCard(makeBot({ avatarUrl: "/api/attachments/cat.webp", avatarCrop: "rounded" }));
+    expect(markup).toContain('aria-label="Zoom avatar"');
     expect(markup).not.toContain(">Body<");
-    expect(markup).not.toContain(`aria-label="Use the ${MASCOT_BODIES.cursor.name} body"`);
-  });
-
-  it("hides the body picker for every flat crop, not just circle", () => {
-    for (const crop of ["rounded", "square"] as const) {
-      const markup = renderCard(makeBot({ avatarCrop: crop }));
-
-      expect(markup).not.toContain(">Body<");
-    }
   });
 });

@@ -613,8 +613,10 @@ function main(): void {
     )
   }
 
+  // The cursor only anchors the face size; the catalog is the ASTER companions.
+  const emitted = baked.filter(b => b.id !== FACE_SIZE_ANCHOR_ID)
   const out = fileURLToPath(new URL("../shared/mascot-bodies.ts", import.meta.url))
-  writeFileSync(out, emit(baked))
+  writeFileSync(out, emit(emitted))
   console.log(`wrote ${out}`)
 
   // P1 ruling (task 7): emitted into `ios/Sources/CompanionCore`, not `ios/App` — that is
@@ -622,7 +624,7 @@ function main(): void {
   const swiftOut = fileURLToPath(
     new URL("../ios/Sources/CompanionCore/MausBodies.swift", import.meta.url)
   )
-  writeFileSync(swiftOut, emitSwift(baked))
+  writeFileSync(swiftOut, emitSwift(emitted))
   console.log(`wrote ${swiftOut}`)
 
   // The Android app module: its JVM unit tests (Robolectric) can parse the catalog the
@@ -630,7 +632,7 @@ function main(): void {
   const kotlinOut = fileURLToPath(
     new URL("../android/app/src/main/kotlin/com/openmausbot/companion/ui/MausBodies.kt", import.meta.url)
   )
-  writeFileSync(kotlinOut, emitKotlin(baked))
+  writeFileSync(kotlinOut, emitKotlin(emitted))
   console.log(`wrote ${kotlinOut}`)
 }
 

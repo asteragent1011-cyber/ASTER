@@ -20,31 +20,27 @@ const renderBot = (bot: Partial<BotAvatarProps["bot"]>) =>
   );
 
 describe("MausAvatar body", () => {
-  it("wears the ASTER Luma companion when no body is given", () => {
+  it("wears the default ASTER companion, Luma, when no body is given", () => {
     expect(render({})).toContain(MASCOT_BODIES.luma.fit);
+    expect(render({})).toContain('data-body="luma"');
   });
 
-  it("still wears the cursor when a bot chose it", () => {
-    expect(render({ bodyId: "cursor" })).toContain(MASCOT_BODIES.cursor.fit);
+  it("wears the companion it is given", () => {
+    for (const id of ["luma", "nova", "orbit", "echo"] as const) {
+      expect(render({ bodyId: id })).toContain(`data-body="${id}"`);
+    }
   });
 
-  it("wears the body it is given", () => {
-    const markup = render({ bodyId: "star" });
-    expect(markup).toContain(MASCOT_BODIES.star.fit);
+  it("never draws a retired geometric body: cursor, hexagon, drop and the rest draw a companion", () => {
+    for (const legacy of ["cursor", "blob", "circle", "squircle", "capsule", "drop", "shield", "hexagon", "diamond", "star", "mochi", "hexagram"]) {
+      const markup = render({ bodyId: legacy });
+      expect(markup).toContain('data-body="luma"');
+      expect(markup).toContain("aster-blob");
+    }
   });
 
-  it("falls back to the default Luma for an unknown body", () => {
-    // SAFETY: "hexagram" is deliberately not a valid MascotBodyId — this
-    // exercises the runtime schema fallback for a value that could arrive
-    // from persisted/streamed data, which the type system would otherwise
-    // rule out at this call site.
-    expect(render({ bodyId: "hexagram" as MausAvatarProps["bodyId"] })).toContain(
-      MASCOT_BODIES.luma.fit,
-    );
-  });
-
-  it("paints the body with the per-bot gradient, never a flat black fill", () => {
-    const markup = render({ bodyId: "circle" });
+  it("paints with the companion's own gradients, never a flat black fill", () => {
+    const markup = render({ bodyId: "nova" });
     expect(markup).not.toContain('fill="#000000"');
     expect(markup).not.toContain("{{GRADIENT}}");
     expect(markup).toContain("url(#");

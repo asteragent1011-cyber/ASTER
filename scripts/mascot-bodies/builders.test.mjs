@@ -2,15 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { BODY_DEFS, BODY_IDS } from "./builders.ts";
 
-const EXPECTED_IDS = [
-  "cursor", "blob", "circle", "squircle", "capsule",
-  "drop", "shield", "hexagon", "diamond", "star",
-  "mochi", "puff", "bean", "pebble", "sparkle",
-  "luma", "nova", "orbit", "echo",
-];
+// The cursor leads as the face-size anchor only; the generator never emits it.
+const EXPECTED_IDS = ["cursor", "luma", "nova", "orbit", "echo"];
 
 describe("body builders", () => {
-  it("produces the catalog in its persisted order, cursor first", () => {
+  it("solves the face-size anchor and the four ASTER companions, nothing else", () => {
     expect(BODY_IDS).toEqual(EXPECTED_IDS);
   });
 

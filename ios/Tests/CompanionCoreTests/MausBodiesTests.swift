@@ -91,6 +91,6 @@ final class MausBodiesTests: XCTestCase {
                 MausSilhouette.inFaceBox(id) === MausSilhouette.inFaceBox(id),
                 "\(id) was parsed twice")
         }
-        XCTAssertFalse(MausSilhouette.inFaceBox("cursor") === MausSilhouette.inFaceBox("star"))
+        XCTAssertFalse(MausSilhouette.inFaceBox("luma") === MausSilhouette.inFaceBox("orbit"))
     }
 }
