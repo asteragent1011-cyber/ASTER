@@ -1,6 +1,6 @@
 # Desktop-to-desktop companion mode
 
-Every ASTER desktop build can play either role:
+Every OpenMausBot desktop build can play either role:
 
 - **Host mode** is the normal app. It owns the agents, conversations, credentials, routines, and computers.
 - **Client mode** controls a paired host through the same authenticated, default-deny companion API used by the phone app.

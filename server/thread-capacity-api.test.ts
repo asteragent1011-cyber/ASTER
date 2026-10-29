@@ -295,9 +295,7 @@ describe("per-bot thread capacity through an isolated HTTP fixture", () => {
       }
       if (routineId) await api("DELETE", `/api/routines/${routineId}`).catch(() => undefined);
       if (botId) await api("DELETE", `/api/bots/${botId}`).catch(() => undefined);
-      // Windows can still hold the fake engine's handle on the project for a
-      // moment after the bot is deleted.
-      rmSync(project, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      rmSync(project, { recursive: true, force: true });
     }
   }, 90_000);
 

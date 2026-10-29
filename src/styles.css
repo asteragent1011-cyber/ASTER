@@ -847,6 +847,27 @@ body {
   30% { opacity: 1; }
   60% { opacity: 0.25; }
 }
+.voice-floating-bar {
+  animation: voice-bar-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes voice-bar-in {
+  from { opacity: 0; transform: translate(-50%, 12px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.voice-orb {
+  animation: voice-orb-breathe 1.8s ease-in-out infinite;
+}
+@keyframes voice-orb-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 0%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in oklab, var(--color-accent) 13%, transparent); }
+}
+.voice-wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+.voice-wave i { display: block; width: 2px; height: 5px; border-radius: 999px; background: currentColor; animation: voice-wave 0.9s ease-in-out infinite; }
+.voice-wave i:nth-child(2) { animation-delay: 0.12s; }
+.voice-wave i:nth-child(3) { animation-delay: 0.24s; }
+.voice-wave i:nth-child(4) { animation-delay: 0.36s; }
+.voice-wave i:nth-child(5) { animation-delay: 0.48s; }
+@keyframes voice-wave { 0%, 100% { height: 4px; opacity: 0.45; } 50% { height: 13px; opacity: 1; } }
 .thinking-shimmer {
   background: linear-gradient(90deg, var(--color-ink-secondary) 40%, var(--color-ink) 50%, var(--color-ink-secondary) 60%);
   background-size: 200% 100%;
@@ -855,7 +876,7 @@ body {
   color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
-  .animate-caret, .animate-msg-in, .animate-shimmer, .animate-pop-in, .animate-pop-out { animation: none; }
+  .animate-caret, .animate-msg-in, .animate-shimmer, .animate-pop-in, .animate-pop-out, .voice-floating-bar, .voice-orb, .voice-wave i { animation: none; }
   .animate-status-pulse { animation: none; opacity: 0.6; }
   .thinking-shimmer { background: none; color: var(--color-ink-secondary); }
   .turn-mascot-in, .turn-mascot-out, .turn-answer { animation: none; }
@@ -1733,20 +1754,20 @@ button:disabled.bg-danger {
    on a canvas or put `filter: blur()` on a full-window layer; both cost
    frames, and every backdrop-filter above would re-sample them. */
 :root {
-  --wallpaper-url: url("/wallpapers/light.jpg");
+  --wallpaper-url: url("/WallpaperWavy.jpg");
 }
 :root.dark,
 [data-skin="midnight"],
 [data-skin="foundry"],
 [data-skin="graphite"],
 [data-skin="dusk"] {
-  --wallpaper-url: url("/wallpapers/dark.jpg");
+  --wallpaper-url: url("/DarkModeWallpaper.jpg");
 }
 [data-skin="atelier"],
 [data-skin="lagoon"],
 [data-skin="linen"],
 [data-skin="daylight"] {
-  --wallpaper-url: url("/wallpapers/light.jpg");
+  --wallpaper-url: url("/WallpaperWavy.jpg");
 }
 .glass-ground {
   /* The sidebar can't be its own stacking context (below), so its glass
@@ -2314,94 +2335,4 @@ button:disabled.bg-danger {
 @media (prefers-reduced-motion: reduce) {
   .aster-mascot *,
   .aster-mascot-body { animation: none !important; }
-}
-
-/* The ASTER companions (aster/AsterBlobAvatar.tsx): Luma, Nova, Orbit, Echo.
-   Every movement is a transform or opacity on an SVG group, so a roster of
-   them stays on the compositor. Per-bot phases (--aster-blob-*) keep a roster
-   from bobbing and blinking in step. */
-.aster-blob { position: relative; }
-.aster-blob svg { display: block; overflow: visible; }
-.aster-blob__enter, .aster-blob__lift, .aster-blob__float, .aster-blob__squish, .aster-blob__look, .aster-blob__eyes,
-.aster-blob__nudge, .aster-blob__particle { transform-box: fill-box; transform-origin: 50% 60%; }
-.aster-blob__enter { animation: aster-blob-enter 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--aster-blob-enter, 0ms) both; }
-.aster-blob__float { animation: aster-blob-float 4.6s ease-in-out var(--aster-blob-float, 0s) infinite; }
-.aster-blob__lift { transition: transform 180ms ease-out; }
-.aster-blob:hover .aster-blob__lift { transform: translateY(-3px) scale(1.04); }
-.aster-blob__eyes { transform-origin: 50% 50%; animation: aster-blob-blink 6.2s ease-in-out var(--aster-blob-blink, 0s) infinite; }
-.aster-blob__look { transition: transform 260ms ease-out; }
-.aster-blob__happy { opacity: 0; transition: opacity 160ms ease-out; }
-.aster-blob__eyes { transition: opacity 160ms ease-out; }
-.aster-blob__particle { animation: aster-blob-twinkle 3.4s ease-in-out infinite; }
-.aster-blob__nudge { transform-origin: 50% 50%; }
-
-/* moods */
-.aster-blob[data-state="happy"] .aster-blob__eyes { opacity: 0; }
-.aster-blob[data-state="happy"] .aster-blob__happy { opacity: 1; }
-.aster-blob[data-state="sleepy"] .aster-blob__eyes { animation: none; transform: scaleY(0.3); }
-.aster-blob[data-state="thinking"] .aster-blob__look { transform: translate(4px, -4px); }
-.aster-blob[data-state="thinking"] .aster-blob__float { animation-duration: 2.8s; }
-.aster-blob[data-state="thinking"] .aster-blob__particle { animation-duration: 1.6s; }
-.aster-blob[data-state="alert"] .aster-blob__eyes { transform: scale(1.18); animation: none; }
-.aster-blob[data-state="selected"] .aster-blob__lift { transform: scale(1.05); }
-.aster-blob[data-state="selected"] .aster-blob__rim { stroke-opacity: 0.7; }
-
-/* one-shot beats */
-.aster-blob[data-motion="blink"] .aster-blob__eyes { animation: aster-blob-blink-once 320ms ease-in-out; }
-.aster-blob[data-motion="message-sent"] .aster-blob__squish { transform-origin: 50% 100%; animation: aster-blob-sent 700ms cubic-bezier(0.3, 0.7, 0.4, 1); }
-.aster-blob[data-motion="message-sent"] .aster-blob__nudge { animation: aster-blob-ring-nudge 700ms ease-out; }
-.aster-blob[data-motion="message-received"] .aster-blob__squish { animation: aster-blob-received 900ms ease-out; }
-.aster-blob[data-motion="message-received"] .aster-blob__eyes { opacity: 0; }
-.aster-blob[data-motion="message-received"] .aster-blob__happy { opacity: 1; }
-.aster-blob[data-motion="message-received"] .aster-blob__nudge { animation: aster-blob-ring-nudge 900ms ease-out reverse; }
-.aster-blob[data-motion="message-received"] .aster-blob__particle { animation-duration: 0.9s; }
-
-@keyframes aster-blob-enter {
-  from { opacity: 0; transform: scale(0.82); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes aster-blob-float {
-  0%, 100% { transform: translateY(0) scale(1, 1); }
-  50% { transform: translateY(-5px) scale(1.012, 0.99); }
-}
-@keyframes aster-blob-blink {
-  0%, 93%, 100% { transform: scaleY(1); }
-  95.5% { transform: scaleY(0.12); }
-}
-@keyframes aster-blob-blink-once {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.12); }
-}
-@keyframes aster-blob-sent {
-  0% { transform: scale(1, 1); }
-  18% { transform: scale(1.1, 0.86); }
-  45% { transform: translateY(-9px) scale(0.94, 1.08); }
-  75% { transform: translateY(0) scale(1.03, 0.97); }
-  100% { transform: scale(1, 1); }
-}
-@keyframes aster-blob-received {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.08); }
-  60% { transform: scale(0.97); }
-  100% { transform: scale(1); }
-}
-@keyframes aster-blob-ring-nudge {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(9deg); }
-  100% { transform: rotate(0deg); }
-}
-@keyframes aster-blob-twinkle {
-  0%, 100% { opacity: 0.85; transform: translateY(0); }
-  50% { opacity: 0.35; transform: translateY(-3px); }
-}
-
-/* still: lists that ask for no animation, and reduced motion */
-.aster-blob--still .aster-blob__enter,
-.aster-blob--still .aster-blob__float,
-.aster-blob--still .aster-blob__eyes,
-.aster-blob--still .aster-blob__particle { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .aster-blob *,
-  .aster-blob[data-motion] * { animation: none !important; transition: none !important; }
-  .aster-blob:hover .aster-blob__lift { transform: none; }
 }

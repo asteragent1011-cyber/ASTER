@@ -50,7 +50,7 @@ private struct NeedsYouView: View {
         Group {
             switch entry.state {
             case .unpaired:
-                Placeholder(icon: "qrcode", message: "Open ASTER to pair")
+                Placeholder(icon: "qrcode", message: "Open MausBot to pair")
             case .quiet:
                 Placeholder(icon: "checkmark.circle", message: "All quiet")
             case .fresh, .stale:
@@ -180,7 +180,7 @@ struct AnswerPills: View {
         if #available(iOS 17.0, *) {
             pills
         } else {
-            Text("Open ASTER to answer")
+            Text("Open MausBot to answer")
                 .font(.system(size: compact ? 11 : 13, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

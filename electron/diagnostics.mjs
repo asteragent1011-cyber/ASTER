@@ -25,8 +25,6 @@ export const CREDENTIAL_ENV_NAMES = [
   "OMB_TTS_KEY",
   "OMB_FISH_AUDIO_API_KEY",
   "OMB_JEV_API_KEY",
-  "CLOUDFLARE_API_TOKEN",
-  "CLOUDFLARE_ACCOUNT_ID",
   "OMB_OPENAI_IMAGE_KEY",
   "OMB_CUSTOM_IMAGE_KEY",
   "COMPOSIO_API_KEY",
@@ -293,7 +291,7 @@ export function buildDiagnosticsReport({
   now = new Date().toISOString(),
 } = {}) {
   const lines = [];
-  lines.push("ASTER diagnostics");
+  lines.push("OpenMausBot diagnostics");
   lines.push(`Generated: ${now}`);
   lines.push("");
   lines.push("## App");

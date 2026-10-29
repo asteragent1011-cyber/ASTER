@@ -259,7 +259,7 @@ final class SpeechDictation: ObservableObject {
     }
 
     static let speechDeniedMessage: LocalizedStringKey =
-        "Dictation needs Speech Recognition access. Enable it in Settings → ASTER."
+        "Dictation needs Speech Recognition access. Enable it in Settings → OpenMausMobile."
     static let micDeniedMessage: LocalizedStringKey =
-        "Dictation needs Microphone access. Enable it in Settings → ASTER."
+        "Dictation needs Microphone access. Enable it in Settings → OpenMausMobile."
 }

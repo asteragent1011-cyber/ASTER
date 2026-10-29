@@ -92,7 +92,7 @@ class SettingsReconnectWiringTest {
             troubleshootingText(Session.Status.Live),
         )
         assertEquals(
-            "ASTER is trying the saved connection automatically.",
+            "OpenMausBot is trying the saved connection automatically.",
             troubleshootingText(Session.Status.Connecting),
         )
         assertEquals(

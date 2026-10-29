@@ -3,13 +3,6 @@ package com.openmausbot.companion.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import com.openmausbot.companion.core.target
-import com.openmausbot.companion.core.chatSummaries
-import com.openmausbot.companion.core.Chat
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.openmausbot.companion.core.Connection
@@ -206,15 +198,7 @@ fun CompanionRoot(
         // screen wants the same answer — keep content clear of the status bar,
         // the gesture bar, and the keyboard.
         Box(modifier = Modifier.fillMaxSize()) {
-            // The ASTER skins lay their atmosphere under every screen, edge to
-            // edge; the surface over it goes clear. Other skins are unchanged.
-            val asterLook = LocalAsterLook.current
-            asterLook?.let { AsterBackdrop(it, Modifier.fillMaxSize()) }
-            Surface(
-                modifier = Modifier.fillMaxSize().safeDrawingPadding(),
-                color = if (asterLook != null) Color.Transparent else MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ) {
+            Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (route) {
                         OnboardingRoute.WELCOME -> WelcomeScreen(
@@ -377,26 +361,6 @@ private fun PairedScreen(
 
     BackHandler(enabled = navigator.canGoBack) { navigator.pop() }
 
-    val environment = LocalCompanion.current
-    // Home with no bot conversation opened yet: the first bot in roster order,
-    // on the thread it was last left on, exactly as tapping its row would.
-    val fallbackHome: () -> Destination.Chat? = {
-        environment.session.state.value
-            .chatSummaries(environment.chatPreferences.activityDetail.value)
-            .firstOrNull { it.chat is Chat.BotChat }
-            ?.let { environment.chatPreferences.restoringThread(it.chat, environment.session.connection.value?.id) }
-            ?.let { Destination.Chat(it.target) }
-    }
-    val tab = navigator.current.asterTab()
-
-    Column(Modifier.fillMaxSize()) {
-    Box(
-        Modifier
-            .weight(1f)
-            .fillMaxWidth()
-            // The tab bar sits on the system bar; the screen above it must not pad for it again.
-            .then(if (tab != null) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier),
-    ) {
     when (val destination = navigator.current) {
         Destination.Roster -> RosterScreen(navigator)
         Destination.Settings -> SettingsScreen(
@@ -434,15 +398,6 @@ private fun PairedScreen(
             botId = destination.botId,
             onBack = navigator::pop,
         )
-    }
-    }
-    if (tab != null) {
-        AsterTabBar(
-            current = tab,
-            onSelect = { next -> navigator.showTab(next, fallbackHome) },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-    }
     }
 }
 

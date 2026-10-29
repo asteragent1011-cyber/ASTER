@@ -5,7 +5,6 @@
 import { useState } from "react";
 import { withViewTransition } from "../view-transition";
 import { ProgressDots } from "../ProgressDots";
-import { devMode } from "@/lib/dev-mode";
 import { t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
 import { PrimaryButton, staggerIndex, type BeatProps } from "../beats/shared";
@@ -16,8 +15,7 @@ function copyKey(id: string, part: "title" | "body"): LocaleKey {
 }
 
 export function FeatureReel({ onNext, setMascot }: BeatProps) {
-  // The terminal scene teaches the upstream `npx openmausbot` CLI: Dev Mode only.
-  const ids = devMode() ? REEL : REEL.filter((scene) => scene !== "terminal");
+  const ids = REEL;
   const [index, setIndex] = useState(0);
   const [round, setRound] = useState(0);
   const id = ids[index] ?? ids[0];

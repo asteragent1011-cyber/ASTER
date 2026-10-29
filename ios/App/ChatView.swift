@@ -26,7 +26,6 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
     @State private var draft = ""
     @State private var revealedMessageId: String?
     @State private var showingTasks = false
@@ -160,17 +159,6 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         // room for the floating face when scrolled to the top
                         Color.clear.frame(height: 72)
-
-                        // An empty conversation opens on the ASTER home.
-                        if transcript.isEmpty, session.state.hasMore[threadId] != true,
-                           session.state.streaming[threadId]?.isEmpty ?? true {
-                            AsterHero(
-                                name: current.name,
-                                mood: .of(busy: current.busy, typing: !draft.isEmpty, streaming: false)
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 56)
-                        }
 
                         if session.state.hasMore[threadId] == true {
                             Button("Load earlier messages") {
@@ -368,7 +356,6 @@ struct ChatView: View {
         // gesture, which is wired to the bar's navigation controller.
         // Re-arm it so a rightward swipe from the left edge pops back to
         // Home, the way the rest of iOS behaves.
-        .asterBackground()
         .background(SwipeBackBridge())
         .navigationDestination(isPresented: $showingComputer) {
             if case let .bot(bot) = current { ComputerView(bot: bot) }
@@ -1319,13 +1306,9 @@ struct ChatView: View {
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundStyle(canSend ? Color.white : Color.secondary)
                                 .frame(width: 32, height: 32)
-                                .background {
-                                    if canSend {
-                                        Circle().fill(AsterPalette.of(colorScheme).accent)
-                                    } else {
-                                        Circle().fill(Color.secondary.opacity(0.18))
-                                    }
-                                }
+                                .background(
+                                    Circle().fill(canSend ? BubbleColor.mine : Color.secondary.opacity(0.18))
+                                )
                         }
                         .buttonStyle(.plain)
                         .disabled(!canSend)
@@ -2027,7 +2010,7 @@ struct CredentialRequestCardView: View {
                     Label("Pair again to enter here", systemImage: "qrcode")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(tint)
-                    Text("This pairing predates secure phone entry. Scan a fresh QR from ASTER, or finish this request on your computer.")
+                    Text("This pairing predates secure phone entry. Scan a fresh QR from OpenMausBot, or finish this request on your computer.")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.secondary)
                         .fixedSize(horizontal: false, vertical: true)

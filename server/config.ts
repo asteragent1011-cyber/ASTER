@@ -1030,10 +1030,15 @@ export function loadConfig(): AppConfig {
   cfg.opencodeGo = { ...cfg.opencodeGo };
   if (process.env.OPENCODE_API_KEY !== undefined) cfg.opencodeGo.apiKey = process.env.OPENCODE_API_KEY;
   cfg.tts = { ...cfg.tts };
+  // OMB_TTS_KEY is ASTER's canonical ElevenLabs credential. The explicit
+  // ElevenLabs name is accepted only as a boot-time alias for deployments
+  // that configure the provider directly; it is never copied to the client
+  // or persisted as a second credential.
   if (process.env.OMB_TTS_KEY !== undefined) cfg.tts.key = process.env.OMB_TTS_KEY;
+  else if (process.env.ELEVENLABS_API_KEY !== undefined) cfg.tts.key = process.env.ELEVENLABS_API_KEY;
   // A preset ElevenLabs voice (Cloud Pro sets one) is only a default: a voice or
   // another speech provider the person picked in Settings always wins.
-  const presetVoice = process.env.OMB_TTS_DEFAULT_VOICE?.trim();
+  const presetVoice = process.env.ELEVENLABS_VOICE_ID?.trim() || process.env.OMB_TTS_DEFAULT_VOICE?.trim();
   if (presetVoice && !cfg.tts.voice?.trim() && (cfg.tts.provider ?? "elevenlabs") === "elevenlabs") cfg.tts.voice = presetVoice;
   if (process.env.OMB_FISH_AUDIO_API_KEY !== undefined) cfg.tts.fishKey = process.env.OMB_FISH_AUDIO_API_KEY;
   cfg.decider = { ...cfg.decider };
@@ -1122,6 +1127,7 @@ export const WORKSPACE_CREDENTIAL_ENV = [
   "BOX_TOKEN",
   "OPENCODE_API_KEY",
   "OMB_TTS_KEY",
+  "ELEVENLABS_API_KEY",
   "OMB_FISH_AUDIO_API_KEY",
   "OMB_JEV_API_KEY",
   "CLOUDFLARE_API_TOKEN",

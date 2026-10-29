@@ -294,12 +294,12 @@
         }
       }
     },
-    "Add the shared Fish Audio key in ASTER on your computer. The key is never returned to iOS.": {
+    "Add the shared Fish Audio key in OpenMausBot on your computer. The key is never returned to iOS.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adicione a chave compartilhada do Fish Audio no ASTER no computador. A chave nunca é devolvida ao iOS."
+            "value": "Adicione a chave compartilhada do Fish Audio no OpenMausBot no computador. A chave nunca é devolvida ao iOS."
           }
         }
       }
@@ -384,12 +384,12 @@
         }
       }
     },
-    "Alerts arrive while ASTER is open or was recently in the background. Closed-app delivery is not available yet.": {
+    "Alerts arrive while OpenMausBot is open or was recently in the background. Closed-app delivery is not available yet.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Os alertas chegam enquanto o ASTER está aberto ou esteve em segundo plano há pouco. A entrega com o app fechado ainda não está disponível."
+            "value": "Os alertas chegam enquanto o OpenMausBot está aberto ou esteve em segundo plano há pouco. A entrega com o app fechado ainda não está disponível."
           }
         }
       }
@@ -404,12 +404,12 @@
         }
       }
     },
-    "Allow camera access to scan the pairing QR code shown by ASTER.": {
+    "Allow camera access to scan the pairing QR code shown by OpenMausBot.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permita o acesso à câmera para escanear o QR code de pareamento mostrado pelo ASTER."
+            "value": "Permita o acesso à câmera para escanear o QR code de pareamento mostrado pelo OpenMausBot."
           }
         }
       }
@@ -604,12 +604,12 @@
         }
       }
     },
-    "Changes the language inside ASTER. Buttons drawn by iOS itself follow the phone's language, which you can set for this app in iOS Settings.": {
+    "Changes the language inside OpenMausMobile. Buttons drawn by iOS itself follow the phone's language, which you can set for this app in iOS Settings.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Muda o idioma dentro do ASTER. Os botões desenhados pelo próprio iOS seguem o idioma do telefone, que você pode definir para este app nos Ajustes do iOS."
+            "value": "Muda o idioma dentro do OpenMausMobile. Os botões desenhados pelo próprio iOS seguem o idioma do telefone, que você pode definir para este app nos Ajustes do iOS."
           }
         }
       }
@@ -1396,22 +1396,22 @@
         }
       }
     },
-    "Dictation needs Microphone access. Enable it in Settings → ASTER.": {
+    "Dictation needs Microphone access. Enable it in Settings → OpenMausMobile.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O ditado precisa de acesso ao Microfone. Ative em Ajustes → ASTER."
+            "value": "O ditado precisa de acesso ao Microfone. Ative em Ajustes → OpenMausMobile."
           }
         }
       }
     },
-    "Dictation needs Speech Recognition access. Enable it in Settings → ASTER.": {
+    "Dictation needs Speech Recognition access. Enable it in Settings → OpenMausMobile.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O ditado precisa de acesso ao Reconhecimento de Fala. Ative em Ajustes → ASTER."
+            "value": "O ditado precisa de acesso ao Reconhecimento de Fala. Ative em Ajustes → OpenMausMobile."
           }
         }
       }
@@ -1779,12 +1779,12 @@
         }
       }
     },
-    "Get alerts while ASTER is open or was recently in the background. Alerts stop after iOS fully suspends or closes the app.": {
+    "Get alerts while OpenMausBot is open or was recently in the background. Alerts stop after iOS fully suspends or closes the app.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Receba alertas enquanto o ASTER está aberto ou esteve em segundo plano há pouco. Os alertas param depois que o iOS suspende ou fecha o app por completo."
+            "value": "Receba alertas enquanto o OpenMausBot está aberto ou esteve em segundo plano há pouco. Os alertas param depois que o iOS suspende ou fecha o app por completo."
           }
         }
       }
@@ -2499,12 +2499,12 @@
         }
       }
     },
-    "On your computer, open ASTER → Settings → Phone.": {
+    "On your computer, open OpenMausBot → Settings → Phone.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "No seu computador, abra ASTER → Ajustes → Telefone."
+            "value": "No seu computador, abra OpenMausBot → Ajustes → Telefone."
           }
         }
       }
@@ -2529,12 +2529,12 @@
         }
       }
     },
-    "Only continue on a network you trust. Local connections are authenticated but are not encrypted by ASTER.": {
+    "Only continue on a network you trust. Local connections are authenticated but are not encrypted by OpenMausBot.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Só continue em uma rede em que você confia. As conexões locais são autenticadas, mas não são criptografadas pelo ASTER."
+            "value": "Só continue em uma rede em que você confia. As conexões locais são autenticadas, mas não são criptografadas pelo OpenMausBot."
           }
         }
       }
@@ -2639,15 +2639,15 @@
         }
       }
     },
-    "ASTER": {
+    "OpenMausBot": {
       "shouldTranslate": false
     },
-    "ASTER is trying the saved connection automatically.": {
+    "OpenMausBot is trying the saved connection automatically.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O ASTER está tentando a conexão salva automaticamente."
+            "value": "O OpenMausBot está tentando a conexão salva automaticamente."
           }
         }
       }
@@ -2762,12 +2762,12 @@
         }
       }
     },
-    "Pair this device with ASTER to see your chats and respond to your bots.": {
+    "Pair this device with OpenMausBot to see your chats and respond to your bots.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pareie este dispositivo com o ASTER para ver suas conversas e responder aos seus bots."
+            "value": "Pareie este dispositivo com o OpenMausBot para ver suas conversas e responder aos seus bots."
           }
         }
       }
@@ -3315,12 +3315,12 @@
         }
       }
     },
-    "Runs the agent and its tools inside its Boat virtual machine. The VM wakes automatically for each run; keep ASTER running so its scheduler can launch the job.": {
+    "Runs the agent and its tools inside its Boat virtual machine. The VM wakes automatically for each run; keep OpenMausBot running so its scheduler can launch the job.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Roda o agente e as ferramentas dele dentro da máquina virtual Boat. A VM acorda automaticamente a cada execução; mantenha o ASTER rodando para que o agendador consiga iniciar o trabalho."
+            "value": "Roda o agente e as ferramentas dele dentro da máquina virtual Boat. A VM acorda automaticamente a cada execução; mantenha o OpenMausBot rodando para que o agendador consiga iniciar o trabalho."
           }
         }
       }
@@ -3395,12 +3395,12 @@
         }
       }
     },
-    "Scan the QR code in ASTER. We'll securely choose the best way to connect.": {
+    "Scan the QR code in OpenMausBot. We'll securely choose the best way to connect.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escaneie o QR code no ASTER. Vamos escolher com segurança a melhor forma de conectar."
+            "value": "Escaneie o QR code no OpenMausBot. Vamos escolher com segurança a melhor forma de conectar."
           }
         }
       }
@@ -3605,12 +3605,12 @@
         }
       }
     },
-    "Showing what was connected last time. Your computer could not open its credential store just now, so these could not be re-checked. Nothing has been disconnected — restarting ASTER on your computer usually clears this.": {
+    "Showing what was connected last time. Your computer could not open its credential store just now, so these could not be re-checked. Nothing has been disconnected — restarting OpenMausBot on your computer usually clears this.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostrando o que estava conectado da última vez. O seu computador não conseguiu abrir o cofre de credenciais agora, então não foi possível verificá-las de novo. Nada foi desconectado — reiniciar o ASTER no seu computador costuma resolver."
+            "value": "Mostrando o que estava conectado da última vez. O seu computador não conseguiu abrir o cofre de credenciais agora, então não foi possível verificá-las de novo. Nada foi desconectado — reiniciar o OpenMausBot no seu computador costuma resolver."
           }
         }
       }
@@ -3815,12 +3815,12 @@
         }
       }
     },
-    "Switches ASTER to this computer": {
+    "Switches OpenMausMobile to this computer": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Muda o ASTER para este computador"
+            "value": "Muda o OpenMausMobile para este computador"
           }
         }
       }
@@ -3945,12 +3945,12 @@
         }
       }
     },
-    "That isn't an ASTER pairing QR code.": {
+    "That isn't an OpenMausBot pairing QR code.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esse não é um QR code de pareamento do ASTER."
+            "value": "Esse não é um QR code de pareamento do OpenMausBot."
           }
         }
       }
@@ -4165,12 +4165,12 @@
         }
       }
     },
-    "This pairing predates secure phone entry. Scan a fresh QR from ASTER, or finish this request on your computer.": {
+    "This pairing predates secure phone entry. Scan a fresh QR from OpenMausBot, or finish this request on your computer.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este pareamento é anterior à digitação segura pelo telefone. Escaneie um novo QR do ASTER ou conclua esta solicitação no seu computador."
+            "value": "Este pareamento é anterior à digitação segura pelo telefone. Escaneie um novo QR do OpenMausBot ou conclua esta solicitação no seu computador."
           }
         }
       }
@@ -4185,12 +4185,12 @@
         }
       }
     },
-    "This removes the connection from this device only. It does not revoke this device on your Mac. To remove Mac-side access, open ASTER → Settings → Phone and remove it there.": {
+    "This removes the connection from this device only. It does not revoke this device on your Mac. To remove Mac-side access, open OpenMausBot → Settings → Phone and remove it there.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Isto remove a conexão apenas deste dispositivo. Não revoga este dispositivo no seu Mac. Para remover o acesso do lado do Mac, abra ASTER → Ajustes → Telefone e remova por lá."
+            "value": "Isto remove a conexão apenas deste dispositivo. Não revoga este dispositivo no seu Mac. Para remover o acesso do lado do Mac, abra OpenMausBot → Ajustes → Telefone e remova por lá."
           }
         }
       }
@@ -4215,12 +4215,12 @@
         }
       }
     },
-    "This routine uses a schedule added by a newer ASTER. Choose One time, Selected days, or Every X minutes before saving.": {
+    "This routine uses a schedule added by a newer OpenMausBot. Choose One time, Selected days, or Every X minutes before saving.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta rotina usa um agendamento adicionado por um ASTER mais novo. Escolha Uma vez, Dias selecionados ou A cada X minutos antes de salvar."
+            "value": "Esta rotina usa um agendamento adicionado por um OpenMausBot mais novo. Escolha Uma vez, Dias selecionados ou A cada X minutos antes de salvar."
           }
         }
       }
@@ -4265,12 +4265,12 @@
         }
       }
     },
-    "To generate images, configure the shared image provider in ASTER on your computer. Provider keys cannot be added from this device.": {
+    "To generate images, configure the shared image provider in OpenMausBot on your computer. Provider keys cannot be added from this device.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para gerar imagens, configure o provedor de imagens compartilhado no ASTER no seu computador. Não é possível adicionar chaves de provedor por este dispositivo."
+            "value": "Para gerar imagens, configure o provedor de imagens compartilhado no OpenMausBot no seu computador. Não é possível adicionar chaves de provedor por este dispositivo."
           }
         }
       }
@@ -4755,12 +4755,12 @@
         }
       }
     },
-    "Your computer could not open its credential store, so it cannot say which accounts are connected. Nothing has been disconnected — restarting ASTER on your computer usually clears this.": {
+    "Your computer could not open its credential store, so it cannot say which accounts are connected. Nothing has been disconnected — restarting OpenMausBot on your computer usually clears this.": {
       "localizations": {
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O seu computador não conseguiu abrir o cofre de credenciais, então não sabe dizer quais contas estão conectadas. Nada foi desconectado — reiniciar o ASTER no seu computador costuma resolver."
+            "value": "O seu computador não conseguiu abrir o cofre de credenciais, então não sabe dizer quais contas estão conectadas. Nada foi desconectado — reiniciar o OpenMausBot no seu computador costuma resolver."
           }
         }
       }

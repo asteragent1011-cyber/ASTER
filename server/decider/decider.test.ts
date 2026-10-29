@@ -286,32 +286,6 @@ describe("settings rules", () => {
     expect(deciderSavePatch({ enabled: true }, { key: KEY })).toEqual({ ok: true, patch: { enabled: true } });
   });
 
-  it("Clef turns on only once both its token and Account ID are saved, in either order", () => {
-    const clef = { provider: "clef-flash" as const };
-    // the desktop's order: the token through the encrypted store, then the Account ID
-    const tokenFirst = deciderSavePatch({ cloudflareToken: " cf_token " }, { ...clef, enabled: false });
-    expect(tokenFirst).toEqual({ ok: true, patch: { cloudflareToken: "cf_token", jobs: { roomRouting: true } } });
-    expect(deciderSavePatch({ cloudflareAccountId: "acct", provider: "clef-flash" }, { ...clef, cloudflareToken: "cf_token" }))
-      .toMatchObject({ ok: true, patch: { cloudflareAccountId: "acct", enabled: true, jobs: { roomRouting: true } } });
-    // and the reverse
-    expect(deciderSavePatch({ cloudflareAccountId: "acct", provider: "clef-flash" }, {}))
-      .toEqual({ ok: true, patch: { cloudflareAccountId: "acct", provider: "clef-flash", jobs: { roomRouting: true } } });
-    expect(deciderSavePatch({ cloudflareToken: "cf_token" }, { ...clef, cloudflareAccountId: "acct" }))
-      .toMatchObject({ ok: true, patch: { enabled: true } });
-    // an enabled Clef missing a credential is switched off by a partial save, not left on and unusable
-    expect(deciderSavePatch({ cloudflareToken: "cf_token" }, { ...clef, enabled: true }))
-      .toMatchObject({ ok: true, patch: { enabled: false } });
-  });
-
-  it("switching Clef on explicitly still needs both credentials", () => {
-    const clef = { provider: "clef-flash" as const };
-    expect(deciderSavePatch({ cloudflareToken: "cf_token", enabled: true }, clef))
-      .toEqual({ ok: false, error: "Save a Cloudflare Account ID and API token before turning on Clef-Flash." });
-    expect(deciderSavePatch({ enabled: true }, { ...clef, cloudflareAccountId: "acct" })).toMatchObject({ ok: false });
-    expect(deciderSavePatch({ enabled: true }, { ...clef, cloudflareAccountId: "acct", cloudflareToken: "cf_token" }))
-      .toEqual({ ok: true, patch: { enabled: true } });
-  });
-
   it("a job switch merges with the others", () => {
     expect(deciderSavePatch({ jobs: { roomRouting: false } }, { key: KEY, jobs: { roomRouting: true } }))
       .toEqual({ ok: true, patch: { jobs: { roomRouting: false } } });

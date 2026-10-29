@@ -55,7 +55,7 @@ export function agentUnit(spec: { node: string; script: string; operator: string
   return [
     "# Written by `openmausbot fleet init`. The operator workspace creates and manages workspaces through this.",
     "[Unit]",
-    "Description=ASTER fleet agent",
+    "Description=OpenMausBot fleet agent",
     "After=network-online.target",
     "Wants=network-online.target",
     "",
@@ -188,7 +188,7 @@ export function fenceUnit(layout = fleetLayout()): string {
   return [
     "# Written by `openmausbot fleet init`: keeps each workspace's loopback ports to its own user.",
     "[Unit]",
-    "Description=ASTER per-workspace loopback fence",
+    "Description=OpenMausBot per-workspace loopback fence",
     "",
     "[Service]",
     "Type=oneshot",

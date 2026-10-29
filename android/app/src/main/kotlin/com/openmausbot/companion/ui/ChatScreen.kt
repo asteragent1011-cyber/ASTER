@@ -4,7 +4,6 @@ import android.view.KeyCharacterMap
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -438,22 +437,14 @@ private fun LoadedChat(
     // The source transcript stays intact for approvals, mascot state and
     // pagination. Only the rendered rows fold activity according to the local
     // preference, so changing the choice never mutates server state.
-    // The ASTER home (the desktop's `isCompanionHome`): a thread holding nothing
-    // but the bot's seeded greeting is still at its start, so the hero stands in
-    // for that row. Read from the raw transcript, before any folding.
-    val companionHome = AsterCompanion.isHome(busy = chat.busy, messages = rawTranscript) &&
-        state.hasMore[threadId] != true
-    val transcript = remember(rawTranscript, activityDetail, companionHome) {
-        if (companionHome) emptyList() else transcriptRows(rawTranscript, activityDetail)
+    val transcript = remember(rawTranscript, activityDetail) {
+        transcriptRows(rawTranscript, activityDetail)
     }
     var expandedTurns by remember(threadId) { mutableStateOf(emptySet<String>()) }
     var revealedTurnMessageId by remember(threadId) { mutableStateOf<String?>(null) }
     val predictiveChips = remember(quickReplies) {
         quickReplies.map { PredictiveChip(title = it.title, prompt = it.prompt, icon = it.icon) }
     }
-    // The home composer offers the desktop's quick actions; a conversation keeps
-    // the reader's own quick replies.
-    val composerChips = if (companionHome) AsterCompanion.QUICK_ACTION_CHIPS else predictiveChips
     val streaming = state.streaming[threadId]
     val reasoning = state.reasoning[threadId]
     // Stream, then reasoning, then the bare fact of being busy — the order in
@@ -934,18 +925,6 @@ private fun LoadedChat(
                     }
                 }
 
-                if (transcript.isEmpty() && liveCount == 0 && !hasMore) {
-                    AsterHero(
-                        name = chat.name,
-                        mood = asterMood(busy = chat.busy, typing = draft.isNotEmpty(), streaming = liveText != null),
-                        hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = HEADER_CLEARANCE)
-                            .verticalScroll(rememberScrollState()),
-                    )
-                }
-
                 ChatHeader(
                     chat = chat,
                     face = remember(chat, rawTranscript) {
@@ -993,12 +972,11 @@ private fun LoadedChat(
                     draft = draft,
                     busy = chat.busy,
                     pendingApproval = pendingApproval,
-                    hasQuickReplies = composerChips.isNotEmpty(),
+                    hasQuickReplies = predictiveChips.isNotEmpty(),
                     hasAttachments = attachments.isNotEmpty(),
                 ),
                 commands = commands,
-                home = companionHome,
-                chips = composerChips,
+                chips = predictiveChips,
                 plusOpen = showingPlus,
                 dictationListening = dictationListening,
                 dictationLocked = dictationLocked,
@@ -1070,18 +1048,7 @@ private fun LoadedChat(
                 },
                 onSelectCommand = { selectCommand(it) },
                 // A chip is the whole message, sent on the tap.
-                onSelectChip = { chip ->
-                    val action = AsterCompanion.quickActionFor(chip)
-                    if (action == null) {
-                        submit(chip.prompt)
-                    } else {
-                        // A quick action starts the sentence, as on the desktop;
-                        // "Analyze a file" also opens the picker.
-                        composer.onTypedChange(AsterCompanion.draftAfter(action, composer.text))
-                        publishFrom(composer)
-                        if (action.attach) onAction(ChatActionId.FILES)
-                    }
-                },
+                onSelectChip = { submit(it.prompt) },
             )
         }
 
@@ -1180,7 +1147,7 @@ private fun ChatHeader(
     onOpenThreads: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val surface = LocalAsterLook.current?.ground?.copy(alpha = 0.92f) ?: MaterialTheme.colorScheme.surface
+    val surface = MaterialTheme.colorScheme.surface
     Box(modifier = modifier.fillMaxWidth()) {
         Spacer(
             modifier = Modifier
@@ -1484,8 +1451,6 @@ private fun Composer(
     modifier: Modifier = Modifier,
     name: String,
     draft: String,
-    /** The ASTER home: the composer invites the first message. */
-    home: Boolean = false,
     accessory: ComposerAccessory,
     commands: List<SlashCommand>,
     plusOpen: Boolean,
@@ -1710,7 +1675,6 @@ private fun Composer(
                                 engineCanSteer = engineCanSteer,
                                 sending = sending,
                                 listening = dictationListening,
-                                home = home,
                             ),
                             fontSize = 17.sp,
                             color = secondaryTint,
@@ -1780,27 +1744,19 @@ private fun Composer(
                 }
 
                 TouchTarget(onClick = onSend, enabled = canSend) {
-                    val asterLook = LocalAsterLook.current
                     Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .then(
-                                when {
-                                    !canSend -> Modifier.background(secondaryTint.copy(alpha = 0.18f), CircleShape)
-                                    asterLook != null -> Modifier.background(asterLook.accentBrush, CircleShape)
-                                    else -> Modifier.background(BubbleColor.mine, CircleShape)
-                                },
+                            .background(
+                                if (canSend) BubbleColor.mine else secondaryTint.copy(alpha = 0.18f),
+                                CircleShape,
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
-                            tint = when {
-                                !canSend -> secondaryTint
-                                asterLook != null -> Color.White
-                                else -> BubbleColor.mineText
-                            },
+                            tint = if (canSend) BubbleColor.mineText else secondaryTint,
                             modifier = Modifier.size(16.dp),
                         )
                     }

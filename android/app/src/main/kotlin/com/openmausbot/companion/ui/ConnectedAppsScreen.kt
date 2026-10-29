@@ -265,9 +265,9 @@ private fun CredentialStoreWarning(hasLastKnownInventory: Boolean) {
             Text("Accounts could not be re-checked", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.tertiary)
             Text(
                 if (hasLastKnownInventory) {
-                    "Showing what was connected last time. Your computer could not open its credential store just now, so these accounts could not be re-checked. Nothing has been disconnected — restarting ASTER on your computer usually clears this."
+                    "Showing what was connected last time. Your computer could not open its credential store just now, so these accounts could not be re-checked. Nothing has been disconnected — restarting OpenMausBot on your computer usually clears this."
                 } else {
-                    "Your computer could not open its credential store, so it cannot say which accounts are connected. Nothing has been disconnected — restarting ASTER on your computer usually clears this."
+                    "Your computer could not open its credential store, so it cannot say which accounts are connected. Nothing has been disconnected — restarting OpenMausBot on your computer usually clears this."
                 },
                 color = secondaryTint,
                 fontSize = 13.sp,

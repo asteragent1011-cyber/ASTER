@@ -478,7 +478,7 @@ final class Session: ObservableObject {
             _ = try await probe.environment()
         } catch APIError.status(404, _) {
             throw APIError.transport(
-                "\(connection.displayAddress) isn't an ASTER server. Check the address and try again."
+                "\(connection.displayAddress) isn't an OpenMausBot server. Check the address and try again."
             )
         }
     }
@@ -1060,7 +1060,7 @@ final class Session: ObservableObject {
                 do {
                     capable = try await client.imageCapableInstanceIDs()
                 } catch APIError.status(code: 404, message: _) {
-                    actionError = "Update ASTER on this computer before sending images."
+                    actionError = "Update OpenMausBot on this computer before sending images."
                     return false
                 }
                 guard imageSupported(by: chat, capableInstances: capable) else {

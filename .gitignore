@@ -15,7 +15,6 @@ electron/resources/OpenMausBot Speech.app
 # stale helper from the removed Teach a skill recorder
 electron/resources/OpenMausBot Recorder.app
 release
-release-next
 .omb-scratch
 .wrangler/
 .dev.vars
@@ -41,15 +40,3 @@ deploy/podman/.env
 deploy/podman/.env.*
 !deploy/podman/.env.example
 /.env
-/.env.*
-!/.env.example
-
-# Logs, coverage and editor/OS clutter
-*.log
-coverage/
-.idea/
-Thumbs.db
-
-# Personal Claude Code project memory (local only, never commit)
-CLAUDE.local.md
-.claude/settings.local.json

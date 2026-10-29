@@ -67,16 +67,12 @@ describe("the organization library in the real renderer", () => {
     }, { timeout: launchTimeout, interval: 250 }).toBe(true);
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
     const click = (name: string) => ui("click", "--name", name);
-    // ASTER keeps the chat list collapsed behind the rail (and Escape collapses
-    // it again), so open it before reaching for a button that lives in it.
-    const openChats = () => ui("eval", "--js", `(() => { if (document.querySelector('[aria-label="New or share"]')?.offsetParent) return true; document.querySelector('nav[aria-label="Application navigation rail"] button[aria-expanded="false"]')?.click(); return true; })()`);
     const press = (keys: string) => ui("press", "--keys", keys);
     const snapshot = async () => (await ui("snapshot")).snapshot as string;
     const api = (path: string, method = "GET", body?: unknown) => request(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }, info.url);
     const evidence = (name: string) => ui("screenshot", "--out", join(ROOT, ".omb-scratch", "verify-evidence", name));
 
     // No organization: Templates has no organization tab.
-    await openChats();
     await click("New or share");
     await click("Templates");
     await expect.poll(snapshot, { timeout: 10_000 }).toContain("Community templates");
@@ -98,7 +94,6 @@ describe("the organization library in the real renderer", () => {
     expect(relayed.status).toBe(200);
 
     // The shelf is the first tab and opens first.
-    await openChats();
     await click("New or share");
     await click("Templates");
     await expect.poll(snapshot, { timeout: 10_000 }).toContain("Packages Customer Co shares with you");
@@ -125,7 +120,6 @@ describe("the organization library in the real renderer", () => {
     expect((await api("/api/routines")).routines.every((routine: { enabled: boolean }) => !routine.enabled)).toBe(true);
 
     // The shelf now says Added; the skills-only package adds in place.
-    await openChats();
     await click("New or share");
     await click("Templates");
     await expect.poll(snapshot, { timeout: 10_000 }).toContain("Packages Customer Co shares with you");

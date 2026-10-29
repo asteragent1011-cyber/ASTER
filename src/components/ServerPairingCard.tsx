@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { t } from "@/lib/i18n";
-import { devMode } from "@/lib/dev-mode";
 import { api } from "@/state/store";
 import { isOwnerOrAdmin, readSessionState, type SessionState } from "../lib/session";
 import { readMembership } from "../lib/membership";
@@ -115,7 +114,7 @@ export function ServerPairingCard({ initialSession = null, initialPairingCodes =
     if (pairingBlockedReason(session) !== "chat-only") return null;
     return (
       <Card title={t("remote.serverPairing.title")} subtitle={t(pairingCodes ? "remote.serverPairing.subtitle" : "remote.serverPairing.portalSubtitle")}>
-        <p data-server-pairing-chat-only className="mt-3 text-[13px] text-ink-secondary">{t(pairingCodes ? (devMode() ? "remote.serverPairing.chatOnly" : "remote.serverPairing.chatOnlyPublic") : "remote.serverPairing.portalChatOnly")}</p>
+        <p data-server-pairing-chat-only className="mt-3 text-[13px] text-ink-secondary">{t(pairingCodes ? "remote.serverPairing.chatOnly" : "remote.serverPairing.portalChatOnly")}</p>
       </Card>
     );
   }

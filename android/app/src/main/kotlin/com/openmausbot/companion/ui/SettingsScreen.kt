@@ -223,7 +223,7 @@ fun SettingsScreen(
                 )
                 Footnote(
                     if (alwaysOnEnabled) {
-                        "ASTER keeps a permanent notification while this is on, so scheduled " +
+                        "OpenMausBot keeps a permanent notification while this is on, so scheduled " +
                             "reminders and routine results reach you even with the app fully closed."
                     } else {
                         "Notifications only arrive while the app is open or was recently backgrounded. " +
@@ -632,7 +632,7 @@ private fun Footnote(text: String) {
     Text(text = text, fontSize = 13.sp, color = secondaryTint)
 }
 
-private const val ADDRESS_CLIP_LABEL = "ASTER computer address"
+private const val ADDRESS_CLIP_LABEL = "OpenMausMobile computer address"
 
 /** Long enough for "Copied" to be read, short enough not to linger (iOS `:363-367`). */
 private const val COPIED_LABEL_MILLIS = 2_000L
@@ -643,7 +643,7 @@ private const val COPIED_LABEL_MILLIS = 2_000L
  */
 internal fun troubleshootingText(status: Session.Status): String = when (status) {
     Session.Status.Live -> "This computer is connected and responding normally."
-    Session.Status.Connecting -> "ASTER is trying the saved connection automatically."
+    Session.Status.Connecting -> "OpenMausBot is trying the saved connection automatically."
     Session.Status.Unauthorized -> "This phone was removed from the computer. Pair it again to reconnect."
     Session.Status.Unpaired -> "This phone is not paired with a computer."
     is Session.Status.Offline -> status.message

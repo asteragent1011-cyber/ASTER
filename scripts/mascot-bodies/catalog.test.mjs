@@ -9,13 +9,13 @@ import {
 } from "../../shared/mascot-bodies.ts";
 
 describe("the generated catalog", () => {
-  it("carries all nineteen bodies", () => {
-    expect(MASCOT_BODY_IDS).toHaveLength(19);
+  it("carries all ten bodies", () => {
+    expect(MASCOT_BODY_IDS).toHaveLength(10);
     for (const id of MASCOT_BODY_IDS) expect(MASCOT_BODIES[id].id).toBe(id);
   });
 
-  it("defaults to the ASTER Luma companion", () => {
-    expect(DEFAULT_MASCOT_BODY).toBe("luma");
+  it("defaults to the cursor", () => {
+    expect(DEFAULT_MASCOT_BODY).toBe("cursor");
   });
 
   it("gives every body the markup the renderer expects", () => {
@@ -49,12 +49,11 @@ describe("botMascotBody", () => {
     expect(botMascotBody("blob")).toBe("blob");
   });
 
-  it("falls back to the default Luma for anything else", () => {
-    expect(botMascotBody("hexagram")).toBe("luma");
-    expect(botMascotBody(undefined)).toBe("luma");
-    expect(botMascotBody(null)).toBe("luma");
-    expect(botMascotBody(42)).toBe("luma");
-    expect(botMascotBody("cursor")).toBe("cursor");
+  it("falls back to the cursor for anything else", () => {
+    expect(botMascotBody("hexagram")).toBe("cursor");
+    expect(botMascotBody(undefined)).toBe("cursor");
+    expect(botMascotBody(null)).toBe("cursor");
+    expect(botMascotBody(42)).toBe("cursor");
   });
 
   it("exposes a schema that rejects an unknown id", () => {

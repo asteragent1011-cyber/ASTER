@@ -269,13 +269,13 @@ struct BotWidgetView: View {
         Group {
             switch (entry.state, entry.entity) {
             case (.unpaired, _):
-                Placeholder(icon: "qrcode", message: "Open ASTER to pair")
+                Placeholder(icon: "qrcode", message: "Open MausBot to pair")
             case (_, nil):
-                Placeholder(icon: "person.crop.circle", message: "Open ASTER first")
+                Placeholder(icon: "person.crop.circle", message: "Open MausBot first")
             case (.quiet, let entity?), (.fresh, let entity?), (.stale, let entity?):
                 content(for: entity)
             default:
-                Placeholder(icon: "person.crop.circle", message: "Open ASTER first")
+                Placeholder(icon: "person.crop.circle", message: "Open MausBot first")
             }
         }
         // The widget is about one chat; every state it can show opens

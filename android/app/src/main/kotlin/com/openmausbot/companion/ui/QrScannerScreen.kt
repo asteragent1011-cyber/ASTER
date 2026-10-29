@@ -89,13 +89,13 @@ fun QrScannerScreen(onCancel: () -> Unit, validate: (String) -> String?) {
 
             access == CameraAccess.UNKNOWN -> EmptyState(
                 title = "Requesting camera access…",
-                description = "Allow camera access to scan the pairing QR code shown by ASTER.",
+                description = "Allow camera access to scan the pairing QR code shown by OpenMausBot.",
             )
 
             access == CameraAccess.DENIED -> EmptyState(
                 title = "Camera access needed",
                 description = "Allow camera access to scan the pairing QR code shown by " +
-                    "ASTER, or go back and enter the address and code by hand.",
+                    "OpenMausBot, or go back and enter the address and code by hand.",
             ) {
                 Button(onClick = environment.openAppSettings) { Text("Open Settings") }
             }

@@ -21,8 +21,8 @@ describe("the generated Kotlin catalog", () => {
     }
   });
 
-  it("defaults to the ASTER Luma companion, matching the web catalog", () => {
-    expect(kotlin).toContain('const val DEFAULT_ID: String = "luma"');
+  it("defaults to the cursor", () => {
+    expect(kotlin).toContain('const val DEFAULT_ID: String = "cursor"');
   });
 
   it("carries the same anchors as the TypeScript catalog", () => {

@@ -12,7 +12,6 @@ import { api, useStore, type Bot } from "@/state/store";
 import { useBotEditor } from "./BotEditorContext";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { devMode } from "@/lib/dev-mode";
 import type { LocaleKey } from "@/locales";
 import { mcpServersForBot, useMcpServers } from "@/lib/mcp-servers";
 import { placeOffered } from "@/lib/place";
@@ -708,7 +707,7 @@ export function AccessSection({
           <div className="mt-0.5 text-[13px] text-ink-secondary">
             {!desktopBrowser
               ? browserBlockedOnWindows && !browserInstallable
-                ? t(devMode() ? "settings.experimental.browserWindows" : "settings.experimental.browserWindowsPublic")
+                ? "Not available on this Windows machine yet: install the browser engine with `openmausbot browser install`."
                 : browserUnavailableReason(state.config)
               : !browserFeature
                 ? "The built-in browser is switched off under App Settings → Experimental."

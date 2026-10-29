@@ -17,8 +17,6 @@ import { MAUS_COLORS, type MausColor, type MausMotion, type MausState } from "@/
 import { CursorAvatar, type CursorAvatarHandle } from "./CursorAvatar";
 import { botAvatarProfile, clampAvatarFocus, clampAvatarZoom, type BotAvatarCrop } from "../../shared/bot-avatar";
 import { MASCOT_BODIES, botMascotBody, type MascotBodyId } from "../../shared/mascot-bodies";
-import { blobMotionFor, blobStateFor, botBodyFor, isAsterBlob } from "@/lib/aster-blobs";
-import { AsterBlobAvatar } from "./aster/AsterBlobAvatar";
 
 export const EYE_SCALE = 1.12;
 export const MOUTH_WEIGHT = 11;
@@ -110,15 +108,8 @@ export type MausAvatarProps = {
   trackPointer?: boolean;
   /** Run the animation. Off renders the state's resting face. */
   animated?: boolean;
-  /** Which body the bot wears. Unknown values fall back to the default. */
+  /** Which body the bot wears. Unknown values fall back to the cursor. */
   bodyId?: MascotBodyId;
-  /** Whether the bot is working. The ASTER companions read it for their thinking
-   * mood and their message sent / received beats; the cursor bodies ignore it. */
-  busy?: boolean;
-  /** Stable per-bot identity, so a roster of companions never moves in step. */
-  identity?: string;
-  /** The avatar stands for the selected bot. */
-  selected?: boolean;
 };
 
 function MausAvatarComponent(
@@ -141,14 +132,10 @@ function MausAvatarComponent(
     trackPointer = true,
     animated = true,
     bodyId,
-    busy,
-    identity,
-    selected = false,
   }: MausAvatarProps,
   ref: React.Ref<MausAvatarHandle>,
 ) {
-  const resolvedBody = botMascotBody(bodyId);
-  const silhouette = MASCOT_BODIES[resolvedBody];
+  const silhouette = MASCOT_BODIES[botMascotBody(bodyId)];
   const inner = useRef<CursorAvatarHandle>(null);
   useImperativeHandle(ref, () => ({
     blink: () => inner.current?.blink(),
@@ -183,23 +170,6 @@ function MausAvatarComponent(
   };
   const onPointerLeave = () => setPointer({ x: 0, y: 0 });
 
-  // The ASTER companions draw themselves: CSS motion, no face engine.
-  if (isAsterBlob(resolvedBody)) {
-    return (
-      <AsterBlobAvatar
-        body={resolvedBody}
-        size={size}
-        state={selected ? "selected" : blobStateFor(motionState ?? state, busy)}
-        motion={blobMotionFor(motion)}
-        motionKey={motionKey}
-        busy={busy}
-        identity={identity}
-        animated={animated}
-        label={label ?? null}
-      />
-    );
-  }
-
   return (
     <span
       className="inline-flex shrink-0"
@@ -231,12 +201,8 @@ export const MausAvatar = memo(forwardRef(MausAvatarComponent));
 
 export type BotAvatarProps = Omit<MausAvatarProps, "color"> & {
   bot: {
-    /** The bot's id: picks its ASTER companion when it has not chosen a body. */
-    id?: string;
     name?: string;
     color: MausColor;
-    /** Working on a turn: the companions show it and beat on the change. */
-    busy?: boolean;
     avatarUrl?: string | null;
     avatarCrop?: BotAvatarCrop;
     avatarZoom?: number;
@@ -292,9 +258,7 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
   if (outcome !== "flatImage") {
     return (
       <MausAvatar
-        bodyId={botBodyFor(bot)}
-        busy={bot.busy}
-        identity={bot.id ?? bot.name}
+        bodyId={bot.mascotBody ?? undefined}
         {...mascotProps}
         color={bot.color}
         size={size}

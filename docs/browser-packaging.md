@@ -81,7 +81,7 @@ browser updater in the desktop bundle.
 
 ### Temporary Windows engine backport
 
-Windows uses an explicitly identified ASTER build of agent-browser
+Windows uses an explicitly identified OpenMausBot build of agent-browser
 0.36.0, with the handle-inheritance fix from
 [upstream PR #1781](https://github.com/vercel-labs/agent-browser/pull/1781).
 The official 0.37.0 release does not contain this fix, so Windows stays on the

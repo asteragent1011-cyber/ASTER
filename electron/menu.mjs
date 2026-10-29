@@ -3,10 +3,7 @@
 // and the macOS Preferences… item (Electron has no role for it, so it is
 // built explicitly). Everything else is Electron's standard roles so macOS
 // keeps Edit/Window and Windows/Linux get the same items under a visible bar.
-import { Menu } from "electron";
-
-/** The product name people see in the menu bar and About panel. */
-export const APP_DISPLAY_NAME = "ASTER";
+import { Menu, app } from "electron";
 
 /**
  * @param {object} input
@@ -44,9 +41,7 @@ export function buildApplicationMenu({ environments, activeId, onSwitch, onAddFr
     ],
   };
   const template = [
-    // app.name stays "openmausbot" (it names the userData folder, so changing
-    // it would orphan existing data); the menu says ASTER explicitly instead.
-    ...(isMac ? [{ label: APP_DISPLAY_NAME, submenu: [{ role: "about", label: `About ${APP_DISPLAY_NAME}` }, { label: "Preferences…", accelerator: "CmdOrCtrl+,", click: () => onOpenSettings() }, { type: "separator" }, { role: "hide", label: `Hide ${APP_DISPLAY_NAME}` }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit", label: `Quit ${APP_DISPLAY_NAME}` }] }] : []),
+    ...(isMac ? [{ label: app.name, submenu: [{ role: "about" }, { label: "Preferences…", accelerator: "CmdOrCtrl+,", click: () => onOpenSettings() }, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] }] : []),
     { role: "fileMenu" },
     { role: "editMenu" },
     server,

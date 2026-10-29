@@ -55,17 +55,3 @@ export function greetingFor(hour: number): "morning" | "afternoon" | "evening" {
   if (hour >= 12 && hour < 17) return "afternoon";
   return "evening";
 }
-
-/** The seeded opening line every new bot's thread starts with
- * (server/store.ts createBot): `Hi, I'm <name>. What would you like me to do?` */
-const OPENING_GREETING = /^Hi, I'm .+\. What would you like me to do\?$/;
-
-/** Whether a thread is still at its start, so the home hero takes the place
- * of the transcript: nothing yet, or only the bot's own opening greeting. A
- * thread holding any other bot content (a routine result, a peer's message, a
- * webhook) is a conversation and must show it, even with no user turn. */
-export function isCompanionHome(bot: { busy?: boolean }, messages: Pick<Message, "role" | "kind" | "text">[]): boolean {
-  if (bot.busy) return false;
-  return messages.every((message) =>
-    message.role === "bot" && message.kind === "text" && OPENING_GREETING.test(message.text ?? ""));
-}

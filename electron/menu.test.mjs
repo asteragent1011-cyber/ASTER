@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
-  app: { name: "openmausbot" },
+  app: { name: "ASTER" },
   Menu: { buildFromTemplate: (template) => template },
 }));
 
@@ -41,14 +41,6 @@ describe("buildApplicationMenu", () => {
     expect(item.click).toBeTypeOf("function");
     item.click();
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
-  });
-
-  it("macOS app menu names ASTER, not the internal app.name", () => {
-    const template = build("darwin");
-    expect(template[0].label).toBe("ASTER");
-    const labels = template[0].submenu.map((entry) => entry.label).filter(Boolean);
-    expect(labels).toEqual(expect.arrayContaining(["About ASTER", "Hide ASTER", "Quit ASTER"]));
-    expect(JSON.stringify(template)).not.toMatch(/openmausbot/i);
   });
 
   it.each(["linux", "win32"])("does not add an app menu on %s", (platform) => {

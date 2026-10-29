@@ -17,7 +17,7 @@
 // verified, and that is always an own key.
 import { elevenLabsProviderApi } from "../included-services.ts";
 
-const MODEL = "eleven_flash_v2_5";
+const DEFAULT_MODEL = "eleven_flash_v2_5";
 // 64kbps mono is indistinguishable for speech and a third of the bytes
 const FORMAT = "mp3_44100_64";
 
@@ -99,10 +99,11 @@ export async function listVoices(key: string, api: string): Promise<Voice[]> {
 }
 
 export async function synthesize(text: string, voiceId: string, key: string, api: string): Promise<Audio> {
+  const model = process.env.ELEVENLABS_MODEL_ID?.trim() || DEFAULT_MODEL;
   const res = await fetch(`${api}/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${FORMAT}`, {
     method: "POST",
     headers: { "xi-api-key": key, "content-type": "application/json", accept: "audio/mpeg" },
-    body: JSON.stringify({ text, model_id: MODEL }),
+    body: JSON.stringify({ text, model_id: model }),
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(message(res.status, "speaking", await safeJson(res)));

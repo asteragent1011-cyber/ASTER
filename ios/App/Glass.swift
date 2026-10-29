@@ -14,20 +14,15 @@ struct GlassSurface<S: InsettableShape>: ViewModifier {
     var interactive: Bool = true
     var tint: Color? = nil
 
-    @Environment(\.colorScheme) private var colorScheme
-
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             let base: Glass = interactive ? .regular.interactive() : .regular
             content.glassEffect(tint.map { base.tint($0) } ?? base, in: shape)
         } else {
-            // Before Liquid Glass, the material carries ASTER's frosted fill
-            // and rim (`.aster-card`) so the chrome reads as the desktop's.
-            let aster = AsterPalette.of(colorScheme)
             content
                 .background(.ultraThinMaterial, in: shape)
-                .background(tint?.opacity(0.18) ?? aster.glassFill, in: shape)
-                .overlay(shape.strokeBorder(aster.glassBorder, lineWidth: 0.5))
+                .background(tint?.opacity(0.18) ?? .clear, in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5))
         }
     }
 }

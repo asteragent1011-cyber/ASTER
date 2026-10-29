@@ -28,25 +28,25 @@ final class MausBodiesTests: XCTestCase {
         }
     }
 
-    func testUnknownBodyFallsBackToTheDefault() {
-        XCTAssertEqual(MausBodies.body("hexagram").id, "luma")
-        XCTAssertEqual(MausBodies.body(nil).id, "luma")
-        XCTAssertEqual(MausBodies.body("").id, "luma")
+    func testUnknownBodyFallsBackToTheCursor() {
+        XCTAssertEqual(MausBodies.body("hexagram").id, "cursor")
+        XCTAssertEqual(MausBodies.body(nil).id, "cursor")
+        XCTAssertEqual(MausBodies.body("").id, "cursor")
     }
 
-    /// An unrecognised id must reach the *drawn* geometry as the default body too,
+    /// An unrecognised id must reach the *drawn* geometry as the cursor too,
     /// not just as a catalog entry — the fallback is only useful if the paint
     /// path honours it.
-    func testAnUnknownBodyDrawsTheDefault() {
+    func testAnUnknownBodyDrawsTheCursor() {
         XCTAssertEqual(
-            MausSilhouette.faceBoxBounds("hexagram"), MausSilhouette.faceBoxBounds("luma"))
-        XCTAssertEqual(MausSilhouette.faceBoxBounds(nil), MausSilhouette.faceBoxBounds("luma"))
+            MausSilhouette.faceBoxBounds("hexagram"), MausSilhouette.faceBoxBounds("cursor"))
+        XCTAssertEqual(MausSilhouette.faceBoxBounds(nil), MausSilhouette.faceBoxBounds("cursor"))
 
         let unknown = MausSilhouette.anchor("hexagram")
-        let fallback = MausSilhouette.anchor("luma")
-        XCTAssertEqual(unknown.x, fallback.x)
-        XCTAssertEqual(unknown.y, fallback.y)
-        XCTAssertEqual(unknown.scale, fallback.scale)
+        let cursor = MausSilhouette.anchor("cursor")
+        XCTAssertEqual(unknown.x, cursor.x)
+        XCTAssertEqual(unknown.y, cursor.y)
+        XCTAssertEqual(unknown.scale, cursor.scale)
     }
 
     func testEveryAnchorPlacesAFaceInsideItsBody() {

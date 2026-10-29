@@ -36,9 +36,6 @@ describe("Share team in the real renderer", () => {
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
     const evaluate = async (js: string) => (await ui("eval", "--js", js)).result;
     const click = (name: string) => ui("click", "--name", name);
-    // ASTER keeps the chat list collapsed behind the rail (and Escape collapses
-    // it again), so open it before reaching for a button that lives in it.
-    const openChats = () => ui("eval", "--js", `(() => { if (document.querySelector('[aria-label="New or share"]')?.offsetParent) return true; document.querySelector('nav[aria-label="Application navigation rail"] button[aria-expanded="false"]')?.click(); return true; })()`);
     const snapshot = async () => (await ui("snapshot")).snapshot as string;
     const api = (path: string, method = "GET", body?: unknown) => request(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }, info.url);
     const control = (...args: string[]) => runControlOmb([...args, "--url", info.url]) as Promise<Record<string, any>>;
@@ -67,8 +64,6 @@ describe("Share team in the real renderer", () => {
       HTMLAnchorElement.prototype.click = function () { window.__shareDownload = this.download; };
       return true;
     })()`);
-
-    await openChats();
 
     await click("New or share");
     await click("Templates");

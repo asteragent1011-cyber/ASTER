@@ -20,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import { MascotCentrepiece, MascotCompanionHeader } from "./MascotCentrepiece";
-import { isCompanionHome } from "@/lib/aster-companion";
 import { WorkingDots } from "@/components/WorkingIndicator";
 import { MessageActions, messageActionClass } from "@/components/MessageActions";
 import { useSpeech } from "@/lib/tts/useSpeech";
@@ -80,7 +79,8 @@ import { ModelPicker } from "./ModelPicker";
 import { ExportTranscriptMenu } from "./ExportTranscriptMenu";
 
 import { SpeakButton } from "./SpeakButton";
-import { CallButton, CallOverlay } from "./CallView";
+import { CallOverlay } from "./CallView";
+import { VoiceFloatingBar } from "./VoiceFloatingBar";
 import { effectivePlace, toolPlace, type EffectivePlace } from "@/lib/place";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -706,7 +706,7 @@ const MessagesList = memo(function MessagesList({
   // row out of the DOM, and there is nothing for the scroll to land on.
   const focus = state.focusMessage;
   const focusedId = focus && !focus.consumed && focus.threadId === bot.threadId ? focus.messageId : null;
-  const isIdle = isCompanionHome(bot, messages);
+  const isIdle = !bot.busy && messages.length === 0;
   return (
     <>
       {isIdle ? (
@@ -1334,7 +1334,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
           <TaskPicker bot={bot} />
           <UsageChip bot={bot} />
           {!remoteClient && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
-          <CallButton bot={bot} />
+          <VoiceFloatingBar bot={bot} />
           <button
             data-tour="computer"
             onClick={() => dispatch({ type: "toggleComputer" })}
@@ -1570,7 +1570,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         bot={profile}
         // The empty conversation is ASTER's home: a larger composer with
         // the quick actions, the same one as in any thread.
-        hero={isCompanionHome(bot, messages)}
+        hero={!bot.busy && messages.length === 0}
         replyTo={replyTo}
         onClearReply={clearReply}
         onConsumeReply={consumeReply}

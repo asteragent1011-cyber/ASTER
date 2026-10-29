@@ -1,7 +1,7 @@
-# ASTER MCP server
+# OpenMausBot MCP server
 
-The ASTER desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
-ASTER team while the desktop app and its harness are running.
+The OpenMausBot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
+OpenMausBot team while the desktop app and its harness are running.
 
 ## What it can do
 
@@ -16,7 +16,7 @@ change credentials, or control computer/VM lifecycle. Those actions stay in the 
 
 ## From a source checkout
 
-Start ASTER, then configure the MCP client to run:
+Start OpenMausBot, then configure the MCP client to run:
 
 ```json
 {
@@ -36,7 +36,7 @@ loopback without one. A hosted or shared server with service loopback trust
 session for almost every tool, reads included. To authorize an external MCP
 client:
 
-1. In ASTER, open **Settings → Phone → Set up a phone** and reveal the
+1. In OpenMausBot, open **Settings → Phone → Set up a phone** and reveal the
    one-time pairing code.
 2. Exchange it locally (remove spaces from the displayed code):
 
@@ -82,15 +82,15 @@ macOS example:
 
 On Windows, use the installed `OpenMausBot.exe` as `command`, the adjacent
 `resources\\server\\mcp-server.js` as the argument, and the same `ELECTRON_RUN_AS_NODE=1` environment value.
-The usual per-user install is under `%LOCALAPPDATA%\\Programs\\ASTER`.
+The usual per-user install is under `%LOCALAPPDATA%\\Programs\\OpenMausBot`.
 
 On Ubuntu `.deb` installs, the executable is normally `/opt/OpenMausBot/openmausbot` and the script is
 `/opt/OpenMausBot/resources/server/mcp-server.js`. Use the same environment value.
 
 ## Connection discovery
 
-With no configuration, the MCP process probes ASTER's three desktop ports (`8799`, `18799`, and `28799`)
-and accepts only a health response that identifies itself as ASTER. This handles the desktop's normal
+With no configuration, the MCP process probes OpenMausBot's three desktop ports (`8799`, `18799`, and `28799`)
+and accepts only a health response that identifies itself as OpenMausBot. This handles the desktop's normal
 fallback when another local process already owns port 8799.
 
 Set `OMB_PORT` to force one local port, or `OPENMAUSBOT_URL` to use an explicit HTTP(S) origin. Cleartext remote

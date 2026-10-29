@@ -138,7 +138,7 @@ struct WorkingMonitorView: View {
         Group {
             switch entry.state {
             case .unpaired:
-                Placeholder(icon: "qrcode", message: "Open ASTER to pair")
+                Placeholder(icon: "qrcode", message: "Open MausBot to pair")
             case .quiet:
                 Placeholder(icon: "checkmark.circle", message: "Nothing working")
             case .fresh, .stale:

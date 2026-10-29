@@ -1212,7 +1212,7 @@ class Session(
                     activeClient.imageCapableInstanceIds()
                 } catch (error: APIError.Status) {
                     if (error.code != 404) throw error
-                    _actionError.value = "Update ASTER on this computer before sending images."
+                    _actionError.value = "Update OpenMausBot on this computer before sending images."
                     return false
                 }
                 if (!imageSupported(to, capable)) {
@@ -1418,7 +1418,7 @@ class Session(
         val endpoints = saved.automaticEndpoints
         if (endpoints.isEmpty()) {
             throw APIError.Transport(
-                "Couldn't reach ${saved.name}. Keep ASTER open and Phone access on, then try again.",
+                "Couldn't reach ${saved.name}. Keep OpenMausBot open and Phone access on, then try again.",
             )
         }
         var lastError: Throwable? = null
@@ -1434,7 +1434,7 @@ class Session(
             }
         }
         throw lastError ?: APIError.Transport(
-            "Couldn't reach ${saved.name}. Keep ASTER open and Phone access on, then try again.",
+            "Couldn't reach ${saved.name}. Keep OpenMausBot open and Phone access on, then try again.",
         )
     }
 

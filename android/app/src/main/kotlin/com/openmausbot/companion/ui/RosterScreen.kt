@@ -647,13 +647,7 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (LocalAsterLook.current != null) AsterMark(size = 16.dp)
-                Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-            }
+            Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 text = RosterLayout.headerSubtitle(name, status),
                 fontSize = 13.sp,
@@ -1146,12 +1140,12 @@ private fun SearchHitRow(hit: SearchHit, onClick: () -> Unit) {
     ) {
         // Who said it. Two hits with the same words are otherwise identical.
         Icon(
-            // A person for what you said, the ASTER mark for what a bot said —
+            // A person for what you said, the Maus mark for what a bot said —
             // iOS makes the same split with person.fill and a speech bubble.
             painter = if (SearchHitRole.isFromUser(hit.role)) {
                 rememberVectorPainter(Icons.Filled.Person)
             } else {
-                painterResource(R.drawable.ic_aster_mark)
+                painterResource(R.drawable.ic_maus_mark)
             },
             contentDescription = SearchHitRole.contentDescription(hit.role, hit.name),
             tint = secondaryTint,

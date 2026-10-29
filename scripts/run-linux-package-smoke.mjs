@@ -33,7 +33,7 @@ const executables = [
   path.join(root, "release", appImage),
 ];
 if (process.env.OMB_SMOKE_INSTALLED_DEB === "1") {
-  executables.push("/opt/ASTER/openmausbot");
+  executables.push("/opt/OpenMausBot/openmausbot");
 }
 
 for (const executable of executables) {

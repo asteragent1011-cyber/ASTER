@@ -216,6 +216,21 @@ describe("ElevenLabs", () => {
     expect(JSON.parse(call.body)).toMatchObject({ text: "hello there", model_id: "eleven_flash_v2_5" });
   });
 
+  it("uses the server-side ElevenLabs model override without exposing credentials", async () => {
+    vi.stubEnv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2");
+    try {
+      seen.length = 0;
+      const { speak } = await voice();
+      await speak(cfg(ready), "short sample");
+      const call = seen.at(-1)!;
+      expect(JSON.parse(call.body)).toEqual({ text: "short sample", model_id: "eleven_multilingual_v2" });
+      expect(call.headers["xi-api-key"]).toBe("el-key");
+      expect(call.body).not.toContain("el-key");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("lets a caller override the voice per bot", async () => {
     seen.length = 0;
     const { speak } = await voice();

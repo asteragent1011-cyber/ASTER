@@ -48,18 +48,6 @@ describe("remote connection Settings", () => {
   };
   const environments = { addFromLink: vi.fn() };
 
-  it("in public mode explains pairing through Settings, with no upstream CLI command", () => {
-    vi.stubEnv("DEV", false);
-    try {
-      const html = render({ environments, remoteClient: { active: false } });
-      expect(html).toContain("Settings → Remote access");
-      expect(html).toContain("12-character code");
-      expect(html).not.toMatch(/openmausbot/i);
-    } finally {
-      vi.unstubAllEnvs();
-    }
-  });
-
   it("defaults to server pairing and explains how to obtain a fresh full link", () => {
     const html = render({ environments, remoteClient: { active: false } });
     expect(html).toContain('<option value="server" selected="">Self-hosted server</option>');
@@ -85,7 +73,7 @@ describe("remote connection Settings", () => {
     expect(html).toContain("Companion address");
     expect(html).toContain("Six-digit companion code");
     expect(html).toContain('placeholder="000000"');
-    expect(html).toContain("managed ASTER HTTPS address");
+    expect(html).toContain("managed OpenMausBot HTTPS address");
     expect(html).toContain("Tailscale name ending in .ts.net");
     expect(html).not.toContain("<select");
     expect(html).not.toContain("Server pairing link");

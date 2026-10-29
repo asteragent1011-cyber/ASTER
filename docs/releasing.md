@@ -10,12 +10,17 @@ reruns and recovery. It
 builds macOS (arm64 + x64, signed, notarized, stapled), Windows, and Ubuntu
 from a single pinned commit, verifies every artifact the way a user would
 receive it, and assembles the canonical draft in
-[ASTER releases](https://github.com/asteragent1011-cyber/ASTER/releases).
+[OpenMausBot releases](https://github.com/milind-soni/OpenMausBot/releases).
+The exact same assets are also staged in the public legacy releases repo so
+installed builds from 0.1.46 and earlier can update across the repository
+migration.
 
-Tick **publish** to publish and verify the release in the same run. Leave it
-unticked to review the draft; when you publish that draft in GitHub's UI, the
-**Sync published release** workflow re-downloads every asset and verifies the
-updater feeds against the published bytes.
+Tick **publish** to publish and verify the canonical release first, then make
+the identical legacy updater bridge visible. Leave it unticked to review the
+canonical draft; when you publish that draft in GitHub's UI, the **Sync
+published release** workflow
+verifies and publishes its legacy mirror automatically. Never publish only the
+legacy draft.
 
 The release commit must have passed CI: the **CI passed on the release commit**
 job waits (while the platforms build) for ci.yml's `CI` check on the pinned
@@ -30,27 +35,29 @@ A release is rejected if any installer, stable download
 name, updater feed, blockmap, size, or digest is absent or inconsistent.
 
 GitHub generates the release body from pull requests since the previous
-tag. The docs changelog reads published ASTER releases and caches them for
-five minutes.
+canonical tag. The docs changelog combines published canonical releases with
+the legacy archive into one complete history and caches it for five minutes.
 Configure the optional Vercel hook below to rebuild the docs immediately after
 publication; otherwise the live cache or the next normal docs deployment
 refreshes it.
 
-## Artifact names and the updater feed
+## Updater migration invariant
 
-`electron-builder.yml` sets `productName: ASTER`, so the packaged app is
-`ASTER.app` on macOS, installs to `/opt/ASTER` from the `.deb`, and every
-versioned artifact is named `ASTER-<version>-…`. The workflow adds stable
-copies for the README's `/latest/download/` links: `ASTER.dmg`,
-`ASTER-intel.dmg`, `ASTER-setup.exe`, `ASTER-amd64.deb` and `ASTER.AppImage`.
+`app-update.yml` is baked into every packaged desktop app. Builds through
+0.1.46 point to `milind-soni/openmausbot-releases`; newer builds point to
+`milind-soni/OpenMausBot`. For that reason:
 
-`app-update.yml` is baked into every packaged desktop app and points at
-`asteragent1011-cyber/ASTER`. In-app updates read `latest-mac.yml`,
-`latest.yml` and `latest-linux.yml` from **public** releases there, so updates
-only reach users once that repository's releases are publicly readable.
+1. Every new release is published byte-for-byte to both repositories during
+   the bridge period.
+2. `openmausbot-releases` must stay public. Do not delete its final bridge
+   release, feeds, or assets.
+3. README and docs downloads point at the canonical repo, while the legacy
+   mirror exists only for installed updater clients and historical releases.
 
-ASTER does not mirror releases into the upstream OpenMausBot release
-repositories. Never upload ASTER artifacts or feeds there.
+The npm package is published separately and its versioned `.tgz` is attached
+only to the canonical release. It is not a desktop updater artifact; the
+mirror checks permit that one extra file while still verifying the complete,
+byte-identical desktop asset set.
 
 ## Why the gates exist
 
@@ -73,7 +80,7 @@ must fail the build, not ship an installer that downloads them on first use.
 
 ## One-time setup: release secrets
 
-Set these in **ASTER → Settings → Secrets and variables → Actions**.
+Set these in **OpenMausBot → Settings → Secrets and variables → Actions**.
 
 The **Prepare next release** workflow also needs
 **Settings → Actions → General → Workflow permissions → Allow GitHub Actions
@@ -105,10 +112,16 @@ password for CI — revocable, scoped, no 2FA dance):
 base64 -i AuthKey_XXXXXXXX.p8 | pbcopy   # → APPLE_API_KEY_P8_BASE64
 ```
 
-The release itself uses the workflow's scoped `GITHUB_TOKEN`; no personal
-access token is needed.
+### 3. `RELEASES_PAT`
 
-### 3. Optional `DOCS_DEPLOY_HOOK_URL`
+A fine-grained personal access token that lets the workflow write to the
+legacy updater mirror: **GitHub → Settings → Developer settings →
+Fine-grained tokens** → repository access: only `openmausbot-releases` →
+permissions: **Contents: Read and write**. Set a long expiry and a calendar
+reminder. The canonical release uses the workflow's scoped `GITHUB_TOKEN` and
+does not need a PAT.
+
+### 4. Optional `DOCS_DEPLOY_HOOK_URL`
 
 In Vercel, open the docs project and create a **Deploy Hook** for its production
 branch. Store that private URL as the `DOCS_DEPLOY_HOOK_URL` repository secret.
@@ -121,6 +134,7 @@ The hand-cut path still works when Actions is down or a release needs
 surgery: `pnpm package:mac`, gate with `codesign --verify --deep --strict`,
 notarize with the local keychain profile (`xcrun notarytool submit …
 --keychain-profile AC_PASSWORD`), staple, re-zip, regenerate blockmaps and
-`node scripts/regenerate-mac-feed.mjs`, upload the complete asset set, publish,
-and always verify the published bytes against the published feed by
-downloading them back.
+`node scripts/regenerate-mac-feed.mjs`, upload the identical complete asset set
+to both repositories, publish and verify the canonical release before the
+legacy mirror, and always verify the published bytes against the published feed
+by downloading them back.

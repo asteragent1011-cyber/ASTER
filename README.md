@@ -1,320 +1,457 @@
-<div align="center">
+> ⚠️ **No affiliation with any cryptocurrency.** OpenMausBot has no token. Any coin using the OpenMausBot, Maus, or SupaMaus name is not created, endorsed, or affiliated with this project or its maintainer. I have received no tokens, payment, or allocation from anyone, and I will not be endorsing any token.
 
-<img src="public/app-icon.svg" alt="ASTER" width="96">
+<div align="center">
 
 # ASTER
 
-**A local-first chat app where every contact is a real AI agent.**
+**Your own team of AI bots, in a chat app.**
 
-Each bot runs on an agent CLI already installed on your machine (Claude Code, Codex, or any
-ACP-speaking engine) and has its own personality, model, computer, and connected apps.
-Talk to bots like contacts, watch them work, and approve what matters.
+<sub>An independent, open-source project rebranded as **ASTER**, based on [OpenMausBot](https://github.com/milind-soni/OpenMausBot) by Milind Soni. Not affiliated with xAI.</sub>
+
+Every bot in the sidebar is a real agent — Claude or Codex running locally under the hood — with its own
+personality, its own model, its own cloud computer, and its own connected apps.
+Talk to them like contacts. Watch them work. Approve what matters.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Electron](https://img.shields.io/badge/Electron-macOS%20%C2%B7%20Windows%20%C2%B7%20Ubuntu-2B2E3A?logo=electron&logoColor=9FEAF9)
-![Node](https://img.shields.io/badge/Node-%E2%89%A524-339933?logo=nodedotjs&logoColor=white)
-![License](https://img.shields.io/badge/license-Apache--2.0-blue)
+![Agents](https://img.shields.io/badge/agents-Claude%20·%20Codex-d97757)
+[![Release](https://img.shields.io/github/v/release/asteragent1011-cyber/ASTER?label=release&color=1084fe&cacheSeconds=300)](https://github.com/asteragent1011-cyber/ASTER/releases/latest)
+![PRs](https://img.shields.io/badge/PRs-welcome-38d591)
+
+<br>
+
+<a href="https://github.com/asteragent1011-cyber/ASTER/releases/latest/download/ASTER.dmg">
+  <img src="https://img.shields.io/github/v/release/asteragent1011-cyber/ASTER?style=for-the-badge&label=%E2%AC%87%EF%B8%8F%20%20Download%20for%20Mac%20%28Apple%20silicon%29&labelColor=070707&color=1084fe&cacheSeconds=300" alt="Download the latest ASTER for Mac with Apple silicon (.dmg)" height="40">
+</a>
+&nbsp;
+<a href="https://github.com/asteragent1011-cyber/ASTER/releases/latest/download/ASTER-intel.dmg">
+  <img src="https://img.shields.io/github/v/release/asteragent1011-cyber/ASTER?style=for-the-badge&label=%E2%AC%87%EF%B8%8F%20%20Download%20for%20Mac%20%28Intel%29&labelColor=070707&color=2a9d8f&cacheSeconds=300" alt="Download the latest ASTER for Intel Macs (.dmg)" height="40">
+</a>
+&nbsp;
+<a href="https://github.com/asteragent1011-cyber/ASTER/releases/latest/download/ASTER-setup.exe">
+  <img src="https://img.shields.io/github/v/release/asteragent1011-cyber/ASTER?style=for-the-badge&label=%E2%AC%87%EF%B8%8F%20%20Download%20for%20Windows&labelColor=070707&color=4cc2ff&cacheSeconds=300" alt="Download the latest ASTER for Windows (.exe)" height="40">
+</a>
+&nbsp;
+<a href="https://github.com/asteragent1011-cyber/ASTER/releases/latest/download/ASTER-amd64.deb">
+  <img src="https://img.shields.io/github/v/release/asteragent1011-cyber/ASTER?style=for-the-badge&label=%E2%AC%87%EF%B8%8F%20%20Download%20for%20Ubuntu&labelColor=070707&color=e95420&cacheSeconds=300" alt="Download the latest ASTER for Ubuntu (.deb)" height="40">
+</a>
+
+<sub>[latest release](https://github.com/asteragent1011-cyber/ASTER/releases/latest) &nbsp;·&nbsp; macOS: Apple silicon & Intel · signed & notarized .dmg &nbsp;·&nbsp; Windows: x64 installer &nbsp;·&nbsp; Ubuntu 24.04 x64: .deb or AppImage beta &nbsp;·&nbsp; [all releases](https://github.com/asteragent1011-cyber/ASTER/releases)</sub>
+
+<br>
+
+<a href="https://github.com/sponsors/milind-soni">
+  <img src="https://img.shields.io/badge/%E2%9D%A4%EF%B8%8F%20%20Support%20Upstream%20OpenMausBot-GitHub%20Sponsors-38d591?style=for-the-badge&labelColor=070707" alt="Support Upstream OpenMausBot via GitHub Sponsors" height="40">
+</a>
+
+<br>
+<br>
+
+<img src="docs/screenshots/hero.png" alt="ASTER — a Telegram-style chat app where every chat is a real AI agent" width="900">
 
 </div>
 
-> ASTER is a fork of [OpenMausBot](https://github.com/milind-soni/OpenMausBot) by Milind Soni and its
-> contributors. Most of the engine, server, and app come from upstream; ASTER adds its own brand and UI
-> layer, decision-model routing for rooms, and a companion sidecar. See [Provenance](#provenance).
-
 ---
 
-## Contents
+## Why
 
-- [Why ASTER](#why-aster)
-- [Capabilities](#capabilities)
-- [Architecture](#architecture)
-- [Tech stack](#tech-stack)
-- [Repository layout](#repository-layout)
-- [Getting started](#getting-started)
-- [Configuration](#configuration)
-- [Development](#development)
-- [Testing and builds](#testing-and-builds)
-- [Deployment](#deployment)
-- [Security and privacy](#security-and-privacy)
-- [Roadmap](#roadmap)
-- [Provenance](#provenance)
-- [License](#license)
+One assistant in one box is the wrong shape for agents. ASTER is an independent, open-source project based on OpenMausBot and inspired by **Grok Bot** —
+it keeps the idea (AI as a *messaging app*: a roster of bots you chat with, each with its own personality,
+memory of its thread, model, computer, and apps) and rebuilds it open, local-first, and on the agents you
+already have:
 
-## Why ASTER
+- **Bring your own agents.** Bots run on the `claude`, `codex`, and `grok` CLIs installed on your own machine
+  — your existing logins and subscriptions, no new accounts, no proxy in the middle. Point any engine at a
+  custom CLI binary (a versioned build or wrapper) in **Settings → Engines**.
+- **Local first.** One small harness server on `127.0.0.1` owns every agent process. Transcripts, keys, and
+  events live in `~/.openmausbot`, not a cloud.
+- **Agents with hands.** Each bot can use a cloud Linux desktop, an isolated Local VM, or—where the platform
+  safety boundary is currently certified—your own computer, plus 500+ apps through Composio. Host control is
+  available on macOS and Ubuntu Xorg after explicit opt-in. Ubuntu Wayland host control remains disabled while
+  issue #345 is resolved.
 
-A single assistant in a single box is the wrong shape for agents. ASTER treats AI as a **messaging
-app**: a roster of bots you chat with, each with its own thread memory, model, computer, and tools.
+## Features
 
-- **Bring your own agents.** Bots run on CLIs you already have (`claude`, `codex`, `gemini`, `grok`,
-  and others), using your existing logins and subscriptions. No new account and no proxy in the middle.
-- **Local first.** One harness server on `127.0.0.1` owns every agent process. Bots, transcripts,
-  settings, and keys stay on your machine.
-- **You stay in control.** Risky actions turn into approval cards. Secrets are write-only.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## Capabilities
+### 🧠 Pick a brain per bot
 
-Each item below has an implementation in this repository; paths point to where it lives.
+A model picker with a provider rail — Claude and Codex models side by side, defaults marked, unavailable
+providers dimmed with the reason. Switch a bot's model mid-conversation.
 
-| Capability | What it does | Where |
-|---|---|---|
-| **Multi-engine bots** | Built-in drivers for Claude, Codex, OpenCode, Qwen, Gemini, Grok, Kimi, Droid, Cursor, Hermes, Pi, Antigravity, MiniMax and a cloud-computer agent, plus any ACP CLI or OpenAI-compatible endpoint through config. An unknown driver shows as "unavailable" and does not crash the others. | `server/drivers/`, [`docs/custom-engines.md`](docs/custom-engines.md) |
-| **Per-bot model picker** | Choose a model per bot, and switch it mid-conversation. | `server/model-catalog/`, `src/components/` |
-| **Rooms with Auto routing** | In a room set to Auto, a fast decision model (TypeSafe Jev, or Cloudflare Workers AI Clef-Flash) picks which bot answers a message that @-mentions no one. If it is off, unsure or slow (1.5 s timeout), the room's lead answers instead. | `server/decider/`, [`docs/decision-model.md`](docs/decision-model.md) |
-| **Approvals** | Shell commands, file edits, and questions appear as inline Allow / Deny cards from a permission broker. | `server/permission-proxy.ts`, [`docs/approval-levels.md`](docs/approval-levels.md) |
-| **Computers** | Each bot can use a cloud desktop (Boat), an isolated local VM (Docker/Podman), or, after you opt in, this computer through the Cua driver. | `server/boat.ts`, `electron/`, [`docs/computer-use-integration.md`](docs/computer-use-integration.md) |
-| **Connected apps** | Gmail, Slack, GitHub, Notion and more through Composio, plus your own MCP servers. | [`docs/composio.md`](docs/composio.md), [`docs/custom-mcp-servers.md`](docs/custom-mcp-servers.md) |
-| **Memory** | Each bot has a workspace with `MEMORY.md` and topic files, and every memory change can be undone. | `server/memory-*.ts`, [`docs/memory.md`](docs/memory.md) |
-| **Routines and webhooks** | Scheduled runs (once, on chosen weekdays, or every 5–1,440 minutes) and webhook triggers on a separate loopback receiver. | `server/routines.ts`, [`docs/routine-schedules.md`](docs/routine-schedules.md) |
-| **Team sharing** | Export or import a whole team (bots, rooms, routines, instructions) as one file. Chat history and secrets are never included. | [`docs/team-sharing.md`](docs/team-sharing.md), [`docs/presets.md`](docs/presets.md) |
-| **Voice** | Read replies aloud through ElevenLabs, Fish Audio, Grok (xAI), built-in macOS voices, or a local Chatterbox server. Calls work on macOS. | `server/tts/`, [`docs/voice-mode.md`](docs/voice-mode.md) |
-| **MCP server** | A stdio MCP server lets external clients inspect and drive bots, rooms, and tasks. It does not expose approvals, deletion, or credentials. | `scripts/mcp-server.ts`, [`docs/mcp-server.md`](docs/mcp-server.md) |
-| **Desktop and mobile** | Electron builds for macOS, Windows, and Ubuntu 24.04; iOS and Android companion apps pair with a running server. | `electron/`, `ios/`, `android/`, [`docs/ios-companion.md`](docs/ios-companion.md) |
-| **Localization** | The UI ships in English, German, Spanish, French, Hindi, Japanese, Brazilian Portuguese, Ukrainian, and Simplified and Traditional Chinese. | `src/locales/`, [`docs/localization.md`](docs/localization.md) |
+<img src="docs/screenshots/model-picker.png" alt="Model picker with provider rail" width="100%">
 
-## Architecture
+</td>
+<td width="50%" valign="top">
 
-There are two processes. The app has no agent transports of its own: it sends typed HTTP commands and
-reads a single replayable SSE stream. The harness server owns every agent process and converts each
-provider's protocol into one canonical event stream.
+### 🖥️ Every bot gets a computer
+
+Open the Computer panel and the bot's cloud desktop spins up on its own — live screen preview while it
+works, "Open desktop" to take over in your browser, or point the bot at *this Mac* instead.
+
+<img src="docs/screenshots/computer-panel.png" alt="Computer panel with live screen preview" width="100%">
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🙋 Bots ask before they act
+
+Shell commands, file edits, and questions surface as inline cards — Allow / Deny / answer in chat. A
+permission broker turns every risky action into a decision you make, for cloud and local computers alike.
+
+<img src="docs/screenshots/approval-card.png" alt="Approval and question cards in chat" width="100%">
+
+</td>
+<td width="50%" valign="top">
+
+### 🔌 Connected apps
+
+A one-click marketplace over Composio Sessions: Gmail, Slack, GitHub, Notion, Linear and hundreds more.
+OAuth once, and every bot can use them as tools.
+
+<img src="docs/screenshots/marketplace.png" alt="Connected apps marketplace" width="100%">
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🗂 Manage bots like chats
+
+Right-click any bot: pin, mark unread, edit profile, duplicate, copy conversation ID, hide, delete. It's a
+messaging app — your agents behave like contacts.
+
+<img src="docs/screenshots/context-menu.png" alt="Bot context menu" width="100%">
+
+</td>
+<td width="50%" valign="top">
+
+### 🔑 Keys once, everything lights up
+
+Paste credentials in App Settings — they persist locally and the provider fleet hot-reloads instantly.
+Secrets are write-only: the UI only ever sees "configured" flags.
+
+<img src="docs/screenshots/app-settings.png" alt="App-level settings with API keys" width="100%">
+
+</td>
+</tr>
+</table>
+
+### #️⃣ Channels for every context
+
+Keep Work, Personal, and each project in separate channels without cloning your bots. Every channel has
+its own transcript, shared instructions, working folder, responder rules, and editable bot roster. File a
+channel and its bots under a named context, then rename it or change its members whenever the team changes.
+
+### ⚡ Fast decisions with Jev
+
+Add a TypeSafe Jev key in **Settings → Decision model** and rooms set to **Auto** pick the bot that fits each
+un-mentioned message in a few hundred milliseconds, falling back to the room's lead whenever Jev is off or unsure.
+See [docs/decision-model.md](docs/decision-model.md).
+
+### 📦 Install a complete team from one Markdown file
+
+Browse outcome-driven teams on [BotMRR](https://botmrr.io), then choose **Add to OpenMausBot**. The app
+opens a review screen before creating the bots, Chief of Staff, channels, playbooks, connector checklist,
+and suggested routines. You can also import the same `.md` file from disk or paste its public GitHub URL
+in **Teams → Import**.
+
+The format stays portable: OpenMausBot reads the structured YAML frontmatter for a reliable one-click
+install, while Grok, Claude, ChatGPT, and people can follow the ordinary Markdown playbook. Connections
+remain off until you approve them, routines arrive paused, and packages never carry credentials,
+conversations, permissions, memory, or computer access. Browse the
+[open-source playbook repository](https://github.com/milind-soni/openmausbot-teams) or read its
+[portable format](https://github.com/milind-soni/openmausbot-teams/blob/main/FORMAT.md).
+
+### 🤝 Share a whole team
+
+Right-click a team and choose **Share team…** (or use **Templates → Share**) to save the whole team as one
+file: its bots with their instructions, pictures and skills, group chats, routines, shared instructions,
+Chief of Staff, connection slots and each bot's starter notes (untick them to leave them out). The dialog
+shows exactly what the file holds before you save it. Chat history, keys and passwords, model choices and
+computers never go in, and anything that looks like a secret is removed from the text. Whoever imports it
+gets new bots on Ask, skills switched off and routines paused. See [docs/team-sharing.md](docs/team-sharing.md).
+Desktops connected to an organization also get **Templates → From {Organization}**: the packages its Admin shares,
+added with one click, skills switched on. See [docs/org-library.md](docs/org-library.md).
+Your New bot defaults can travel too, as a **preset bot** that appears in New bot (in a team file, or on
+their own with **Share as preset…**). See [docs/presets.md](docs/presets.md).
+
+### 🎧 Bots that talk back
+
+Press the speaker on any reply, or switch a bot to read its answers out as they land — so you can listen
+to what ran overnight while you make breakfast. Hit **call** and it's a conversation: it hears you, tells
+you what it's doing while it works, and asks for approvals out loud.
+
+Choose ElevenLabs, Fish Audio, Grok (xAI), built-in Mac voices, or a local Chatterbox server in an agent profile. Paste a
+cloud key once when needed, pick a voice, and every bot can talk.
+Give a bot its own voice and a channel stops sounding like one person.
+
+For Grok, save your xAI API key in **Settings → Connections**, then choose **Grok (xAI)**
+and a voice under the bot’s **Voice & alerts**. It reuses that host-side key and returns MP3
+audio for spoken replies and calls. Language is detected automatically from the reply text;
+quality varies outside xAI’s [officially supported languages](https://docs.x.ai/developers/model-capabilities/audio/text-to-speech).
+This adds speech synthesis to the existing call flow; microphone transcription remains unchanged.
+
+**Also in the box:** streaming replies with tool-run activity chips · native macOS dictation from the
+composer mic (on-device Apple speech recognition — desktop app) · SupaMaus cursor mascots with role-aware
+expressions · screenshots of the bot's work folded into the transcript.
+
+## Powered By
+
+<div align="center">
+
+![Claude](https://img.shields.io/badge/Claude-d97757?logo=claude&logoColor=white)
+![Codex](https://img.shields.io/badge/Codex-000000)
+![Grok](https://img.shields.io/badge/Grok%20CLI-000000?logo=x&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-2B2E3A?logo=electron&logoColor=9FEAF9)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-0F172A?logo=tailwindcss&logoColor=38BDF8)
+![Composio](https://img.shields.io/badge/Composio-e6493a)
+![Cua](https://img.shields.io/badge/Cua%20Driver-1f2937)
+![ElevenLabs](https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white)
+![Fish Audio](https://img.shields.io/badge/Fish%20Audio-2563eb)
+![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-ea4aaa)
+
+</div>
+
+| Service | Purpose |
+|---|---|
+| **Claude · Codex · Grok** | The agents behind every bot, run through their local CLIs |
+| **Electron** | Desktop shells for macOS, Windows, and Ubuntu |
+| **React + Vite + Tailwind CSS** | The chat app UI and its build |
+| **Boat** ([boat.dev](https://boat.dev)) | Each bot's cloud computer |
+| **Composio** | Connected apps — Gmail, Slack, GitHub, and more |
+| **Cua Driver** | Native computer use on your own machine |
+| **ElevenLabs · Fish Audio** | Hosted voices for bots that talk back |
+| **GitHub Sponsors** | One-time and monthly project support |
+
+## How it works
+
+Two processes. The app holds no transports of its own — it sends typed commands over HTTP and folds one SSE
+event stream into state. The harness server owns every agent process and normalizes each provider's native
+protocol into one canonical runtime event stream (logged per-thread as NDJSON).
 
 ```mermaid
 flowchart LR
-    subgraph app ["App: React + Vite (dev :5199)"]
+    subgraph app ["App — React + Tailwind (5199)"]
         UI[Chat UI · model picker · computer panel]
     end
     subgraph server ["Harness server (127.0.0.1:8799)"]
-        API[REST /api/*] --> REG[Driver registry]
-        REG --> BUS[Event bus → SSE /api/events]
-        DEC[Decider: Jev / Clef-Flash]
+        REG[Driver registry] --> BUS[Event bus → SSE]
         BROKER[Permission broker]
-        STORE[(JSON files + SQLite)]
     end
-    subgraph agents ["Agent CLIs on your machine"]
-        CL[claude] & CX[codex] & ACP[ACP engines]
+    subgraph agents ["Agents on your computer"]
+        CL[claude CLI]
+        CX[codex CLI]
+        GR[grok CLI]
     end
-    UI -- HTTP --> API
-    BUS -- one SSE stream --> UI
-    REG --> CL & CX & ACP
-    CL & CX & ACP -- permission requests --> BROKER
-    API --> DEC
-    API --> STORE
+    UI -- "HTTP commands" --> server
+    BUS -- "one SSE stream" --> UI
+    REG --> CL & CX & GR
+    CL & CX & GR -- "permission requests" --> BROKER
+    server -- "Boat API" --> BOAT[("Cloud computer<br/>boat.dev")]
+    server -- "Composio Session" --> APPS[("Gmail · Slack · GitHub · …")]
 ```
 
-| Layer | Where | Role |
+| Layer | Where | What it does |
 |---|---|---|
-| Renderer | `src/` | React chat shell with a server-backed store and one reducer. |
-| Wire contract | `shared/wire.ts` | Types shared by the server and every client. |
-| Server | `server/index.ts`, `server/routes/` | Plain `node:http` server with REST and SSE. New routes go in `server/routes/*` modules. |
-| Drivers | `server/drivers/`, `server/contracts.ts` | One driver per engine behind a small SPI. |
-| Persistence | `server/store.ts`, `server/message-db.ts` | Atomic JSON (`bots.json`, `groups.json`, `config.json`) plus `node:sqlite` transcripts. No external database. |
-| Desktop | `electron/` | `main.mjs` forks the bundled server with `utilityProcess.fork`; `preload.cjs` exposes `window.ogb`. |
-| Companion | `companion/` | Sidecar for paired phones (mDNS). It is the only component that listens off-machine. |
-| Edge services | `cloudflare/` | The Composio broker and control-plane Workers. |
+| Drivers | `server/drivers/` | One per provider: Claude, Codex, and Grok Build over their local CLIs (stream-JSON / JSON-RPC / ACP), plus a cloud-computer agent. Unknown drivers degrade to "unavailable", never crash the fleet. |
+| Harness | `server/harness/` | Registry (configs → live instances) and the fan-in event bus every client folds. |
+| API | `server/index.ts` | Bots, turns, approvals, model catalog, computer lifecycle, connectors, config — HTTP + SSE. |
+| Voice | `server/tts/` | ElevenLabs, Fish Audio, Grok (xAI), built-in Mac voices, or local Chatterbox. Cloud keys stay on the harness; markdown is rewritten into something worth hearing before it is spoken. |
+| App | `src/` | The chat shell. Server-backed store, one reducer, zero client-side transports. |
+| Desktop | `electron/` | macOS, Windows, and Ubuntu shells with an embedded harness and platform capabilities; Apple speech stays macOS-only, Ubuntu Xorg has opt-in local control, and Wayland remains fail-closed. |
 
-The deep reference is [`docs/architecture.md`](docs/architecture.md); there is a study-guide version in
-[`docs/aster-capabilities.md`](docs/aster-capabilities.md).
+### Orchestrate OpenMausBot over MCP
 
-## Tech stack
+OpenMausBot ships a stdio MCP server for external clients such as Claude Desktop and Cursor. It exposes a
+deliberately bounded team control plane: inspect bots and channels, read/search compact transcript pages,
+create and configure bots/channels/tasks, send work, wait for completion, switch models, and interrupt turns.
+It does **not** expose approval grants, deletion, arbitrary settings, credentials, or computer lifecycle.
 
-- **Language:** TypeScript (strict). The server runs directly with `node --experimental-strip-types`;
-  `tsc` only typechecks until packaging.
-- **UI:** React 19, Vite 7, Tailwind CSS 4, Radix Slot, Mermaid, KaTeX, Shiki.
-- **Server:** Node ≥ 24 (`node:http`, `node:sqlite`), zod, ajv, croner, undici.
-- **Desktop:** Electron, electron-builder, electron-updater.
-- **Tooling:** pnpm 10, oxlint, vitest, wrangler.
-- **Mobile:** Swift (iOS) and Kotlin (Android).
-- **Docs site:** `apps/docs` (Next.js).
+See [MCP server setup and tool reference](docs/mcp-server.md).
 
-## Repository layout
+## Quick start
 
-```text
-src/            React renderer (components/, state/, lib/, locales/, styles.css)
-  components/aster/   ASTER-brand UI (context panel, mark, mascot)
-server/         Harness server (drivers/, decider/, routes/, harness/, tts/, testing/)
-shared/         Wire contract and logic shared by server and clients
-electron/       Desktop shell: main process, preload bridge, updater, computer use
-companion/      Phone-pairing sidecar
-cloudflare/     Composio broker and control-plane Workers
-ios/, android/  Native companion apps
-apps/docs/      Documentation website
-docs/           Engineering docs, verification recipes, plans and specs
-evals/          Behavior evaluations for bots
-scripts/        Build, packaging, smoke-test and verification tooling
-deploy/         Docker Compose, Podman, Fly.io and local deployment recipes
-build/          Desktop icons, entitlements and Linux packaging hooks
-public/         Static web assets (app icon, wallpapers)
-third_party/    Vendored code with its license and provenance records
-enterprise/     Source-available enterprise layer (separate license)
-skills/         Bundled agent skills
-```
+**Released builds ([latest release](https://github.com/milind-soni/OpenMausBot/releases/latest)):** the harness server is embedded, so no separate server setup is required.
 
-## Getting started
+| | Download | Install |
+|---|---|---|
+| **macOS** (Apple silicon) | [OpenMausBot.dmg](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.dmg) | Drag it to Applications, open it. Signed & notarized. |
+| **macOS** (Intel) | [OpenMausBot-intel.dmg](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-intel.dmg) | Same app, built for Intel Macs. Signed & notarized. |
+| **Windows** (x64) | [OpenMausBot-setup.exe](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-setup.exe) | Run it — one-click, per-user, no admin rights. The installer isn't code-signed yet, so SmartScreen shows "unknown publisher": **More info → Run anyway**. |
+| **Ubuntu 24.04** (x64) | [OpenMausBot-amd64.deb](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-amd64.deb) · [OpenMausBot.AppImage](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.AppImage) | Install the `.deb` with APT (recommended), or make the AppImage executable and run it. Beta; GNOME is the supported desktop. |
 
-### Prerequisites
+See the [Ubuntu Desktop guide](docs/linux-desktop.md) for installation, capabilities, and troubleshooting.
+Any desktop build can also pair as a client to another Windows, macOS, or Ubuntu host over Tailscale; see [desktop-to-desktop companion mode](docs/desktop-companion.md).
 
-- macOS, Windows, or Ubuntu 24.04 x64
-- **Node.js 24 or newer** and **pnpm 10** (`corepack enable` gives the pinned version)
-- At least one agent CLI, installed and signed in:
-  [`claude`](https://claude.com/claude-code), [`codex`](https://github.com/openai/codex), or another
-  supported engine. Installed engines appear in the model picker automatically.
-- To package for macOS: Xcode command-line tools (Swift)
 
-### Install and run from source
+**From source:**
 
 ```sh
-git clone https://github.com/asteragent1011-cyber/ASTER.git
-cd ASTER
-pnpm install --frozen-lockfile
+git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot
+pnpm install
 
-pnpm dev:server    # harness server → http://127.0.0.1:8799
-pnpm dev           # web UI        → http://127.0.0.1:5199
+pnpm dev:server    # harness server → 127.0.0.1:8799
+pnpm dev           # app → http://127.0.0.1:5199
 pnpm dev:desktop   # Electron shell; keep the two commands above running
 ```
 
-To run the server through the CLI entry point instead (setup, serve, pair):
+Requirements: **macOS, Windows, or Ubuntu 24.04 x64**, **Node 24+**, **pnpm**, and at least one agent CLI — [`claude`](https://claude.com/claude-code),
+[`codex`](https://github.com/openai/codex), or [`grok`](https://x.ai/cli) — installed and logged in. They appear
+in the model picker automatically.
+
+Package the desktop application:
 
 ```sh
-pnpm aster setup   # interactive first-run setup
-pnpm aster serve   # serve and print a pairing link
-pnpm pair          # mint a pairing code for another device
+pnpm package:mac      # macOS: DMG + ZIP; requires Swift/Xcode tools
+pnpm package:win      # Windows: installer + ZIP
+pnpm package:linux    # Ubuntu x64: .deb + AppImage + verified CUA runtime
 ```
 
-## Configuration
+### Desktop capability status
 
-Local chat needs no configuration. Integrations are turned on by pasting keys in **App Settings**,
-where they are stored locally and never shown again. You can also set environment variables.
+| Capability | macOS | Ubuntu 24.04 Xorg | Ubuntu 24.04 Wayland |
+|---|---|---|---|
+| Packaged app, embedded harness, local agent CLIs | Supported | Beta | Beta |
+| Composio and Boat/cloud computers | Supported | Beta | Beta |
+| Explicit preview-only local screen capture | Supported | Beta | Beta |
+| Bot control of this computer | Supported | Beta, explicit opt-in | Disabled: Wayland safety gate |
+| Native on-device dictation | Supported | Planned | Planned |
 
-Every `ASTER_*` variable falls back to its older `OMB_*` name, so existing setups keep working.
+The Linux preview is user-initiated and never enables local bot control or Auto routing. On Xorg, the reviewed Cua
+Driver 0.19.3 runtime starts only after explicit opt-in and without its full-screen cursor overlay. On Wayland the
+app never starts it and clears legacy opt-ins while that real-seat safety gate remains unresolved. Chat, preview,
+Cloud, and Local VM remain available on both sessions. See the [Ubuntu Desktop guide](docs/linux-desktop.md) and tracking
+issues [#29](https://github.com/milind-soni/OpenMausBot/issues/29),
+[#345](https://github.com/milind-soni/OpenMausBot/issues/345), and
+[#113](https://github.com/milind-soni/OpenMausBot/issues/113).
 
-| Variable | Purpose | Default |
+The Linux packager downloads only the tag-pinned upstream archive during the build, verifies its size, SHA-256,
+complete member allowlist, and inner executable hashes, then packages only the CLI and cursor-theme sidecar. The
+installed app never downloads or self-updates native automation code. Cua's MIT notice, Inter's SIL OFL, a generated
+third-party license report, and a CycloneDX inventory ship with the runtime. See
+[`third_party/cua-driver/`](third_party/cua-driver/) for the reviewed provenance record.
+
+These credentials are optional — local chat works without them. Paste a key once in **App Settings** (gear
+in the sidebar footer) when you want to enable its integration:
+
+| Credential | What it enables | Where to get it |
 |---|---|---|
-| `ASTER_PORT` / `OMB_PORT` | Harness server port | `8799` |
-| `ASTER_WEBHOOK_PORT` / `OMB_WEBHOOK_PORT` | Webhook-only receiver port | server port + 1 |
-| `ASTER_DATA_DIR` / `OMB_DATA_DIR` | Data directory (bots, transcripts, config) | `~/.openmausbot` |
-| `ASTER_UI_PORT` / `OMB_UI_PORT` | Vite dev server port | `5199` |
-| `DECIDER_PROVIDER` / `OMB_DECIDER_PROVIDER` | Decision model for Auto rooms: `jev`, `clef-flash`, or `off` | `jev` |
-| `OMB_JEV_API_KEY` | TypeSafe Jev key (also settable in the UI) | — |
-| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Clef-Flash credentials | — |
+| Composio project key (`ak_…`) | Connect Gmail, GitHub, Slack, Notion, and other apps to your bots | [OpenMausBot Composio setup](docs/composio.md) |
+| Boat API key | Give bots an isolated remote Linux computer with a desktop and terminal | [Boat API key guide](https://docs.boat.dev/api-keys) |
+| ElevenLabs key | Read replies aloud, and call your bots | [ElevenLabs API keys](https://elevenlabs.io/app/settings/api-keys) |
+| Fish Audio key | Read replies aloud with Fish Audio voices, and call your bots | [Fish Audio API keys](https://fish.audio/app/api-keys/) |
 
-The Compose deployment reads its own variables (`OMB_HTTP_PORT`, `OMB_PUBLIC_URL`, `ENGINES`, …);
-[`.env.example`](.env.example) and [`deploy/.env.example`](deploy/.env.example) document them.
-
-Optional third-party credentials:
-
-| Credential | Enables | Guide |
-|---|---|---|
-| Composio project key (`ak_…`) | Connected apps | [`docs/composio.md`](docs/composio.md) |
-| Boat API key | Cloud Linux desktop per bot (paid after trial) | [docs.boat.dev](https://docs.boat.dev/api-keys) |
-| ElevenLabs / Fish Audio / xAI key | Hosted voices | [`docs/voice-mode.md`](docs/voice-mode.md) |
-
-## Development
+Composio and Boat are third-party services with their own accounts and terms. Boat is a paid service after
+its trial, and using a cloud computer may incur charges.
 
 ```sh
-pnpm typecheck        # app + server (tsc)
-pnpm lint             # oxlint, warnings are errors
-pnpm i18n:check       # locale packs match the English source
-pnpm check:electron   # syntax-check Electron entry points
-pnpm docs:dev         # documentation site
-pnpm mcp              # stdio MCP server
-pnpm eval             # behavior evals
+pnpm typecheck     # app + server
+pnpm test          # unit, driver, API, and desktop capability tests
+pnpm build         # typecheck + production build
+pnpm check:electron # syntax-check Electron main/preload files
+pnpm package:win   # Windows installer + zip → release/
+pnpm package:linux # Ubuntu x64 .deb + AppImage → release/
 ```
 
-Changes to the server or conversation flow must be verified against an **isolated fixture**, never
-against your real data. See [`AGENTS.md`](AGENTS.md) and [`docs/verification/README.md`](docs/verification/README.md):
+### Routines and webhook triggers
+
+Routines can run once, on selected weekdays, or every 5–1,440 minutes, using either a MAUS's configured
+model/computer or the Cloud VM runner. Interval schedules stay aligned to their chosen start time and skip
+an occurrence when the previous run is still active, so slow work cannot build an unbounded queue. A
+separate optional Advanced run limit can safely stop stuck work; no timeout is imposed unless one is chosen.
+The existing duration field remains calendar/display metadata. Webhook triggers are independent from schedules
+but reuse the same queued task executor and calendar
+receipts.
+
+OpenMausBot starts a webhook-only receiver on `127.0.0.1:8800` by default (or one port above `OMB_PORT`).
+Set `OMB_WEBHOOK_PORT` to choose another port. A webhook secret is shown once when the trigger is created
+or rotated. Bearer authentication is recommended so the secret stays out of request URLs and most access
+logs; a single capability URL remains available for senders that cannot configure headers. The receiver
+exposes only `/health` and secret `/hooks/...` endpoints; it never exposes the app's broader API.
+OpenMausBot must remain running to accept a delivery. For public internet delivery, proxy only this
+dedicated receiver through a hosted relay or a tool such as Tailscale Funnel.
+
+## Status
+
+Early but real — the loop works end to end: message → agent → streamed reply → tools → approvals →
+computer use. macOS, Windows, and Ubuntu 24.04 x64 have released builds; Ubuntu remains a beta with the
+capability limits above. Rough edges to expect: hosted/mobile connectivity is still being built, and webhook
+triggers currently use the local receiver rather than an always-on hosted relay.
+Hosted voice needs an ElevenLabs, Fish Audio, or xAI key; built-in Mac and local Chatterbox voices need no cloud key. Calls are macOS-only for now (they ride the same on-device dictation as
+the composer mic) — see [`docs/voice-mode.md`](docs/voice-mode.md) for the design and the known gaps.
+
+Contributions welcome — the driver SPI in [`server/contracts.ts`](server/contracts.ts) is deliberately
+small; adding a provider is one file in [`server/drivers/`](server/drivers/) plus a one-line registration.
+No code needed at all for your own engines: any ACP-speaking CLI or OpenAI-compatible endpoint
+plugs in through config — see [`docs/custom-engines.md`](docs/custom-engines.md).
+Users can add their own MCP tool servers with zero code via [`docs/custom-mcp-servers.md`](docs/custom-mcp-servers.md).
+
+## Support the project
+
+OpenMausBot is free and open source. If it does real work for you, you can
+[support its development through GitHub Sponsors](https://github.com/sponsors/milind-soni)
+with a one-time contribution or a monthly sponsorship. Your support helps fund ongoing development
+and maintenance; OpenMausBot remains free and open source.
+
+## Run from a terminal or on a server
+
+With Node 24 or newer, install once and run:
 
 ```sh
-node --experimental-strip-types scripts/control-aster.ts launch
-pnpm control:aster doctor --url http://127.0.0.1:PORT
+npm install -g openmausbot
+openmausbot
 ```
 
-## Testing and builds
+Or use `npx openmausbot` without a global install. First launch guides you with
+arrow-key choices: choose AI access, sign in or paste a hidden API key, choose
+a model, and optionally connect a phone. Next time, the same command reuses your
+saved setup and opens OpenMausBot on this computer. Keep the terminal open; Ctrl-C stops
+the server, not your saved work. Use `--no-open` to skip opening the browser.
 
-```sh
-pnpm exec vitest run <files>   # targeted tests
-pnpm test                      # vitest + broker + Electron node tests + packaged-server smoke
-pnpm build                     # typecheck + production UI build → dist/
-pnpm build:server              # bundled server → dist-server/
-pnpm docs:build                # documentation site
-```
+Phone access is optional and defaults to skipping. Choose an explicitly
+approved managed public HTTPS endpoint protected by pairing, an existing
+Tailscale connection, or your own HTTPS reverse proxy. Both native apps pair from
+this flow: the QR is an app link when you are connecting an Android phone, and the
+iOS app takes either that or the web link. A browser works on either phone. A phone
+cannot use a localhost link. `--local` ignores saved remote access for one launch;
+`--no-pair` suppresses phone prompts and invitations but does not disable a saved
+remote connection.
 
-Desktop packages (output in `release/`):
+Run `openmausbot setup` to reconfigure without resetting bots or conversations;
+the saved model default applies only to new bots. Native setup confirms provider
+sign-in; API setup asks before a potentially billable test message. API keys are
+saved as plaintext, not encrypted, in private `config.json` (`0600` on Unix).
+See the [short setup guide](docs/cli-onboarding.md) for account differences,
+phone choices, credential storage, and cancellation.
 
-```sh
-pnpm package:mac      # DMG + ZIP (needs Swift/Xcode tools)
-pnpm package:win      # NSIS installer + ZIP
-pnpm package:linux    # Ubuntu x64 .deb + AppImage
-```
-
-CI is defined in [`.github/workflows/`](.github/workflows/). The `CI` gate job in `ci.yml` is the
-merge verdict; [`docs/ci.md`](docs/ci.md) explains how jobs are selected. Releases are covered in
-[`docs/releasing.md`](docs/releasing.md).
-
-## Deployment
-
-| Target | Guide |
-|---|---|
-| Local Docker Compose | [`deploy/local/README.md`](deploy/local/README.md) |
-| Rootless Podman (Linux, Windows/WSL2) | [`deploy/podman/README.md`](deploy/podman/README.md) |
-| VPS / always-on host | [`docs/deploy-vps.md`](docs/deploy-vps.md), [`docs/self-hosting.md`](docs/self-hosting.md) |
-| Ubuntu desktop | [`docs/linux-desktop.md`](docs/linux-desktop.md) |
-| Bring your own VPS for bot computers | [`docs/byo-vps.md`](docs/byo-vps.md) |
-
-Remote devices pair once with a short code. To expose ASTER beyond loopback, use Tailscale or your
-own HTTPS reverse proxy; never publish the server port directly.
-
-## Security and privacy
-
-- The harness server binds to **127.0.0.1**. Mutating requests need the desktop's per-launch
-  capability or a paired session.
-- **Secrets are write-only.** Keys go in through `PUT /api/config` or desktop credential storage, and
-  the API only ever returns `configured` flags.
-- Every risky agent action goes through the **permission broker** unless you have explicitly set that
-  bot to Full access.
-- Agent processes are never spawned through a shell with user-influenced strings.
-- Control of your own computer is opt-in, and stays disabled on Ubuntu Wayland.
-- Shared team files never carry chat history, credentials, permissions, or computer access.
-- When the CLI is used in API-key mode, keys are saved in plain text in `config.json` (mode `0600` on
-  Unix). Protect that data directory.
-
-Please report vulnerabilities privately; [`SECURITY.md`](SECURITY.md) explains how.
-
-## Roadmap
-
-These items are planned and not yet built:
-
-- Publish the first ASTER release and container image, then point the Compose defaults at
-  `ghcr.io/asteragent1011-cyber/aster` instead of the upstream image.
-- Re-check and resolve the known gaps listed in [`docs/architecture.md` §8](docs/architecture.md),
-  such as decider configuration precedence and the `.well-known` path mismatch.
-- Refresh the documentation screenshots for the ASTER interface.
-- Add native dictation on Ubuntu, and make bot control of this computer safe on Wayland.
-
-Longer-term design notes are in [`docs/plans/`](docs/plans/) and [`docs/superpowers/`](docs/superpowers/).
-
-## Provenance
-
-ASTER is an independent fork of [OpenMausBot](https://github.com/milind-soni/OpenMausBot). It is not
-affiliated with or endorsed by the OpenMausBot maintainer, xAI, or any cryptocurrency or token. Some
-internal identifiers keep the upstream name on purpose, because changing them would break existing
-installs, updates, or paired devices:
-
-- app ID `com.openmausbot.app` and URL scheme `openmausbot://`
-- the data directory `~/.openmausbot`
-- the `OMB_*` environment variables (aliased by `ASTER_*`)
-- the preload bridge `window.ogb`
-- the well-known path `/.well-known/openmausbot/*`
-- the npm package name `openmausbot`, the Linux executable `openmausbot`, and the `omb` /
-  `control:omb` scripts
-- the phone-credential HPKE context string, shared with the upstream mobile apps
+For a background service on a VPS or an always-on computer, use
+`npx openmausbot serve` with explicit remote options: `--tunnel` after
+`npx openmausbot login` for a managed public address, `--tailscale` for your
+tailnet, or the Docker stack for your own domain. These are separate from
+AI-provider sign-in. Devices pair once with a short code. The deployment guide is
+[docs/deploy-vps.md](docs/deploy-vps.md); the reference is
+[docs/self-hosting.md](docs/self-hosting.md).
 
 ## License
 
-[Apache License 2.0](LICENSE). Copyright © 2026 ASTER contributors; derived from OpenMausBot,
-copyright © 2026 Milind Soni and OpenMausBot contributors. Attribution notices are in [NOTICE](NOTICE).
+[Apache License 2.0](LICENSE) © 2026 ASTER contributors, and derived from OpenMausBot © 2026 Milind Soni and OpenMausBot contributors,
+except `enterprise/`, which is source-available under its
+[own license](enterprise/LICENSE); delete that folder and what remains is the
+open-source edition. Details, including how contributions are signed off, are
+in [LICENSING.md](LICENSING.md).
 
-The exception is `enterprise/`, which is source-available under its [own license](enterprise/LICENSE).
-Deleting that folder leaves the open-source edition. See [LICENSING.md](LICENSING.md) for details.
+Packaged Cua Driver components retain their upstream MIT, SIL OFL 1.1, MPL-2.0, and other dependency terms;
+the corresponding notices, license texts, source locations, and SBOM are in
+[`third_party/cua-driver/`](third_party/cua-driver/) and ship beside the native runtime.
 
-Vendored third-party components keep their own licenses; see [`third_party/`](third_party/).
-"OpenMausBot", "Grok" and other names are trademarks of their respective owners.
+ASTER is an independent, open-source project based on OpenMausBot and inspired by Grok Bot. It is
+not affiliated with, endorsed by, or associated with xAI; "Grok" is a trademark
+of its respective owner.

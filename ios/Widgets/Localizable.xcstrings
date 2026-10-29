@@ -46,13 +46,13 @@
     "One chat's status at a glance — pick which one on the widget's settings." : {
       "extractionState" : "manual"
     },
-    "Open ASTER first" : {
+    "Open MausBot first" : {
       "extractionState" : "manual"
     },
-    "Open ASTER to answer" : {
+    "Open MausBot to answer" : {
       "extractionState" : "manual"
     },
-    "Open ASTER to pair" : {
+    "Open MausBot to pair" : {
       "extractionState" : "manual"
     },
     "The bots working right now and how long each has been at it — even when the app is closed." : {

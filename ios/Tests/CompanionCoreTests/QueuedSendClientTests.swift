@@ -116,7 +116,7 @@ final class QueuedSendClientTests: XCTestCase {
         } catch let error as APIError {
             XCTAssertEqual(
                 error.errorDescription,
-                "This computer is too old to take back a queued message. Update ASTER on it."
+                "This computer is too old to take back a queued message. Update OpenMausBot on it."
             )
         } catch {
             XCTFail("expected an APIError, got \(error)")

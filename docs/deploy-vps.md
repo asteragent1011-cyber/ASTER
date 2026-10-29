@@ -1,6 +1,6 @@
-# Deploy ASTER on a VPS
+# Deploy OpenMausBot on a VPS
 
-From a blank Linux server to ASTER running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
+From a blank Linux server to OpenMausBot running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
 
 Three ways to make the server reachable are covered. Pick one; the rest of the guide is the same.
 
@@ -64,15 +64,7 @@ sudo -iu maus
 ```
 
 The login shell also changes into `/home/maus`; run setup there, not from `/root`.
-Get ASTER into this account's home and install its dependencies (Node 24 and
-pnpm must be on the PATH); run the `pnpm aster` commands below from `~/ASTER`:
-
-```sh
-git clone https://github.com/asteragent1011-cyber/ASTER.git ~/ASTER
-cd ~/ASTER && pnpm install --frozen-lockfile
-```
-
-Run the engine sign-ins below in this account as well. Keep a separate
+Run the `npx` commands and engine sign-ins below in this account. Keep a separate
 administrator shell for system packages and systemd. If you already signed in as
 root, sign in again as `maus`; those accounts have different homes and credentials.
 
@@ -81,21 +73,18 @@ root, sign in again as `maus`; those accounts have different homes and credentia
 No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.openmausbot.com` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
 
 ```sh
-pnpm aster setup          # once: choose AI access, connect, and choose a model
-pnpm aster login          # once: an emailed code signs this machine in and reserves its address
-pnpm aster serve --tunnel # runs the server there and prints the pairing link with a QR code
+npx openmausbot setup          # once: choose AI access, connect, and choose a model
+npx openmausbot login          # once: an emailed code signs this machine in and reserves its address
+npx openmausbot serve --tunnel # runs the server there and prints the pairing link with a QR code
 ```
 
 `setup` connects an AI provider; it is separate from the OpenMausBot account.
-The managed `--tunnel` address and that account are a service operated by the
-upstream OpenMausBot project, not by ASTER; use path B or C to stay on your own
-infrastructure.
 Use Codex's device-code option over SSH, or enter a hidden API key for a
 chat-only connection. More engines can be added later. See [CLI setup](cli-onboarding.md).
 
 `login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.openmausbot`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
 
-The account credentials live in `~/.openmausbot/tunnel-account.json`, readable only by your user. `pnpm aster logout` releases the address.
+The account credentials live in `~/.openmausbot/tunnel-account.json`, readable only by your user. `npx openmausbot logout` releases the address.
 
 Skip to "Install and sign the engines in".
 
@@ -114,7 +103,7 @@ One container for the server plus Caddy for HTTPS at `https://maus.example.com`.
 3. **Get the deploy files and set the name:**
 
    ```sh
-   git clone https://github.com/asteragent1011-cyber/ASTER && cd ASTER/deploy
+   git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
    cp .env.example .env
    nano .env                # DOMAIN=maus.example.com ; ENGINES=@anthropic-ai/claude-code @openai/codex
    ```
@@ -130,7 +119,7 @@ One container for the server plus Caddy for HTTPS at `https://maus.example.com`.
 
    Caddy requests the certificate on its own; give it a minute. Then `https://maus.example.com` shows a page asking for a pairing code. That is correct: nothing works until you pair.
 
-In this path, every `pnpm aster …` command below is run inside the container instead:
+In this path, every `npx openmausbot …` command below is run inside the container instead:
 
 ```sh
 docker compose exec omb node dist-server/openmausbot.js pair --label "My MacBook"
@@ -141,7 +130,7 @@ docker compose exec omb node dist-server/openmausbot.js pair --label "My MacBook
 From the administrator shell, install Tailscale on the server and sign in (`curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`). Enable HTTPS certificates for your tailnet once in the admin console (DNS → HTTPS Certificates), then run this from the `maus` shell:
 
 ```sh
-pnpm aster serve --tailscale
+npx openmausbot serve --tailscale
 ```
 
 Tailscale terminates HTTPS with its own certificate and the pairing link uses the server's MagicDNS name (`https://maus.tail1234.ts.net`). Only devices on your tailnet can reach it, which is a very good property for a server that can run tools.
@@ -153,13 +142,13 @@ the image. For paths A and C, install Linux system libraries once from the
 administrator shell:
 
 ```sh
-sudo -H pnpm aster browser install --with-deps
+sudo -H npx --yes openmausbot browser install --with-deps
 ```
 
 Then install the browser in the service account's home, from the `maus` shell:
 
 ```sh
-pnpm aster browser install
+npx --yes openmausbot browser install
 ```
 
 The administrator's browser download is in a different home; it does not install
@@ -173,7 +162,7 @@ gets its own isolated session whose logins persist across restarts.
 
 ## Install and sign the engines in
 
-The npm ASTER package does not install model engine CLIs. For paths A and C,
+The npm OpenMausBot package does not install model engine CLIs. For paths A and C,
 install the engine you use in the service account, then sign it in. For example,
 from the `maus` shell, for Claude:
 
@@ -189,7 +178,7 @@ engines you use. For path B, run the installed CLI inside the container, for
 example `docker compose exec omb claude`.
 
 Engine logins belong to the service user's home (for example `~/.codex` and
-`~/.claude`), separately from ASTER's `~/.openmausbot`. Keep that home when
+`~/.claude`), separately from OpenMausBot's `~/.openmausbot`. Keep that home when
 restarting or upgrading. The systemd example below includes `~/.local/bin` in PATH.
 
 ## Pair your first device
@@ -197,7 +186,7 @@ restarting or upgrading. The systemd example below includes `~/.local/bin` in PA
 `serve` already printed a pairing link and QR code when it started. For another device later:
 
 ```sh
-pnpm aster pair --label "Kitchen iPad"
+npx openmausbot pair --label "Kitchen iPad"
 ```
 
 ```
@@ -217,19 +206,19 @@ Worth knowing: a code works **once** and expires after **five minutes**; the lin
 Every paired device is a session:
 
 ```sh
-pnpm aster sessions              # id, device, scope, last seen, expires
-pnpm aster sessions revoke ID    # signs that device out and closes its stream at once
-pnpm aster status                # what the server says about itself
+npx openmausbot sessions              # id, device, scope, last seen, expires
+npx openmausbot sessions revoke ID    # signs that device out and closes its stream at once
+npx openmausbot status                # what the server says about itself
 ```
 
 ## Keep it running
 
-`pnpm aster serve` is a plain foreground process. For systemd (paths A and C),
-pin the checkout to a chosen release first, from the `maus` shell. Replace
-`X.Y.Z` with the published version you want to run:
+`npx openmausbot serve` is a plain foreground process. For systemd (paths A and C),
+install a chosen release first, from the `maus` shell. Replace `X.Y.Z` with the
+published version you want to run:
 
 ```sh
-cd ~/ASTER && git fetch --tags && git checkout vX.Y.Z && pnpm install --frozen-lockfile
+npm install --global --prefix "$HOME/.local" openmausbot@X.Y.Z
 ```
 
 Stop the foreground server with Ctrl-C before enabling the service. From the
@@ -238,15 +227,15 @@ administrator shell, save this as `/etc/systemd/system/openmausbot.service`:
 ```ini
 # /etc/systemd/system/openmausbot.service
 [Unit]
-Description=ASTER server
+Description=OpenMausBot server
 After=network-online.target
 
 [Service]
 User=maus
-WorkingDirectory=/home/maus/ASTER
+WorkingDirectory=/home/maus
 Environment=HOME=/home/maus
-Environment=PATH=/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/env node --experimental-strip-types /home/maus/ASTER/server/aster.ts serve --tunnel --no-pair
+Environment=PATH=/home/maus/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/maus/.local/bin/openmausbot serve --tunnel --no-pair
 Restart=always
 RestartSec=5
 
@@ -259,11 +248,11 @@ sudo systemctl daemon-reload && sudo systemctl enable --now openmausbot
 journalctl -u openmausbot -f            # the server's log, including "tunnel: live at …"
 ```
 
-Use `--tailscale` instead of `--tunnel` for path C. `--no-pair` skips printing a code at every restart; mint one with `pnpm aster pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
+Use `--tailscale` instead of `--tunnel` for path C. `--no-pair` skips printing a code at every restart; mint one with `npx openmausbot pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
 
 Adjust the account, home, and PATH if yours differ; Node 24 must be available on
-that PATH. The service runs the pinned checkout directly, so a restart uses the
-same release without an implicit upgrade.
+that PATH. The service runs the installed CLI directly, so a restart uses the
+same release without an npm install prompt or an implicit upgrade.
 
 ## Update
 
@@ -272,14 +261,14 @@ same release without an implicit upgrade.
 
   ```sh
   sudo systemctl stop openmausbot
-  sudo -iu maus sh -c 'cd ~/ASTER && git fetch --tags && git checkout vX.Y.Z && pnpm install --frozen-lockfile'
+  sudo -iu maus npm install --global --prefix /home/maus/.local openmausbot@X.Y.Z
   sudo systemctl start openmausbot
   ```
 
   Check that installation succeeded before starting. A service restart by itself
-  does not update the checkout. For foreground use, check out the desired
-  release the same way, then run `pnpm aster serve --tunnel`.
-- **Path B:** `cd ASTER/deploy && docker compose pull omb && docker compose up -d`.
+  does not update the installed package. For foreground `npx` usage, specify the
+  desired release as `npx --yes openmausbot@X.Y.Z serve --tunnel`.
+- **Path B:** `cd OpenMausBot/deploy && docker compose pull omb && docker compose up -d`.
 
 Routines and queued work survive a restart; a turn running at that moment does not, so update between runs.
 
@@ -333,9 +322,9 @@ Read this before putting anything else in front of the server.
 
 ## Troubleshooting
 
-**`serve --tunnel` says "no account on this machine yet".** Run `pnpm aster login` on this machine first; the credentials are per machine.
+**`serve --tunnel` says "no account on this machine yet".** Run `npx openmausbot login` on this machine first; the credentials are per machine.
 
-**The tunnel stays on "retrying".** The server is running and usable locally; the public hop is not verified yet. Wait a minute (Cloudflare needs a moment on a fresh address), then check `journalctl`/the terminal for the reason. If it never comes up, `pnpm aster logout && pnpm aster login` issues a fresh address.
+**The tunnel stays on "retrying".** The server is running and usable locally; the public hop is not verified yet. Wait a minute (Cloudflare needs a moment on a fresh address), then check `journalctl`/the terminal for the reason. If it never comes up, `npx openmausbot logout && npx openmausbot login` issues a fresh address.
 
 **Path B: the page never loads or shows a certificate error.** Caddy could not get a certificate. Check that the name resolves to the server and that ports 80 and 443 are open; `docker compose logs caddy` shows the reason.
 
@@ -345,9 +334,9 @@ Read this before putting anything else in front of the server.
 
 **A bot says the engine is not signed in.** Sign that engine in again on the server.
 
-**What does the server think it is?** `https://<address>/.well-known/openmausbot/environment` is public and shows its id, label, version and capabilities; `pnpm aster status` prints the same on the server.
+**What does the server think it is?** `https://<address>/.well-known/openmausbot/environment` is public and shows its id, label, version and capabilities; `npx openmausbot status` prints the same on the server.
 
-**Something else.** `journalctl -u pnpm aster --since -10m` (or `docker compose logs omb --tail 100`) shows the server's startup lines. Paste them with your question in the community channel.
+**Something else.** `journalctl -u openmausbot --since -10m` (or `docker compose logs omb --tail 100`) shows the server's startup lines. Paste them with your question in the community channel.
 
 ### Ubuntu 24.04 browser sandbox
 

@@ -21,8 +21,8 @@ describe("the generated Swift catalog", () => {
     }
   });
 
-  it("defaults to the ASTER Luma companion, matching the web catalog", () => {
-    expect(swift).toContain('static let defaultID = "luma"');
+  it("defaults to the cursor", () => {
+    expect(swift).toContain('static let defaultID = "cursor"');
   });
 
   it("carries the same anchors as the TypeScript catalog", () => {

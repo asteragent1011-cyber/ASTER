@@ -75,8 +75,8 @@ function requireUpdaterTarget(resources, label) {
   const updateFile = path.join(resources, "app-update.yml");
   requireFile(updateFile);
   const update = readFileSync(updateFile, "utf8");
-  if (!/^owner: asteragent1011-cyber$/m.test(update) || !/^repo: ASTER$/m.test(update)) {
-    fail(`${label} app-update.yml does not point at asteragent1011-cyber/ASTER`);
+  if (!/^owner: milind-soni$/m.test(update) || !/^repo: OpenMausBot$/m.test(update)) {
+    fail(`${label} app-update.yml does not point at milind-soni/OpenMausBot`);
   }
 }
 
@@ -435,7 +435,7 @@ for (const expected of [
 const extracted = mkdtempSync(path.join(tmpdir(), "omb-deb-verify-"));
 try {
   execFileSync("dpkg-deb", ["--extract", deb, extracted]);
-  const debAppRoot = path.join(extracted, "opt", "ASTER");
+  const debAppRoot = path.join(extracted, "opt", "OpenMausBot");
   requireDirectoryMode(debAppRoot, 0o755);
   const debResources = path.join(debAppRoot, "resources");
   // Routes the in-app updater to the package-manager hand-off.
@@ -471,8 +471,8 @@ try {
   requireFile(scalableIcon);
   const desktop = readFileSync(desktopFile, "utf8");
   for (const expected of [
-    "Name=ASTER",
-    "Exec=/opt/ASTER/openmausbot %U",
+    "Name=OpenMausBot",
+    "Exec=/opt/OpenMausBot/openmausbot %U",
     "Icon=openmausbot",
     "StartupWMClass=com.openmausbot.app",
     "Categories=Utility;",

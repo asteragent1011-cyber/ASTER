@@ -6,10 +6,8 @@
 // several members. The state is the room, its people, the last room lines
 // and the new message: the shape that routed 53 of 53 bench messages.
 //
-// Acting on it: a bot or __everyone__ at p >= 0.6 answers; __nobody__ (the
-// message needs no bot at all) is acted on only at p >= 0.85, because staying
-// silent by mistake costs more than an unneeded reply. Anything less sure,
-// and any failure at all, falls back to the room's lead (or its first
+// Acting on it: a bot or __everyone__ at p >= 0.6 answers; anything less
+// sure, and any failure at all, falls back to the room's lead (or its first
 // member), which is exactly what a lead-mode room does today. Nothing here
 // throws.
 import type { Decider } from "./index.ts";
@@ -22,12 +20,6 @@ export const ROOM_ROUTING_TIMEOUT_MS = 1_500;
 export const ROOM_ROUTING_MIN_PROBABILITY = 0.6;
 export const EVERYONE_OPTION = "__everyone__";
 const EVERYONE_MEANING = "Several members: the message explicitly needs answers or work from more than one member of the room, for example it asks everyone or asks each member for their part.";
-/** No bot answers. Offered by option, not by instructions: the instructions
- * stay the fixed string Cloud Pro's relay accepts. */
-export const NOBODY_OPTION = "__nobody__";
-const NOBODY_MEANING = "No bot: the message needs no answer from any bot in the room, for example the people in the room are talking to each other, or it only acknowledges or closes the conversation (thanks, ok, got it) and asks for nothing.";
-/** Silence needs more certainty than a choice of speaker. */
-export const ROOM_ROUTING_NOBODY_MIN_PROBABILITY = 0.85;
 /** Fixed: Cloud Pro's decision relay accepts room routing only with these
  * exact instructions (relay.ts). */
 export const ROOM_ROUTING_INSTRUCTIONS = "Which bot in this room should answer `new_message`? Choose __everyone__ only when the message needs several members to answer.";
@@ -63,7 +55,6 @@ export interface RoomRoutingInput {
 export type RoomRoute =
   | { kind: "member"; botId: string; probability: number; provider?: DeciderProvider }
   | { kind: "everyone"; probability: number; provider?: DeciderProvider }
-  | { kind: "nobody"; probability: number; provider?: DeciderProvider }
   | { kind: "fallback"; reason: DeciderFailure | "low_confidence" | "no_choice" };
 
 function clip(value: string, max: number): string {
@@ -99,7 +90,6 @@ export function roomRoutingRequest(input: RoomRoutingInput) {
   const options: Record<string, string> = {};
   for (const member of input.members) options[member.id] = memberOption(member);
   options[EVERYONE_OPTION] = EVERYONE_MEANING;
-  options[NOBODY_OPTION] = NOBODY_MEANING;
   const recent = recentWithinBudget(input.recent);
   const state = {
     room: clip(input.room, NAME_MAX),
@@ -128,11 +118,6 @@ export async function decideRoomResponder(
     const { choice, pTop } = result.answers;
     if (pTop < ROOM_ROUTING_MIN_PROBABILITY) return { kind: "fallback", reason: "low_confidence" };
     if (choice === EVERYONE_OPTION) return { kind: "everyone", probability: pTop, provider: result.provider };
-    if (choice === NOBODY_OPTION) {
-      return pTop >= ROOM_ROUTING_NOBODY_MIN_PROBABILITY
-        ? { kind: "nobody", probability: pTop, provider: result.provider }
-        : { kind: "fallback", reason: "low_confidence" };
-    }
     if (!input.members.some((member) => member.id === choice)) return { kind: "fallback", reason: "malformed" };
     return { kind: "member", botId: choice, probability: pTop, provider: result.provider };
   } catch {

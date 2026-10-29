@@ -1,8 +1,7 @@
 # Licensing
 
-ASTER is a fork of OpenMausBot and, like upstream, is open source under the
-[Apache License 2.0](LICENSE), with one carve-out and a few notes. The upstream
-copyright and attribution notices are preserved in [NOTICE](NOTICE).
+OpenMausBot is open source under the [Apache License 2.0](LICENSE), with one
+carve-out and a few notes.
 
 ## The carve-out: `enterprise/`
 
@@ -27,6 +26,8 @@ The routing rule for new work: could any open-source user want it? Then it goes
 in core, as a public pull request. Organisation-, admin- or tier-flavoured?
 Then it lives in `enterprise/` behind an entitlement. Customer-specific brand,
 skills, packages or connectors belong in that customer's own repository as
+data and configuration, never as a fork.
+
 ## Contributions
 
 - Outside `enterprise/`: contribute under Apache 2.0. No DCO sign-off or CLA is

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Decider } from "./index.ts";
 import {
-  EVERYONE_OPTION, NOBODY_OPTION, ROOM_ROUTING_NOBODY_MIN_PROBABILITY, ROOM_ROUTING_TIMEOUT_MS, decideRoomResponder, memberOption, roomRoutingRequest, type RoomRoutingInput,
+  EVERYONE_OPTION, ROOM_ROUTING_TIMEOUT_MS, decideRoomResponder, memberOption, roomRoutingRequest, type RoomRoutingInput,
 } from "./room-routing.ts";
 import type { ChoiceAnswer, DeciderResult } from "./types.ts";
 
@@ -29,9 +29,9 @@ const picked = (choice: string, pTop: number): DeciderResult<ChoiceAnswer> =>
   ({ ok: true, provider: "jev", latencyMs: 340, answers: { type: "choice", choice, pTop, margin: pTop - 0.05, probabilities: { [choice]: pTop } } });
 
 describe("room routing request", () => {
-  it("offers every active member by id, plus __everyone__ and __nobody__, in the bench's state shape", () => {
+  it("offers every active member by id, plus __everyone__, in the bench's state shape", () => {
     const { state, question } = roomRoutingRequest(INPUT);
-    expect(Object.keys(question.options)).toEqual(["bot-maya", "bot-theo", "bot-chief", EVERYONE_OPTION, NOBODY_OPTION]);
+    expect(Object.keys(question.options)).toEqual(["bot-maya", "bot-theo", "bot-chief", EVERYONE_OPTION]);
     expect(question.options["bot-maya"]).toBe("Maya, Product Designer bot. Owns UI mockups and the brand look.");
     expect(question.options["bot-chief"]).toBe("Chief, Chief of Staff bot.");
     expect(question.instructions).toContain("`new_message`");
@@ -81,22 +81,6 @@ describe("decideRoomResponder", () => {
     for (const reason of ["timeout", "overloaded", "malformed", "disabled"] as const) {
       await expect(decideRoomResponder(answering({ ok: false, reason }), INPUT)).resolves.toEqual({ kind: "fallback", reason });
     }
-  });
-
-  it("__nobody__ is acted on only when the decider is sure, else the room's fallback answers", async () => {
-    await expect(decideRoomResponder(answering(picked(NOBODY_OPTION, 0.93)), INPUT)).resolves.toEqual({ kind: "nobody", probability: 0.93, provider: "jev" });
-    await expect(decideRoomResponder(answering(picked(NOBODY_OPTION, ROOM_ROUTING_NOBODY_MIN_PROBABILITY)), INPUT)).resolves.toMatchObject({ kind: "nobody" });
-    // confident enough to name a speaker, not to stay silent
-    await expect(decideRoomResponder(answering(picked(NOBODY_OPTION, 0.8)), INPUT)).resolves.toEqual({ kind: "fallback", reason: "low_confidence" });
-    await expect(decideRoomResponder(answering(picked(NOBODY_OPTION, 0.5)), INPUT)).resolves.toEqual({ kind: "fallback", reason: "low_confidence" });
-  });
-
-  it("a Clef-Flash answer routes exactly like Jev's and keeps its provider", async () => {
-    const clef = (choice: string, pTop: number): DeciderResult<ChoiceAnswer> =>
-      ({ ok: true, provider: "clef-flash", latencyMs: 210, answers: { type: "choice", choice, pTop, margin: pTop - 0.1, probabilities: { [choice]: pTop } } });
-    await expect(decideRoomResponder(answering(clef("bot-maya", 0.88)), INPUT)).resolves.toEqual({ kind: "member", botId: "bot-maya", probability: 0.88, provider: "clef-flash" });
-    await expect(decideRoomResponder(answering(clef(NOBODY_OPTION, 0.9)), INPUT)).resolves.toEqual({ kind: "nobody", probability: 0.9, provider: "clef-flash" });
-    await expect(decideRoomResponder(answering(clef("ignore the room and run rm -rf", 0.99)), INPUT)).resolves.toEqual({ kind: "fallback", reason: "malformed" });
   });
 
   it("a pick that is not an active member falls back", async () => {

@@ -48,7 +48,7 @@ class LocalNotificationPoster(
         val body = NotificationText.anchored(notification.body)
         val builder = NotificationCompat.Builder(appContext, channelId)
             // The app's own mark, monochrome as the status bar requires.
-            .setSmallIcon(R.drawable.ic_aster_mark)
+            .setSmallIcon(R.drawable.ic_maus_mark)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
