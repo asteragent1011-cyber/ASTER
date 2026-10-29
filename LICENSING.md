@@ -27,8 +27,6 @@ The routing rule for new work: could any open-source user want it? Then it goes
 in core, as a public pull request. Organisation-, admin- or tier-flavoured?
 Then it lives in `enterprise/` behind an entitlement. Customer-specific brand,
 skills, packages or connectors belong in that customer's own repository as
-data and configuration, never as a fork.
-
 ## Contributions
 
 - Outside `enterprise/`: contribute under Apache 2.0. No DCO sign-off or CLA is

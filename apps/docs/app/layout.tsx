@@ -5,8 +5,12 @@ import './global.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const baseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://aster.ai');
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://docs.openmausbot.com'),
+  metadataBase: new URL(baseUrl),
   title: {
     default: 'ASTER Docs',
     template: '%s · ASTER Docs',
