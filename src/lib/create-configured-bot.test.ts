@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, persistBotUpdate, type Bot } from "@/state/store";
 import { BotCreationDraft, EMPTY_BOT_DEFAULTS } from "./bot-creation-draft";
 import { createConfiguredBot } from "./create-configured-bot";
+import { botBodyFor } from "./aster-blobs";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -35,6 +36,16 @@ describe("configured bot creation", () => {
     await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals, "admins");
     expect(f.events[0]).toBe("POST /api/bots");
     expect(f.bodies[0]).toMatchObject({ visibility: "admins", useDefaults: false });
+  });
+
+  it("saves the colour and the companion the editor showed, though the server picks a new id", async () => {
+    const f = fixture("ask");
+    f.draft.patch({ color: "coral" });
+    const shown = botBodyFor(f.draft.bot);
+    const result = await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals);
+    expect(f.bodies[1]).toMatchObject({ color: "coral", mascotBody: shown });
+    expect(result.bot.color).toBe("coral");
+    expect(botBodyFor(result.bot)).toBe(shown);
   });
 
   it("keeps the server-completed workspace effort when applying draft settings", async () => {

@@ -4,6 +4,7 @@ import type { BotCreationDraft } from "./bot-creation-draft";
 import { imageAttachmentFromFile } from "./composer-attachments";
 import type { BotVisibility } from "../../shared/wire";
 import { botAvatarUrlFromStoredPath } from "../../shared/bot-avatar";
+import { botBodyFor } from "./aster-blobs";
 
 export async function preparedBotTemplate(draft: BotCreationDraft) {
   const template = draft.export();
@@ -45,7 +46,9 @@ export async function createConfiguredBot(
   try {
     // The create endpoint already validated the chosen model and completed
     // workspace effort defaults. Do not overwrite those with the raw draft.
-    const patched = await update(bot.id, { ...profile, modelSelection: bot.modelSelection, ...draft.consent }, new AbortController().signal,
+    // The editor drew the companion its draft id picks; the server's id
+    // would pick another, so the bot keeps the one the reader saw and coloured.
+    const patched = await update(bot.id, { ...profile, mascotBody: botBodyFor(draft.bot), modelSelection: bot.modelSelection, ...draft.consent }, new AbortController().signal,
       request, approvals, bot);
     bot = { ...bot, ...patched };
     if (profile.approvalMode === "full" || profile.approvalMode === "custom") {

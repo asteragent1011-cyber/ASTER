@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { StoreProvider, type Bot } from "@/state/store";
-import { asterBlobFor } from "@/lib/aster-blobs";
+import { asterBlobFor, COMPANION_COLORS, companionPalette } from "@/lib/aster-blobs";
 import { BotProfileAvatarCard } from "./BotProfileAvatarCard";
 
 function makeBot(overrides: Partial<Bot> = {}): Bot {
@@ -76,4 +76,38 @@ describe("BotProfileAvatarCard and the companions", () => {
     expect(markup).toContain('aria-label="Zoom avatar"');
     expect(markup).not.toContain(">Body<");
   });
+
+  it("offers no shape choice: Circle, Rounded and Square are gone, the companion is the shape", () => {
+    for (const bot of [makeBot(), makeBot({ avatarUrl: "/api/attachments/cat.webp", avatarCrop: "square" })]) {
+      const markup = renderCard(bot);
+      expect(markup).not.toContain(">Shape<");
+      for (const shape of ["Circle", "Rounded", "Square"]) expect(markup).not.toContain(`>${shape}<`);
+    }
+  });
+
+  it("previews the companion in the bot's colour and marks that colour chosen", () => {
+    const markup = renderCard(makeBot({ color: "coral" }));
+    // the preview and every expression wear the colour, tinted, not flat
+    const colours = [...markup.matchAll(/data-color="([a-z]+)"/g)].map((match) => match[1]);
+    expect(colours.length).toBeGreaterThan(1);
+    expect(new Set(colours)).toEqual(new Set(["coral"]));
+    const tinted = companionPalette(asterBlobFor("bot-1"), "coral");
+    expect(markup).toContain(`stop-color="${tinted.mid}"`);
+    expect(markup).toMatch(/aria-pressed="true"[^>]*aria-label="Use coral mascot color"/);
+    expect(markup).not.toMatch(/aria-pressed="true"[^>]*aria-label="Use green mascot color"/);
+  });
+
+  it("a reopened editor restores the saved colour, and switching colour keeps the companion", () => {
+    for (const color of ["teal", "yellow", "pink"] as const) {
+      const markup = renderCard(makeBot({ color }));
+      expect(markup).toMatch(new RegExp(`aria-pressed="true"[^>]*aria-label="Use ${color} mascot color"`));
+      expect(new Set([...markup.matchAll(/data-body="([a-z]+)"/g)].map((match) => match[1]))).toEqual(new Set([asterBlobFor("bot-1")]));
+    }
+  });
+
+  it("Reset mascot restores the companion's own colour, the brand sheet untouched", () => {
+    const body = asterBlobFor("bot-1");
+    expect(companionPalette(body, COMPANION_COLORS[body])).toEqual(companionPalette(body));
+  });
 });
+

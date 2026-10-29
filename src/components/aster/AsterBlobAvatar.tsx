@@ -1,6 +1,6 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
 import { MASCOT_BODIES } from "../../../shared/mascot-bodies";
-import { blobPhase, type AsterBlobId, type AsterBlobMotion, type AsterBlobState } from "@/lib/aster-blobs";
+import { blobPhase, companionPalette, type AsterBlobId, type AsterBlobMotion, type AsterBlobState } from "@/lib/aster-blobs";
 
 /** The face box every catalog body is solved in (scripts/gen-mascot-bodies.ts). */
 const FACE_BOX = 228.541;
@@ -10,23 +10,6 @@ const COMPACT_AT = 36;
 const PAD = 36;
 /** How long a one-shot beat holds, matching its CSS keyframes. */
 const BEAT_MS: Record<AsterBlobMotion, number> = { blink: 320, "message-sent": 700, "message-received": 1_200 };
-
-interface Palette {
-  light: string;
-  mid: string;
-  deep: string;
-  accent: string;
-  /** The ring and its glints. */
-  ring: string;
-}
-
-/** The brand sheet's swatches, per companion. */
-const PALETTES: Record<AsterBlobId, Palette> = {
-  luma: { light: "#F6E3FF", mid: "#BBA0FF", deep: "#8466EE", accent: "#F5B8F2", ring: "#E9DCFF" },
-  nova: { light: "#D2F5FF", mid: "#7DB4FF", deep: "#5363F0", accent: "#6FE3FF", ring: "#CFEFFF" },
-  orbit: { light: "#D7E4FF", mid: "#8FA4FF", deep: "#5551E2", accent: "#7FD1FF", ring: "#DCE3FF" },
-  echo: { light: "#EEE5FF", mid: "#A9A5FF", deep: "#7A68F0", accent: "#9FCBFF", ring: "#E4DEFF" },
-};
 
 const STAR = "M16,1.5c1.1,7.6 6.9,13.4 14.5,14.5 -7.6,1.1 -13.4,6.9 -14.5,14.5C14.9,22.9 9.1,17.1 1.5,16 9.1,14.9 14.9,9.1 16,1.5Z";
 
@@ -53,6 +36,8 @@ export interface AsterBlobAvatarProps {
   animated?: boolean;
   /** Spreads float and blink phases so a roster never moves in step. */
   identity?: string;
+  /** The bot's colour: tints the companion's palette (companionPalette). */
+  color?: string | null;
   label?: string | null;
 }
 
@@ -71,10 +56,11 @@ export const AsterBlobAvatar = memo(function AsterBlobAvatar({
   busy,
   animated = true,
   identity,
+  color,
   label,
 }: AsterBlobAvatarProps) {
   const uid = useId().replace(/:/g, "");
-  const palette = PALETTES[body];
+  const palette = companionPalette(body, color);
   const shape = OUTLINE[body];
   const compact = size < COMPACT_AT;
   const phase = blobPhase(identity ?? body);
@@ -129,6 +115,7 @@ export const AsterBlobAvatar = memo(function AsterBlobAvatar({
       className={`aster-blob inline-flex shrink-0${animated ? "" : " aster-blob--still"}`}
       data-body={body}
       data-state={state}
+      data-color={color ?? undefined}
       data-motion={beat?.kind}
       role={label ? "img" : undefined}
       aria-label={label ?? undefined}

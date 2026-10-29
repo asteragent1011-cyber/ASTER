@@ -16,14 +16,12 @@ import {
   AVATAR_FOCUS_CENTER,
   AVATAR_ZOOM_MAX,
   AVATAR_ZOOM_MIN,
-  BOT_AVATAR_CROPS,
   botAvatarUrlFromStoredPath,
   clampAvatarFocus,
   clampAvatarZoom,
-  type BotAvatarCrop,
 } from "../../shared/bot-avatar";
 import { BotAvatar, MausAvatar } from "./Avatar";
-import { botBodyFor } from "@/lib/aster-blobs";
+import { botBodyFor, COMPANION_COLORS } from "@/lib/aster-blobs";
 import { AvatarImageGenerator } from "./AvatarImageGenerator";
 import { useOrganizationBranding } from "@/lib/use-organization-branding";
 
@@ -118,13 +116,6 @@ function AvatarFraming({
   );
 }
 
-const CROP_LABEL = {
-  mascot: "Mascot",
-  circle: "Circle",
-  rounded: "Rounded",
-  square: "Square",
-} satisfies Record<BotAvatarCrop, string>;
-
 export function BotProfileAvatarCard({
   bot,
   activeState,
@@ -144,9 +135,11 @@ export function BotProfileAvatarCard({
   const [savingConnection, setSavingConnection] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const crop = bot.avatarCrop ?? "mascot";
-  const cropRef = useRef(crop);
-  cropRef.current = crop;
+  // The companion, unless the bot shows its own picture. Any crop but
+  // "mascot" with an image means the picture (older profiles saved a shape).
+  const showsPicture = Boolean(bot.avatarUrl) && (bot.avatarCrop ?? "mascot") !== "mascot";
+  const showsPictureRef = useRef(showsPicture);
+  showsPictureRef.current = showsPicture;
   const busy = uploading || generating || savingConnection;
 
   const upload = async (file: File | undefined) => {
@@ -157,10 +150,9 @@ export function BotProfileAvatarCard({
       const saved = uploadAvatar ? null : await imageAttachmentFromFile(file);
       const avatarUrl = uploadAvatar ? await uploadAvatar(file) : saved ? botAvatarUrlFromStoredPath(saved.path) : null;
       if (!avatarUrl) throw new Error("The uploaded image could not be used as an avatar");
-      const latestCrop = cropRef.current;
       onPatch({
         avatarUrl,
-        avatarCrop: latestCrop === "mascot" ? "circle" : latestCrop,
+        avatarCrop: "circle",
         avatarZoom: AVATAR_ZOOM_MIN,
         avatarFocusX: AVATAR_FOCUS_CENTER,
         avatarFocusY: AVATAR_FOCUS_CENTER,
@@ -192,23 +184,21 @@ export function BotProfileAvatarCard({
       // Generation reads the bot's identity and crop server-side. Commit any
       // debounced profile edits first, then feed the generated avatar back
       // through the same serialized mutation lane as upload/remove.
-      const cropAtStart = cropRef.current;
+      const pictureAtStart = showsPictureRef.current;
       await flushBotPatches(bot.id);
       const result: { avatarUrl: string; bot: Bot } = await api(`/api/bots/${bot.id}/avatar/generate`, {
         method: "POST",
         body: JSON.stringify({ prompt: direction.trim() }),
       });
-      const latestCrop = cropRef.current;
       onPatch({
         avatarUrl: result.avatarUrl,
         // The server owns this crop for generate (server/index.ts picks
-        // "circle" for a mascot bot). The fallback below is never actually
-        // reached, since the server always assigns a crop; "circle" is kept
-        // only as the truthful default if it ever were.
+        // "circle" for a mascot bot). If the reader switched between the
+        // picture and the companion while it ran, their choice stands.
         avatarCrop:
-          latestCrop === cropAtStart
+          showsPictureRef.current === pictureAtStart
             ? (result.bot.avatarCrop ?? "circle")
-            : latestCrop,
+            : showsPictureRef.current ? "circle" : "mascot",
       });
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : String(generateError));
@@ -223,7 +213,7 @@ export function BotProfileAvatarCard({
         <span className="rounded-lg bg-control px-3 py-1.5 text-[14px] font-medium text-ink">Avatar</span>
         <button
           disabled={busy}
-          onClick={() => onPatch({ avatarCrop: "mascot", color: "green", mascotExpression: null })}
+          onClick={() => onPatch({ avatarCrop: "mascot", color: COMPANION_COLORS[botBodyFor(bot)], mascotExpression: null })}
           className="rounded-md px-2 py-1.5 text-[13px] text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-50"
         >
           Reset mascot
@@ -240,7 +230,7 @@ export function BotProfileAvatarCard({
             void upload(new File([bytes], `${icon.id}.png`, { type: "image/png" }));
           }}><img src={icon.image} alt="" className="size-10 rounded-md object-contain" /></button>)}</div>
         </div>}
-        {crop !== "mascot" && bot.avatarUrl ? (
+        {showsPicture ? (
           <AvatarFraming bot={bot} disabled={busy} onPatch={onPatch} />
         ) : (
           <div className="flex justify-center py-3">
@@ -286,29 +276,7 @@ export function BotProfileAvatarCard({
         </div>
         <div className="mt-1.5 text-[11.5px] text-ink-secondary">PNG, JPEG, GIF, or WebP · up to 10 MB</div>
 
-        <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
-          Shape
-        </div>
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-hairline/40">
-          {BOT_AVATAR_CROPS.map((candidate, index) => (
-            <button
-              key={candidate}
-              type="button"
-              disabled={busy}
-              aria-pressed={crop === candidate}
-              onClick={() => onPatch({ avatarCrop: candidate })}
-              className={cn(
-                "py-1.5 text-[12.5px] disabled:opacity-50",
-                index > 0 && "border-l border-hairline/40",
-                crop === candidate ? "bg-control text-ink" : "text-ink-secondary hover:bg-control/60 hover:text-ink",
-              )}
-            >
-              {CROP_LABEL[candidate]}
-            </button>
-          ))}
-        </div>
-
-        {crop === "mascot" && (
+        {!showsPicture && (
           <>
             <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
               Expression
@@ -328,7 +296,7 @@ export function BotProfileAvatarCard({
                   title={expression}
                   aria-label={`Use ${expression} expression`}
                 >
-                  <MausAvatar bodyId={botBodyFor(bot)} identity={bot.id} state={expression} size={42} animated={false} />
+                  <MausAvatar color={bot.color} bodyId={botBodyFor(bot)} identity={bot.id} state={expression} size={42} animated={false} />
                 </button>
               ))}
             </div>

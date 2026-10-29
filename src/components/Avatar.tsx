@@ -9,7 +9,7 @@ import { blobMotionFor, blobStateFor, botBodyFor, companionBody } from "@/lib/as
 import { AsterBlobAvatar } from "./aster/AsterBlobAvatar";
 
 export type MausAvatarProps = {
-  /** Kept for the call sites that pass it; a companion's palette is its own. */
+  /** The bot's colour: tints the companion, keeping its own design. */
   color?: MausColor;
   /** Named behaviour, drawn as the companion's mood. */
   state?: MausState;
@@ -33,6 +33,7 @@ export type MausAvatarProps = {
 };
 
 function MausAvatarComponent({
+  color,
   state = "idle",
   size = 44,
   label,
@@ -53,6 +54,7 @@ function MausAvatarComponent({
       motionKey={motionKey}
       busy={busy}
       identity={identity}
+      color={color}
       animated={animated}
       label={label ?? null}
     />
@@ -106,7 +108,10 @@ export function resolveBotAvatarOutcome(params: {
 }
 
 /**
- * The one renderer for a bot's chosen profile image. Malformed persisted
+ * The one renderer for a bot's chosen profile image. The companion is the only
+ * avatar shape: a bot's own picture, when it shows one, is framed in a circle
+ * whatever crop an older profile saved (circle, rounded or square all mean
+ * just "show the picture"). Malformed persisted
  * values and images that fail to load both fall back to the animated mascot,
  * so an old/corrupt profile can never leave a broken-image icon in the app.
  */
@@ -136,12 +141,6 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
     );
   }
 
-  const radius =
-    profile.avatarCrop === "circle"
-      ? "50%"
-      : profile.avatarCrop === "rounded"
-        ? "22%"
-        : "0";
   const zoom = clampAvatarZoom(bot.avatarZoom ?? 1);
   const focusX = clampAvatarFocus(bot.avatarFocusX ?? 0.5);
   const focusY = clampAvatarFocus(bot.avatarFocusY ?? 0.5);
@@ -149,7 +148,7 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
   return (
     <span
       className="relative block shrink-0 overflow-hidden bg-raised"
-      style={{ width: size, height: size, borderRadius: radius }}
+      style={{ width: size, height: size, borderRadius: "50%" }}
     >
       <img
         src={profile.avatarUrl}

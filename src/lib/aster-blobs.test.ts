@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { BotAvatar, MausAvatar } from "@/components/Avatar";
 import { AsterBlobAvatar } from "@/components/aster/AsterBlobAvatar";
 import { MASCOT_BODIES } from "../../shared/mascot-bodies";
-import { ASTER_BLOB_IDS, asterBlobFor, blobMotionFor, blobPhase, blobStateFor, botBodyFor, isAsterBlob } from "./aster-blobs";
+import { ASTER_BLOB_IDS, COMPANION_COLORS, COMPANION_PALETTES, asterBlobFor, companionPalette, blobMotionFor, blobPhase, blobStateFor, botBodyFor, isAsterBlob } from "./aster-blobs";
 
 describe("which companion a bot wears", () => {
   it("is stable for a bot and spreads a roster across all four", () => {
@@ -129,3 +129,70 @@ describe("the home's central mascot is the open bot's companion", () => {
     expect(await hero({ id: "yuki-id", name: "Yuki", mascotBody: "hexagon" })).toBe(asterBlobFor("yuki-id"));
   });
 });
+
+describe("a bot's colour tints its companion", () => {
+  const hue = (hex: string) => {
+    const n = Number.parseInt(hex.slice(1), 16);
+    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255) as [number, number, number];
+    const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
+    const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return h * 60;
+  };
+  const lightness = (hex: string) => {
+    const n = Number.parseInt(hex.slice(1), 16);
+    const v = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return (Math.max(...v) + Math.min(...v)) / 510;
+  };
+
+  it("each companion's own colour, or none, draws the brand sheet untouched", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      expect(companionPalette(id)).toEqual(COMPANION_PALETTES[id]);
+      expect(companionPalette(id, COMPANION_COLORS[id])).toEqual(COMPANION_PALETTES[id]);
+      expect(companionPalette(id, "not-a-colour")).toEqual(COMPANION_PALETTES[id]);
+    }
+  });
+
+  it("another colour turns the whole palette to it, keeping each swatch's lightness", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      const green = companionPalette(id, "green");
+      expect(green).not.toEqual(COMPANION_PALETTES[id]);
+      expect(Math.abs(hue(green.mid) - hue("#009957"))).toBeLessThan(2);
+      for (const key of ["light", "mid", "deep", "accent", "ring"] as const) {
+        expect(Math.abs(lightness(green[key]) - lightness(COMPANION_PALETTES[id][key]))).toBeLessThan(0.01);
+      }
+      // the highlight stays the lightest swatch and the shade the deepest: still glossy, never flat
+      expect(lightness(green.light)).toBeGreaterThan(lightness(green.mid));
+      expect(lightness(green.mid)).toBeGreaterThan(lightness(green.deep));
+    }
+  });
+
+  it("every avatar context draws the bot's colour, the face untouched", () => {
+    const bot = { id: "koda", name: "Koda", color: "orange" as const };
+    const tinted = companionPalette(asterBlobFor("koda"), "orange");
+    // sidebar, header, messages and group rows all draw through BotAvatar at their sizes
+    for (const size of [24, 36, 44, 250]) {
+      const markup = renderToStaticMarkup(createElement(BotAvatar, { bot, size, animated: false }));
+      expect(markup).toContain('data-color="orange"');
+      expect(markup).toContain(`stop-color="${tinted.deep}"`);
+      expect(markup).toContain('stop-color="#14163A"');
+    }
+  });
+
+  it("the home's central mascot wears the bot's colour", async () => {
+    const { MascotCentrepiece } = await import("@/components/MascotCentrepiece");
+    const bot = { id: "koda", threadId: "t", name: "Koda", title: "", description: "", notifications: false, color: "teal", unread: false,
+      modelSelection: { instanceId: "local", model: "m" }, messages: [] } as never;
+    const markup = renderToStaticMarkup(createElement(MascotCentrepiece, { bot, messages: [] }));
+    expect(markup).toMatch(/data-mascot-companion[\s\S]*?data-color="teal"/);
+  });
+
+  it("a bot with its own picture shows it in a circle, whatever older shape it saved", () => {
+    for (const crop of ["circle", "rounded", "square"] as const) {
+      const markup = renderToStaticMarkup(createElement(BotAvatar, {
+        bot: { id: "koda", name: "Koda", color: "green", avatarUrl: "/api/attachments/koda.webp", avatarCrop: crop },
+      }));
+      expect(markup).toContain("border-radius:50%");
+    }
+  });
+});
+
