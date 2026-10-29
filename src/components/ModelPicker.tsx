@@ -637,6 +637,13 @@ export function ModelPicker({
       }}
       aria-expanded={open && !bot.busy}
       aria-haspopup="dialog"
+      // The compact chip hides the label below, which would otherwise leave
+      // the tooltip as the button's name; keep the name the label reads.
+      aria-label={active
+        ? `${showActiveAccount ? `${active.displayName} · ` : ""}${modelLabel(active, selection.model)}${
+            modelProvider(active, selection.model) ? ` · ${modelProvider(active, selection.model)}` : ""
+          }${selectedVariantLabel !== undefined ? ` · ${selectedVariantLabel}` : selection.effort ? ` · ${effortLabel(selection.effort)}` : ""}`
+        : undefined}
       className={cn(
         "flex items-center gap-1.5 rounded-full border border-hairline/40 bg-control/60 py-1 pl-2 pr-2.5 text-[13px] text-ink hover:bg-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-control/60",
         // in a narrow chat header fold to a rounded square with just the

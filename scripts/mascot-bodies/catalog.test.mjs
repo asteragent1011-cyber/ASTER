@@ -9,13 +9,13 @@ import {
 } from "../../shared/mascot-bodies.ts";
 
 describe("the generated catalog", () => {
-  it("carries all ten bodies", () => {
-    expect(MASCOT_BODY_IDS).toHaveLength(10);
+  it("carries all fifteen bodies", () => {
+    expect(MASCOT_BODY_IDS).toHaveLength(15);
     for (const id of MASCOT_BODY_IDS) expect(MASCOT_BODIES[id].id).toBe(id);
   });
 
-  it("defaults to the cursor", () => {
-    expect(DEFAULT_MASCOT_BODY).toBe("cursor");
+  it("defaults to the ASTER Mochi blob", () => {
+    expect(DEFAULT_MASCOT_BODY).toBe("mochi");
   });
 
   it("gives every body the markup the renderer expects", () => {
@@ -49,11 +49,12 @@ describe("botMascotBody", () => {
     expect(botMascotBody("blob")).toBe("blob");
   });
 
-  it("falls back to the cursor for anything else", () => {
-    expect(botMascotBody("hexagram")).toBe("cursor");
-    expect(botMascotBody(undefined)).toBe("cursor");
-    expect(botMascotBody(null)).toBe("cursor");
-    expect(botMascotBody(42)).toBe("cursor");
+  it("falls back to the default Mochi for anything else", () => {
+    expect(botMascotBody("hexagram")).toBe("mochi");
+    expect(botMascotBody(undefined)).toBe("mochi");
+    expect(botMascotBody(null)).toBe("mochi");
+    expect(botMascotBody(42)).toBe("mochi");
+    expect(botMascotBody("cursor")).toBe("cursor");
   });
 
   it("exposes a schema that rejects an unknown id", () => {

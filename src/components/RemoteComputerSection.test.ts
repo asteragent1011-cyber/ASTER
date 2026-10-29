@@ -48,6 +48,18 @@ describe("remote connection Settings", () => {
   };
   const environments = { addFromLink: vi.fn() };
 
+  it("in public mode explains pairing through Settings, with no upstream CLI command", () => {
+    vi.stubEnv("DEV", false);
+    try {
+      const html = render({ environments, remoteClient: { active: false } });
+      expect(html).toContain("Settings → Remote access");
+      expect(html).toContain("12-character code");
+      expect(html).not.toMatch(/openmausbot/i);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("defaults to server pairing and explains how to obtain a fresh full link", () => {
     const html = render({ environments, remoteClient: { active: false } });
     expect(html).toContain('<option value="server" selected="">Self-hosted server</option>');

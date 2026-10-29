@@ -167,12 +167,21 @@ export function deciderSavePatch(
     || (typeof patch.accountId === "string" && Boolean(patch.accountId.trim()));
 
   const provider = patch.provider ?? current?.provider ?? "jev";
+  const clefTokenPresent = () => Boolean(next.cloudflareToken || current?.cloudflareToken || (current?.provider === "clef-flash" && current?.key) || process.env.CLOUDFLARE_API_TOKEN);
+  const clefAccountPresent = () => Boolean(next.cloudflareAccountId || next.accountId || current?.cloudflareAccountId || current?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID);
 
   if (savingJevKey && provider === "jev") {
     next.enabled = patch.enabled ?? true;
     next.jobs = { ...current?.jobs, roomRouting: true, ...patch.jobs };
   } else if ((savingClefToken || savingClefAccount) && provider === "clef-flash") {
-    next.enabled = patch.enabled ?? true;
+    // Clef needs two credentials, and the desktop saves them in two requests
+    // (the token through the encrypted store, the Account ID with the rest).
+    // Saving one is only the "turn it on" once the other is present too;
+    // otherwise keep it and leave the switch where it was. An explicit
+    // enabled: true is still checked below.
+    if (patch.enabled !== undefined) next.enabled = patch.enabled;
+    else if (clefTokenPresent() && clefAccountPresent()) next.enabled = true;
+    else if (current?.enabled) next.enabled = false;
     next.jobs = { ...current?.jobs, roomRouting: true, ...patch.jobs };
   } else if (clearingJevKey && provider === "jev") {
     if (!included) next.enabled = false;
@@ -184,9 +193,7 @@ export function deciderSavePatch(
 
   if (next.enabled === true) {
     if (provider === "clef-flash") {
-      const hasToken = Boolean(next.cloudflareToken || current?.cloudflareToken || (current?.provider === "clef-flash" && current?.key) || process.env.CLOUDFLARE_API_TOKEN);
-      const hasAccount = Boolean(next.cloudflareAccountId || next.accountId || current?.cloudflareAccountId || current?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID);
-      if (!hasToken || !hasAccount) {
+      if (!clefTokenPresent() || !clefAccountPresent()) {
         return { ok: false, error: "Save a Cloudflare Account ID and API token before turning on Clef-Flash." };
       }
     } else if (provider === "jev") {

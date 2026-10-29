@@ -311,4 +311,27 @@ describe("Auto rooms ask the decision model who answers", { timeout: 90_000 }, (
     expect(disk).not.toContain("tsk_new_valid_key");
     expect((await api("PUT", "/api/config", { decider: { key: "" } })).body.decider).toMatchObject({ configured: false, enabled: false });
   });
+
+  it("the desktop's Clef save — token to the encrypted store, then the Account ID — turns Clef on without a plaintext token", async () => {
+    const token = "cf_e2e_token_never_on_disk";
+    expect((await api("PUT", "/api/config", { decider: { provider: "clef-flash" } })).status).toBe(200);
+    // credential:set sends the token alone; with no Account ID yet it is kept, not refused
+    const tokenSaved = await api("PUT", "/api/config?secretStorage=external", { decider: { cloudflareToken: token } });
+    expect(tokenSaved.status).toBe(200);
+    expect(tokenSaved.body.decider).toMatchObject({ provider: "clef-flash", enabled: false });
+    expect(tokenSaved.text).not.toContain(token);
+    // then the panel saves the Account ID with the provider, which completes the pair and switches it on
+    const accountSaved = await api("PUT", "/api/config", { decider: { cloudflareAccountId: "acct_e2e", provider: "clef-flash" } });
+    expect(accountSaved.status).toBe(200);
+    expect(accountSaved.body.decider).toMatchObject({ provider: "clef-flash", enabled: true, jobs: { roomRouting: true } });
+    const disk = readFileSync(join(data, "config.json"), "utf8");
+    expect(JSON.parse(disk).decider).toMatchObject({ provider: "clef-flash", cloudflareToken: "", cloudflareAccountId: "acct_e2e", enabled: true });
+    expect(disk).not.toContain(token);
+    expect((await api("GET", "/api/config")).text).not.toContain(token);
+    // switching it on explicitly without a token is still refused
+    expect((await api("PUT", "/api/config", { decider: { cloudflareToken: "" } })).body.decider).toMatchObject({ enabled: false });
+    const refused = await api("PUT", "/api/config", { decider: { enabled: true } });
+    expect(refused.status).toBe(400);
+    expect(refused.body.error).toBe("Save a Cloudflare Account ID and API token before turning on Clef-Flash.");
+  });
 });

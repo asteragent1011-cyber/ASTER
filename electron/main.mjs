@@ -76,7 +76,7 @@ import {
 import capabilitiesModule from "./capabilities.cjs";
 import environmentsModule from "./environments.cjs";
 import localOriginModule from "./local-origin.cjs";
-import { buildApplicationMenu } from "./menu.mjs";
+import { APP_DISPLAY_NAME, buildApplicationMenu } from "./menu.mjs";
 import { createComputerSharing, validateSharedFolders } from "./computer-sharing.mjs";
 import { acquireDataDirLease } from "./data-dir-lease.mjs";
 import { createManagedDesktopClient, createManagedDesktopRelay, createManagedDesktopStore } from "./managed-desktop.mjs";
@@ -3124,6 +3124,8 @@ setCuaStateListener((connection) => {
 });
 
 app.whenReady().then(async () => {
+  // The About panel otherwise titles itself with app.name ("openmausbot").
+  app.setAboutPanelOptions({ applicationName: APP_DISPLAY_NAME });
   // Cached-before-the-fix attachment responses outlive `no-store`: entries
   // stored under the old one-year immutable policy can replay to a second
   // identity in this profile without the visibility gate re-running. The

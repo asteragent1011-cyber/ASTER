@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { companionMood, greetingFor, growthStage, readAsterMode, saveAsterMode } from "./aster-companion";
+import { companionMood, greetingFor, growthStage, isCompanionHome, readAsterMode, saveAsterMode } from "./aster-companion";
 import type { Message } from "@/state/store";
 
 const msg = (role: Message["role"], kind: Message["kind"] = "text"): Message =>
@@ -59,5 +59,29 @@ describe("aster mode preference", () => {
     const broken = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); } };
     expect(readAsterMode(broken)).toBe("balanced");
     expect(() => saveAsterMode("study", broken)).not.toThrow();
+  });
+});
+
+describe("isCompanionHome", () => {
+  const said = (role: Message["role"], text: string, kind: Message["kind"] = "text") => ({ role, kind, text });
+  const greeting = said("bot", "Hi, I'm Koda. What would you like me to do?");
+
+  it("shows home for an empty thread and for a new bot's seeded greeting", () => {
+    expect(isCompanionHome({}, [])).toBe(true);
+    expect(isCompanionHome({}, [greeting])).toBe(true);
+    // a renamed bot keeps the greeting it was created with
+    expect(isCompanionHome({}, [said("bot", "Hi, I'm Old Name. What would you like me to do?")])).toBe(true);
+  });
+
+  it("shows the conversation once anyone has said anything else", () => {
+    expect(isCompanionHome({}, [greeting, said("user", "hello")])).toBe(false);
+    // bot content with no user turn: a routine result, a peer's or a webhook's message
+    expect(isCompanionHome({}, [said("bot", "Daily report: 3 issues closed.")])).toBe(false);
+    expect(isCompanionHome({}, [greeting, said("bot", "", "routine.run")])).toBe(false);
+  });
+
+  it("never shows home while the bot is working", () => {
+    expect(isCompanionHome({ busy: true }, [])).toBe(false);
+    expect(isCompanionHome({ busy: true }, [greeting])).toBe(false);
   });
 });

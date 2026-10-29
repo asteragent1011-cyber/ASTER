@@ -17,6 +17,7 @@
     "dist-server/**",
     "electron/vendor/**",
     "release/**",
+    "release-next/**",
     "third_party/**",
     "electron/resources/**"
   ]

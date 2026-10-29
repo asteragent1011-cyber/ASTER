@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { MascotCentrepiece, MascotCompanionHeader } from "./MascotCentrepiece";
+import { isCompanionHome } from "@/lib/aster-companion";
 import { WorkingDots } from "@/components/WorkingIndicator";
 import { MessageActions, messageActionClass } from "@/components/MessageActions";
 import { useSpeech } from "@/lib/tts/useSpeech";
@@ -705,7 +706,7 @@ const MessagesList = memo(function MessagesList({
   // row out of the DOM, and there is nothing for the scroll to land on.
   const focus = state.focusMessage;
   const focusedId = focus && !focus.consumed && focus.threadId === bot.threadId ? focus.messageId : null;
-  const isIdle = !bot.busy && messages.length === 0;
+  const isIdle = isCompanionHome(bot, messages);
   return (
     <>
       {isIdle ? (
@@ -1569,7 +1570,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         bot={profile}
         // The empty conversation is ASTER's home: a larger composer with
         // the quick actions, the same one as in any thread.
-        hero={!bot.busy && messages.length === 0}
+        hero={isCompanionHome(bot, messages)}
         replyTo={replyTo}
         onClearReply={clearReply}
         onConsumeReply={consumeReply}

@@ -43,24 +43,24 @@ class MausBodiesTest {
     }
 
     @Test
-    fun `an unknown body falls back to the cursor`() {
-        assertEquals("cursor", MausBodies.body("hexagram").id)
-        assertEquals("cursor", MausBodies.body(null).id)
-        assertEquals("cursor", MausBodies.body("").id)
+    fun `an unknown body falls back to the ASTER Mochi default`() {
+        assertEquals("mochi", MausBodies.body("hexagram").id)
+        assertEquals("mochi", MausBodies.body(null).id)
+        assertEquals("mochi", MausBodies.body("").id)
         assertEquals(MausBodies.DEFAULT_ID, MausSilhouette.defaultBody)
     }
 
     /**
-     * An unrecognised id must reach the *drawn* geometry as the cursor too, not
+     * An unrecognised id must reach the *drawn* geometry as the default body too, not
      * just as a catalog entry — the fallback is only useful if the paint path
      * honours it.
      */
     @Test
-    fun `an unknown body draws the cursor`() {
-        assertEquals(MausSilhouette.faceBoxBounds("cursor"), MausSilhouette.faceBoxBounds("hexagram"))
-        assertEquals(MausSilhouette.faceBoxBounds("cursor"), MausSilhouette.faceBoxBounds(null))
-        assertEquals(MausSilhouette.anchor("cursor"), MausSilhouette.anchor("hexagram"))
-        assertSame(MausSilhouette.inFaceBox("cursor"), MausSilhouette.inFaceBox(null))
+    fun `an unknown body draws the default`() {
+        assertEquals(MausSilhouette.faceBoxBounds("mochi"), MausSilhouette.faceBoxBounds("hexagram"))
+        assertEquals(MausSilhouette.faceBoxBounds("mochi"), MausSilhouette.faceBoxBounds(null))
+        assertEquals(MausSilhouette.anchor("mochi"), MausSilhouette.anchor("hexagram"))
+        assertSame(MausSilhouette.inFaceBox("mochi"), MausSilhouette.inFaceBox(null))
     }
 
     @Test

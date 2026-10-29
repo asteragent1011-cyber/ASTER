@@ -94,7 +94,7 @@ describe("openmausbot command line", () => {
       const out = block({ phone: "android" });
       expect(out).toContain(qrToString(invite));
       expect(out).not.toContain(qrToString(url));
-      expect(out).toContain("Scan that in the OpenMausBot app");
+      expect(out).toContain("Scan that in the ASTER app");
       // The web link is still offered, but not as the thing to scan.
       expect(out).toContain(`web browser:   ${url}`);
       expect(out).not.toContain("open or scan:");
@@ -116,7 +116,7 @@ describe("openmausbot command line", () => {
       expect(out).toContain("The Android app needs the phone-app link");
       expect(out).toContain("OMB_PUBLIC_URL");
       // It must not claim the QR is scannable in the app when it is not.
-      expect(out).not.toContain("Scan that in the OpenMausBot app");
+      expect(out).not.toContain("Scan that in the ASTER app");
     });
   });
 

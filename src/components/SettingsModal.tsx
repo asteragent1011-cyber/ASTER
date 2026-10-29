@@ -9,6 +9,7 @@ import { analyticsEnabled, setAnalyticsEnabled } from "@/lib/analytics";
 import { browserAvailable, browserUnavailableReason, builtInBrowserEnabled, routinesInConversationEnabled, showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
 import { localeChoices, type LocaleKey } from "@/locales";
 import { t } from "@/lib/i18n";
+import { devMode } from "@/lib/dev-mode";
 import { withTourReset } from "@/lib/guided-tour";
 import { completionPatch } from "@/lib/onboarding";
 import { ApiKeyRow, OpenAiCompatUrl, VpsConnection } from "./ApiKeys";
@@ -537,7 +538,7 @@ function ExperimentalFeaturesRow() {
                 ? t("settings.experimental.browserOn")
                 : t("settings.experimental.browserOff")
               : browserBlockedOnWindows
-                ? t("settings.experimental.browserWindows")
+                ? t(devMode() ? "settings.experimental.browserWindows" : "settings.experimental.browserWindowsPublic")
                 : browserUnavailableReason(state.config)}
           </div>
         </div>

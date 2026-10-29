@@ -21,8 +21,8 @@ describe("the generated Swift catalog", () => {
     }
   });
 
-  it("defaults to the cursor", () => {
-    expect(swift).toContain('static let defaultID = "cursor"');
+  it("defaults to the ASTER Mochi blob, matching the web catalog", () => {
+    expect(swift).toContain('static let defaultID = "mochi"');
   });
 
   it("carries the same anchors as the TypeScript catalog", () => {

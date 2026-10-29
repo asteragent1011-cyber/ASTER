@@ -416,7 +416,7 @@ public struct PairingRouteError: Error, LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         let routes = attemptedHosts.joined(separator: ", ")
-        return "Couldn’t reach this computer through any available route (\(routes)). Keep Phone access turned on in OpenMausBot, then try again."
+        return "Couldn’t reach this computer through any available route (\(routes)). Keep Phone access turned on in ASTER, then try again."
     }
 }
 
@@ -770,7 +770,7 @@ public struct CompanionClient: Sendable {
     /// that exact route is the user's preferred, explicit choice; neither a
     /// pairing credential nor the later bearer token is sprayed onto the
     /// current wifi merely because a private address was once advertised.
-    /// Only the first response that identifies itself as OpenMausBot receives
+    /// Only the first response that identifies itself as ASTER receives
     /// the one-time pairing POST. The request id makes that redemption safely
     /// replayable by newer desktop builds if its response is lost in transit.
     public static func pairFirstReachable(
@@ -1506,7 +1506,7 @@ public struct CompanionClient: Sendable {
             guard message?.localizedCaseInsensitiveContains(Self.alreadyDrainedQueueMessage) == true else {
                 throw APIError.status(
                     code: 404,
-                    message: "This computer is too old to take back a queued message. Update OpenMausBot on it."
+                    message: "This computer is too old to take back a queued message. Update ASTER on it."
                 )
             }
             return false

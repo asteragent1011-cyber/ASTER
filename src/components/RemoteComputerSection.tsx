@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+import { devMode } from "@/lib/dev-mode";
 import { Laptop, Loader2, Unplug } from "lucide-react";
 import { Card } from "./SettingsPrimitives";
 
@@ -149,11 +150,15 @@ export function RemoteComputerSection() {
           {serverMode ? (
             <>
               <p className="text-[12.5px] leading-relaxed text-ink-secondary">
-                {t("remote.client.server.hint")}
+                {t(devMode() ? "remote.client.server.hint" : "remote.client.server.hintPublic")}
               </p>
-              <code className="select-all rounded-lg bg-inset px-3 py-2 text-[12px] text-ink">
-                npx openmausbot pair --client
-              </code>
+              {/* Dev Mode only: the upstream CLI command; public mode points at
+                  the server's Settings → Remote access instead. */}
+              {devMode() && (
+                <code className="select-all rounded-lg bg-inset px-3 py-2 text-[12px] text-ink">
+                  npx openmausbot pair --client
+                </code>
+              )}
               <label className="flex flex-col gap-1.5 text-[12px] text-ink-secondary">
                 {t("remote.client.server.pairingLink")}
                 <input
@@ -182,7 +187,7 @@ export function RemoteComputerSection() {
                 <input
                   value={endpoint}
                   onChange={(event) => setEndpoint(event.target.value)}
-                  placeholder="https://…openmausbot.com or computer.tailnet.ts.net"
+                  placeholder="https://your-domain.example or computer.tailnet.ts.net"
                   disabled={busy}
                   autoCapitalize="none"
                   autoCorrect="off"

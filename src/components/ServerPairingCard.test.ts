@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { canPairDevices, lastSeen, minutesLeft, pairingBlockedReason, ServerPairingCard, shownDevices } from "./ServerPairingCard";
 
@@ -38,6 +38,14 @@ describe("pairing devices from a hosted server's settings", () => {
     expect(html).toContain("data-server-pairing-chat-only");
     expect(html).toContain("openmausbot pair");
     expect(html).not.toContain("Create pairing code");
+    vi.stubEnv("DEV", false);
+    try {
+      const publicHtml = renderToStaticMarkup(createElement(ServerPairingCard, { initialSession: chatOnly }));
+      expect(publicHtml).toContain("Settings → Remote access");
+      expect(publicHtml).not.toMatch(/openmausbot/i);
+    } finally {
+      vi.unstubAllEnvs();
+    }
     const admin = renderToStaticMarkup(createElement(ServerPairingCard, { initialSession: { ...chatOnly, scopes: ["admin", "client"] } }));
     expect(admin).toContain("Create pairing code");
     expect(admin).not.toContain("data-server-pairing-chat-only");

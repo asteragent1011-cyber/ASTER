@@ -127,7 +127,7 @@ private struct AnswerButtons: View {
         if #available(iOS 17.0, *) {
             buttons
         } else {
-            Text("Open MausBot to answer")
+            Text("Open ASTER to answer")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.7))
         }
