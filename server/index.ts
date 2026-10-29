@@ -12870,6 +12870,18 @@ function startGroupTurn(
       if (routing) {
         const route = await routing;
         if (operation.cancelled) return;
+        // Ids and reasons only: never message text, never a credential.
+        console.log(`[decider] room ${groupId}: ${route.kind}${route.kind === "member" ? ` ${route.botId}` : ""}${route.kind === "fallback" ? ` (${route.reason})` : ` via ${route.provider ?? "jev"} p=${route.probability.toFixed(2)}`}`);
+        if (route.kind === "nobody") {
+          // The decision model judged that no bot needs to answer. Said in the
+          // room, so a person is never left wondering whether it was heard.
+          store.appendMessage(threadId, {
+            role: "bot",
+            kind: "activity",
+            tool: { name: "No bot replied: the decision model judged this message needs no answer", ok: true },
+          });
+          return;
+        }
         const picked = route.kind === "member" ? availableMembers.filter((member) => member.id === route.botId)
           : route.kind === "everyone" ? availableMembers
             : [];

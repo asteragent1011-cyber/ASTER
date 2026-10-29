@@ -21,7 +21,7 @@ const ROOT = join(SERVER_DIR, "..");
 const FAKE_CLAUDE = join(SERVER_DIR, "testing", "fake-claude-cli.ts");
 const KEY = "tsk_e2e_secret_value_7f3a9c2e41d8";
 
-type JevRequest = { auth?: string; body: any };
+type JevRequest = { auth?: string; body: any; url?: string };
 type RouteScript = { status?: number; choice?: string; p?: number; hold?: Promise<void> };
 
 let child: ChildProcess;
@@ -55,12 +55,27 @@ beforeAll(async () => {
     req.on("data", (chunk) => (raw += chunk));
     req.on("end", async () => {
       const body = JSON.parse(raw || "{}");
-      jevRequests.push({ auth: req.headers.authorization, body });
+      jevRequests.push({ auth: req.headers.authorization, body, url: req.url });
       const send = (status: number, value: unknown) => {
         res.writeHead(status, { "content-type": "application/json" });
         res.end(JSON.stringify(value));
       };
       const question = body.questions?.answer;
+      // Cloudflare Workers AI, for the Clef-Flash provider: the same script
+      // answers, in Cloudflare's envelope. `/client/v4/ips` is the warm-up.
+      if (req.url === "/client/v4/ips") return send(200, { success: true, result: {} });
+      if (req.url?.startsWith("/client/v4/accounts/")) {
+        if (req.url !== "/client/v4/accounts/acct_e2e/ai/run/@cf/cloudflare/clef-flash" || !question || question.type !== "choice") {
+          return send(422, { success: false, errors: [{ message: "bad request shape" }] });
+        }
+        const current = script;
+        if (current.status && current.status !== 200) return send(current.status, { success: false, errors: [{ message: "overloaded" }] });
+        const keys = Object.keys(question.criteria);
+        const choice = current.choice!;
+        const rest = keys.filter((key) => key !== choice);
+        const probabilities = Object.fromEntries([[choice, current.p], ...rest.map((key) => [key, Math.round(((1 - current.p!) / rest.length) * 1000) / 1000])]);
+        return send(200, { success: true, result: { model: "clef-flash", answers: { answer: { type: "choice", choice, probabilities } }, usage: { input_tokens: 610 } } });
+      }
       if (req.url !== "/v1/systemone" || body.model !== "jev-latest" || !question) return send(422, { detail: "bad request shape" });
       if (question.type === "noul") {
         return req.headers.authorization === "Bearer tsk_bad"
@@ -147,7 +162,7 @@ afterAll(async () => {
   if (home) await removeTempDir(home);
 });
 
-type RoomMessage = { id: string; kind: string; role: string; text?: string; from?: { botId: string; name: string }; routedBy?: { provider: string; probability: number } };
+type RoomMessage = { id: string; kind: string; role: string; text?: string; from?: { botId: string; name: string }; tool?: { name: string; ok?: boolean }; routedBy?: { provider: string; probability: number } };
 
 const roomState = async (roomId: string) => {
   const state = (await api("GET", "/api/bots?messages=200")).body;
@@ -233,7 +248,7 @@ describe("Auto rooms ask the decision model who answers", { timeout: 90_000 }, (
 
     const request = routeRequests().at(-1)!;
     expect(request.auth).toBe(`Bearer ${KEY}`);
-    expect(Object.keys(request.body.questions.answer.criteria)).toEqual([bots.Maya!.id, bots.Theo!.id, bots.Ravi!.id, "__everyone__"]);
+    expect(Object.keys(request.body.questions.answer.criteria)).toEqual([bots.Maya!.id, bots.Theo!.id, bots.Ravi!.id, "__everyone__", "__nobody__"]);
     expect(request.body.questions.answer.criteria[bots.Theo!.id]).toMatch(/^Theo, Theo title bot\./);
     expect(request.body.state.new_message.text).toBe("The signup button overlaps the footer on Safari mobile.");
     expect(request.body.state.bots_in_room).toEqual(["Maya", "Theo", "Ravi"]);
@@ -253,11 +268,79 @@ describe("Auto rooms ask the decision model who answers", { timeout: 90_000 }, (
     expect(replies[0]!.routedBy).toBeUndefined();
   });
 
+  it("a sure __nobody__ means no bot answers, and the room says so", async () => {
+    script = { choice: "__nobody__", p: 0.95 };
+    const before = new Set((await roomState(room.id)).messages.map((message) => message.id));
+    const post = await api("POST", `/api/groups/${room.id}/messages`, { text: "thanks all, that's everything for today" });
+    expect(post.status).toBe(202);
+    let added: RoomMessage[] = [];
+    await expect.poll(async () => {
+      const { room: current, messages } = await roomState(room.id);
+      added = messages.filter((message) => !before.has(message.id) && message.role === "bot");
+      return !current?.working && added.some((message) => message.kind === "activity");
+    }, { timeout: 20_000, interval: 150 }).toBe(true);
+    // a beat for any turn that might still start: none does
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    const { messages } = await roomState(room.id);
+    const replies = messages.filter((message) => !before.has(message.id) && message.role === "bot" && message.kind === "text");
+    expect(replies).toEqual([]);
+    expect(added.find((message) => message.kind === "activity")!.tool?.name).toMatch(/No bot replied/);
+  });
+
+  it("an unsure __nobody__ is not silence: the room's lead answers", async () => {
+    script = { choice: "__nobody__", p: 0.7 };
+    const { replies } = await round(room.id, "ok noted, anything else on the launch?");
+    expect(replies.map((reply) => reply.from!.name)).toEqual(["Maya"]);
+    expect(replies[0]!.routedBy).toBeUndefined();
+  });
+
+  it("a pick that is not a member of this room is ignored: the lead answers, nobody else", async () => {
+    script = { choice: "bot-from-another-room", p: 0.99 };
+    const { replies } = await round(room.id, "Who owns the pricing page copy?");
+    expect(replies.map((reply) => reply.from!.name)).toEqual(["Maya"]);
+    expect(replies[0]!.routedBy).toBeUndefined();
+  });
+
   it("a failing decision model falls back too", async () => {
     script = { status: 529 };
     const { replies } = await round(room.id, "Stripe webhooks return 500 since the deploy.");
     expect(replies.map((reply) => reply.from!.name)).toEqual(["Maya"]);
     expect(replies[0]!.routedBy).toBeUndefined();
+  });
+
+  it("with Clef-Flash as the decision model, Clef's pick is the only bot that answers", async () => {
+    const token = "cf_e2e_token_routing_only";
+    const switched = await api("PUT", "/api/config", { decider: { provider: "clef-flash", cloudflareToken: token, cloudflareAccountId: "acct_e2e" } });
+    expect(switched.status).toBe(200);
+    expect(switched.body.decider).toMatchObject({ provider: "clef-flash", enabled: true, configured: true });
+    try {
+      script = { choice: bots.Ravi!.id, p: 0.91 };
+      const asked = jevRequests.length;
+      const { replies } = await round(room.id, "Our usage API p95 jumped to 2s after the deploy.");
+      expect(replies.map((reply) => reply.from!.name)).toEqual(["Ravi"]);
+      expect(replies[0]!.routedBy).toEqual({ provider: "clef-flash", probability: 0.91 });
+      const clefCalls = jevRequests.slice(asked).filter((request) => request.url?.includes("/ai/run/"));
+      expect(clefCalls).toHaveLength(1);
+      expect(clefCalls[0]!.url).toBe("/client/v4/accounts/acct_e2e/ai/run/@cf/cloudflare/clef-flash");
+      expect(clefCalls[0]!.auth).toBe(`Bearer ${token}`);
+      expect(Object.keys(clefCalls[0]!.body.questions.answer.criteria)).toEqual([bots.Maya!.id, bots.Theo!.id, bots.Ravi!.id, "__everyone__", "__nobody__"]);
+      // the credential never reaches the room or the model's prompt
+      expect(JSON.stringify(clefCalls[0]!.body)).not.toContain(token);
+      expect(JSON.stringify((await roomState(room.id)).messages)).not.toContain(token);
+
+      // Clef's "nobody", when sure, keeps every bot quiet
+      script = { choice: "__nobody__", p: 0.97 };
+      const before = new Set((await roomState(room.id)).messages.map((message) => message.id));
+      expect((await api("POST", `/api/groups/${room.id}/messages`, { text: "great, thanks everyone" })).status).toBe(202);
+      await expect.poll(async () => {
+        const { room: current, messages } = await roomState(room.id);
+        return !current?.working && messages.some((message) => !before.has(message.id) && message.kind === "activity");
+      }, { timeout: 20_000, interval: 150 }).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      expect((await roomState(room.id)).messages.filter((message) => !before.has(message.id) && message.kind === "text" && message.role === "bot")).toEqual([]);
+    } finally {
+      await api("PUT", "/api/config", { decider: { provider: "jev", cloudflareToken: "", cloudflareAccountId: "" } });
+    }
   });
 
   it("an @mention bypasses the decision model", async () => {
