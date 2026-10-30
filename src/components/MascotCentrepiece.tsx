@@ -7,6 +7,7 @@ import { Grip } from "lucide-react";
 import { greetingFor } from "@/lib/aster-companion";
 import { Badge } from "./glass-ui/badge";
 import { Card } from "./glass-ui/card";
+import { JellyCompanionStage } from "./aster/JellyCompanionStage";
 
 export interface MascotCentrepieceProps {
   bot: Bot;
@@ -65,7 +66,9 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
         {/* The open bot's own companion, drawn by the same renderer as its
             sidebar avatar; keyed so switching bots replays its entrance. */}
         <div className="order-1 mx-auto md:order-2" data-mascot-companion>
-          <BotAvatar key={bot.id} bot={bot} size={250} state={speaking ? "writing" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
+          <JellyCompanionStage>
+            <BotAvatar key={bot.id} bot={bot} size={250} living state={speaking ? "writing" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
+          </JellyCompanionStage>
         </div>
       </div>
     </div>

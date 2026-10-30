@@ -26,6 +26,7 @@ import {
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
 import { AsterMark } from "./aster/AsterMark";
+import { napCompanion, popCompanion } from "@/lib/companion-pop";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -986,6 +987,7 @@ export function Composer({
                   key={label}
                   type="button"
                   onClick={() => {
+                    popCompanion("prompt");
                     editText(text.trim() ? `${text.trimEnd()} ${prompt}` : prompt);
                     if (attach) fileInput.current?.click();
                     requestAnimationFrame(() => {
@@ -1088,6 +1090,12 @@ export function Composer({
           rows={1}
           value={text}
           onChange={(e) => {
+            // a secret on the home: two spaces alone put the companion to sleep
+            if (hero && e.target.value === "  ") {
+              napCompanion();
+              editText("");
+              return;
+            }
             editText(e.target.value);
             setCaret(e.target.selectionStart ?? e.target.value.length);
             setDismissedAt(null);
@@ -1096,6 +1104,8 @@ export function Composer({
           onPaste={handlePaste}
           onKeyUp={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
           onClick={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
+          // clicking into the home's prompt box makes the companion hop
+          onPointerDown={hero ? () => popCompanion("chat") : undefined}
           onKeyDown={(e) => {
             if (commandPickerOpen) {
               if (e.key === "ArrowDown" || e.key === "ArrowUp") {
