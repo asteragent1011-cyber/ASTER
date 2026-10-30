@@ -50,7 +50,7 @@ describe("the companions' moods and beats", () => {
     expect(blobMotionFor("success")).toBe("message-received");
     expect(blobMotionFor("blink")).toBe("blink");
     expect(blobMotionFor("none")).toBeNull();
-    expect(blobMotionFor("failure")).toBeNull();
+    expect(blobMotionFor("failure")).toBe("worried");
   });
 
   it("gives each bot its own phase so a roster never moves in step", () => {

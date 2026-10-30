@@ -26,7 +26,7 @@ import {
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
 import { AsterMark } from "./aster/AsterMark";
-import { napCompanion, popCompanion } from "@/lib/companion-pop";
+import { cueCompanion, napCompanion, popCompanion } from "@/lib/companion-pop";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -1095,6 +1095,11 @@ export function Composer({
               napCompanion();
               editText("");
               return;
+            }
+            if (hero) {
+              // more secrets: ":)" makes it dance, "<3" fills the screen with hearts
+              const code = e.target.value.trim();
+              cueCompanion(code === ":)" ? "dance" : code === "<3" ? "hearts" : "typing");
             }
             editText(e.target.value);
             setCaret(e.target.selectionStart ?? e.target.value.length);

@@ -1,10 +1,11 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { type Bot, type Message } from "@/state/store";
 import { BotAvatar } from "./Avatar";
 import { stateForBot, type MausState, type MausMotion } from "@/lib/mascot";
 import { cn } from "@/lib/cn";
 import { Grip } from "lucide-react";
 import { greetingFor } from "@/lib/aster-companion";
+import { botBodyFor } from "@/lib/aster-blobs";
 import { Badge } from "./glass-ui/badge";
 import { Card } from "./glass-ui/card";
 import { JellyCompanionStage } from "./aster/JellyCompanionStage";
@@ -66,7 +67,7 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
         {/* The open bot's own companion, drawn by the same renderer as its
             sidebar avatar; keyed so switching bots replays its entrance. */}
         <div className="order-1 mx-auto md:order-2" data-mascot-companion>
-          <JellyCompanionStage>
+          <JellyCompanionStage body={botBodyFor(bot)}>
             <BotAvatar key={bot.id} bot={bot} size={250} living state={speaking ? "writing" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
           </JellyCompanionStage>
         </div>
@@ -105,6 +106,18 @@ export const MascotCompanionHeader = memo(function MascotCompanionHeader({
     return stateForBot({ ...bot, messages });
   }, [hasError, speaking, toolInFlight, bot, isTyping, messages]);
 
+  // a failed turn (an "error:" row) makes the companion look worried, once
+  const failedId = useMemo(() => {
+    const newest = messages.at(-1);
+    return newest?.tool?.name.startsWith("error:") ? newest.id : null;
+  }, [messages]);
+  const [worried, setWorried] = useState(0);
+  const seenFailure = useRef(failedId);
+  useEffect(() => {
+    if (failedId && failedId !== seenFailure.current) setWorried((n) => n + 1);
+    seenFailure.current = failedId;
+  }, [failedId]);
+
   const activityText = useMemo(() => {
     if (hasError) return "Attention needed";
     if (speaking) return "Speaking...";
@@ -121,8 +134,8 @@ export const MascotCompanionHeader = memo(function MascotCompanionHeader({
           bot={bot}
           state={currentState}
           size={36}
-          motion={motion}
-          motionKey={motionKey}
+          motion={worried ? "failure" : motion}
+          motionKey={worried ? -worried : motionKey}
           trackPointer={true}
         />
       </div>

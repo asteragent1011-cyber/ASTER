@@ -2336,6 +2336,44 @@ button:disabled.bg-danger {
   to { transform: scaleY(0.12); }
 }
 
+/* a startled blink when the pointer darts past; ^ ^ through a dance */
+.aster-jelly-stage[data-mood="blink"] .aster-blob__eyes { animation: aster-blob-blink-once 260ms ease-in-out; }
+.aster-jelly-stage[data-mood="dance"] .aster-blob__eyes { opacity: 0; }
+.aster-jelly-stage[data-mood="dance"] .aster-blob__happy { opacity: 1; }
+
+/* worried (a failed turn): eyes droop and shrink, the body shivers */
+.aster-blob[data-motion="worried"] .aster-blob__eyes { animation: none; transform: translateY(2px) scale(0.85, 0.7); }
+.aster-blob[data-motion="worried"] .aster-blob__squish { animation: aster-blob-shiver 1.4s ease-in-out; }
+@keyframes aster-blob-shiver {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50% { transform: translateX(-2px); }
+  20%, 40%, 60% { transform: translateX(2px); }
+  75% { transform: translateX(0) scale(0.97, 1.02); }
+}
+
+/* hearts: from petting and the <3 code, rising, drifting and fading */
+.aster-hearts > .aster-heart {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  filter: drop-shadow(0 2px 6px rgb(132 102 238 / 0.35));
+  animation: aster-heart-rise 2.2s ease-out both;
+}
+.aster-hearts--screen > .aster-heart { top: auto; bottom: -40px; animation-name: aster-heart-float; }
+@keyframes aster-heart-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  15% { opacity: 1; transform: translate(calc(var(--drift) * 0.2), -20px) scale(1.1); }
+  100% { opacity: 0; transform: translate(var(--drift), -150px) scale(0.8); }
+}
+@keyframes aster-heart-float {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+  10% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(var(--drift), -105vh) scale(1.2) rotate(25deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aster-hearts { display: none; }
+}
+
 /* zzz: three letters rising and fading, one after another */
 .aster-zzz { display: block; width: 3rem; height: 4.5rem; font-weight: 700; color: #8f7cf0; text-shadow: 0 0 10px rgb(143 124 240 / 0.45); }
 .aster-zzz > span {

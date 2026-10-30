@@ -1,6 +1,6 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
 import { MASCOT_BODIES } from "../../../shared/mascot-bodies";
-import { blobPhase, type AsterBlobId, type AsterBlobMotion, type AsterBlobState } from "@/lib/aster-blobs";
+import { BLOB_PERSONALITY, blobPhase, type AsterBlobId, type AsterBlobMotion, type AsterBlobState } from "@/lib/aster-blobs";
 
 /** The face box every catalog body is solved in (scripts/gen-mascot-bodies.ts). */
 const FACE_BOX = 228.541;
@@ -9,7 +9,7 @@ const COMPACT_AT = 36;
 /** Room around the body for rings, moons and particles at full detail. */
 const PAD = 36;
 /** How long a one-shot beat holds, matching its CSS keyframes. */
-const BEAT_MS: Record<AsterBlobMotion, number> = { blink: 320, "message-sent": 700, "message-received": 1_200 };
+const BEAT_MS: Record<AsterBlobMotion, number> = { blink: 320, "message-sent": 700, "message-received": 1_200, worried: 1_400 };
 
 interface Palette {
   light: string;
@@ -38,8 +38,7 @@ const RINGS: Record<AsterBlobId, Ring | null> = {
 };
 /** A living companion's ring when its body draws none (Echo). */
 const LIVING_RING = { rx: 144, ry: 34, tilt: -12, width: 2.4 };
-/** Seconds per lap for the moons, and for the faster glints. */
-const ORBIT_S = 9;
+/** Seconds per lap for the glints; each body sets its moons' pace (BLOB_PERSONALITY). */
 const GLINT_S = 3.8;
 type Orbiter = { at: number; r: number; tone: "accent" | "mid" | "light" };
 /** The moons riding a living companion's ring: start (in turns), radius, tone. */
@@ -153,40 +152,69 @@ export const AsterBlobAvatar = memo(function AsterBlobAvatar({
   useEffect(() => {
     if (!loopRing) return;
     const lap = ORBITERS[body];
+    const me = BLOB_PERSONALITY[body];
     const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    // the hero's stage says how sleepy it is and when the moons were flung out
+    const stage = squishRef.current?.closest<HTMLElement>(".aster-jelly-stage");
+    let reach = 1;
     const place = (el: SVGElement | null | undefined, theta: number, front: boolean) => {
       if (!el) return;
       const sin = Math.sin(theta);
       el.setAttribute(
         "transform",
-        `translate(${(114 + loopRing.rx * Math.cos(theta)).toFixed(2)} ${(124 + loopRing.ry * sin).toFixed(2)}) scale(${(0.8 + 0.2 * sin).toFixed(3)})`,
+        `translate(${(114 + loopRing.rx * reach * Math.cos(theta)).toFixed(2)} ${(124 + loopRing.ry * reach * sin).toFixed(2)}) scale(${(0.8 + 0.2 * sin).toFixed(3)})`,
       );
       // the near half of the lap is drawn over the body, the far half under it
       el.style.opacity = front !== sin >= 0 ? "0" : front ? "1" : (0.55 + 0.45 * (1 + sin)).toFixed(3);
     };
+    // Clocks are accumulated, not read, so a change of pace never jumps.
+    let last = performance.now();
+    let lapTurns = 0;
+    let breath = -phase.floatDelayS;
+    let pace = 1;
     let raf = 0;
     const frame = (now: number) => {
-      const t = still ? 0 : now / 1000 - phase.floatDelayS;
-      const tilt = `rotate(${(loopRing.tilt + 5 * Math.sin(t * 0.5)).toFixed(2)} 114 124)`;
+      const dt = still ? 0 : Math.min(now - last, 64) / 1000;
+      last = now;
+      const mood = stage?.dataset.mood;
+      const asleep = mood === "asleep";
+      // moons race while it thinks, dawdle as it dozes, all but stop asleep
+      const target = stateRef.current === "thinking" ? 2.4 : asleep ? 0.12 : mood === "sleepy" || mood === "yawn" ? 0.5 : mood === "dance" ? 2 : 1;
+      pace += (target - pace) * Math.min(1, dt * 2.5);
+      lapTurns += (dt / me.orbitS) * pace;
+      breath += dt * me.squishSpeed * (asleep ? 0.5 : 1);
+      const t = breath;
+      // a pop flings the moons outward; they wobble back onto the ring
+      const flung = (now - Number(stage?.dataset.scatter ?? 0)) / 1000;
+      reach = flung >= 0 && flung < 2.5 ? 1 + 0.38 * Math.exp(-3 * flung) * Math.sin(7 * flung) : 1;
+      // heavy moons swing: slow over the top, quick through the bottom
+      const swing = 0.35 * me.moonWeight;
+      const angle = (turns: number) => {
+        const u = 2 * Math.PI * turns;
+        return u - swing * Math.cos(u);
+      };
+      const lead = angle(lap[0]!.at + lapTurns);
+      const tug = me.moonWeight * 5 * Math.cos(lead);
+      const tilt = `rotate(${(loopRing.tilt + 5 * Math.sin(t * 0.5) + tug).toFixed(2)} 114 124)`;
       for (const el of ringRefs.current) el?.setAttribute("transform", tilt);
       lap.forEach((o, i) => {
-        const theta = 2 * Math.PI * (o.at + t / ORBIT_S);
+        const theta = angle(o.at + lapTurns);
         place(orbitRefs.current[i * 2], theta, false);
         place(orbitRefs.current[i * 2 + 1], theta, true);
       });
       GLINTS.forEach((at, i) => {
-        const theta = 2 * Math.PI * (at + t / GLINT_S);
+        const theta = 2 * Math.PI * (at + (lapTurns * me.orbitS) / GLINT_S);
         place(glintRefs.current[i * 2], theta, false);
         place(glintRefs.current[i * 2 + 1], theta, true);
       });
       // squash and stretch that keeps its volume: x wide means y short
-      const sx = 1 + 0.028 * Math.sin(t * 1.8) + 0.01 * Math.sin(t * 3.1 + 1.1);
+      const sx = 1 + me.squish * (0.028 * Math.sin(t * 1.8) + 0.01 * Math.sin(t * 3.1 + 1.1));
       if (squishRef.current) squishRef.current.style.transform = `scale(${sx.toFixed(4)}, ${(1 / sx).toFixed(4)})`;
       // the face trails the body a beat, like something set in jelly
       const think = stateRef.current === "thinking";
       if (lookRef.current) {
-        const lx = (think ? 4 : 0) + 1.2 * Math.sin(t * 1.8 - 0.9);
-        const ly = (think ? -4 : 0) + 2 * Math.sin(t * 1.8 - 1.2);
+        const lx = (think ? 4 : 0) + 1.2 * me.squish * Math.sin(t * 1.8 - 0.9);
+        const ly = (think ? -4 : 0) + 2 * me.squish * Math.sin(t * 1.8 - 1.2);
         lookRef.current.style.transform = `translate(${lx.toFixed(2)}px, ${ly.toFixed(2)}px)`;
       }
       if (!still) raf = requestAnimationFrame(frame);

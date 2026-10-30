@@ -52,7 +52,8 @@ export function botBodyFor(bot: { id?: string; name?: string; mascotBody?: strin
 /** The moods the companions draw, the reusable animation API's states. */
 export type AsterBlobState = "idle" | "thinking" | "happy" | "sleepy" | "alert" | "selected";
 /** One-shot beats, played once and handed back. */
-export type AsterBlobMotion = "blink" | "message-sent" | "message-received";
+/** worried: a turn failed; the eyes droop and the body shivers. */
+export type AsterBlobMotion = "blink" | "message-sent" | "message-received" | "worried";
 
 const HAPPY: ReadonlySet<MausState> = new Set<MausState>(["happy", "proud", "excited", "celebrate", "laughing", "playful", "bouncing"]);
 const SLEEPY: ReadonlySet<MausState> = new Set<MausState>(["sleeping", "drowsy", "bored", "powering-down"]);
@@ -90,6 +91,8 @@ export function blobMotionFor(motion: MausMotion): AsterBlobMotion | null {
     case "blink":
     case "surprise":
       return "blink";
+    case "failure":
+      return "worried";
     default:
       return null;
   }
@@ -104,3 +107,33 @@ export function blobPhase(identity: string): { floatDelayS: number; blinkDelayS:
     enterDelayMs: (h >>> 16) % 240,
   };
 }
+
+/** How a living companion moves: its temperament, as numbers the hero's
+ * frame loops and springs read. 1 is Luma's, the baseline. */
+export interface BlobPersonality {
+  /** How fast it drifts, and how far. */
+  roamSpeed: number;
+  roamReach: number;
+  /** How hard and how fast the body squishes as it breathes. */
+  squish: number;
+  squishSpeed: number;
+  /** Spring bounce (0..1) for its landings and settles. */
+  bounce: number;
+  /** How high a pop throws it. */
+  hop: number;
+  /** Seconds per lap for the moons on its ring. */
+  orbitS: number;
+  /** 0 floats its moons evenly; up to 1 they swing like weights, slow over
+   * the top and fast through the bottom, and drag the ring after them. */
+  moonWeight: number;
+}
+
+export const BLOB_PERSONALITY: Record<AsterBlobId, BlobPersonality> = {
+  luma: { roamSpeed: 1, roamReach: 1, squish: 1, squishSpeed: 1, bounce: 0.45, hop: 1, orbitS: 9, moonWeight: 0 },
+  // quick and bouncy
+  nova: { roamSpeed: 1.6, roamReach: 0.8, squish: 1.35, squishSpeed: 1.7, bounce: 0.68, hop: 1.3, orbitS: 5.5, moonWeight: 0 },
+  // heavy moons that swing and tug the ring
+  orbit: { roamSpeed: 0.85, roamReach: 0.9, squish: 0.85, squishSpeed: 0.9, bounce: 0.35, hop: 0.85, orbitS: 11, moonWeight: 1 },
+  // slow and floaty
+  echo: { roamSpeed: 0.55, roamReach: 1.45, squish: 0.75, squishSpeed: 0.6, bounce: 0.25, hop: 0.8, orbitS: 14, moonWeight: 0 },
+};
