@@ -27,6 +27,7 @@ import {
 } from "@/lib/aster-companion";
 import { BotAvatar } from "../Avatar";
 import { AsterMark } from "./AsterMark";
+import { popCompanion } from "@/lib/companion-pop";
 
 const MODES: Record<AsterMode, { label: string; hint: string; icon: ReactNode }> = {
   balanced: { label: "Balanced", hint: "Everyday help", icon: <Sparkles size={15} /> },
@@ -125,6 +126,7 @@ export const AsterContextPanel = memo(function AsterContextPanel({
                 onClick={() => {
                   setMode(id);
                   saveAsterMode(id);
+                  popCompanion("prompt");
                 }}
                 className={cn("aster-mode-row flex items-center gap-3 rounded-2xl px-2 py-1.5 text-left", selected && "is-selected")}
               >

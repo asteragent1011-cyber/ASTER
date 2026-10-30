@@ -30,6 +30,8 @@ export type MausAvatarProps = {
   selected?: boolean;
   /** Accepted for older call sites; companions do not follow the pointer. */
   trackPointer?: boolean;
+  /** The home's hero companion: jelly body, moons orbiting its ring. */
+  living?: boolean;
 };
 
 function MausAvatarComponent({
@@ -43,6 +45,7 @@ function MausAvatarComponent({
   busy,
   identity,
   selected = false,
+  living = false,
 }: MausAvatarProps) {
   return (
     <AsterBlobAvatar
@@ -55,6 +58,7 @@ function MausAvatarComponent({
       identity={identity}
       animated={animated}
       label={label ?? null}
+      living={living}
     />
   );
 }
