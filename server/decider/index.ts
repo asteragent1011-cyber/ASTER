@@ -289,7 +289,8 @@ export interface Decider {
 }
 
 export function createDecider(deps: DeciderDeps): Decider {
-  const fetchImpl = deps.fetch ?? fetch;
+  // Unset in production: each backend then uses its own fetch.
+  const fetchImpl = deps.fetch;
   const now = deps.now ?? (() => performance.now());
   // Clef-Flash: open the pooled connection now, so the first room message
   // doesn't pay a cold handshake (measured 3–15s on a lossy path, against

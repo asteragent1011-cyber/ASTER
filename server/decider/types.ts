@@ -124,7 +124,9 @@ export interface BackendRequest {
   state: unknown;
   questions: Record<string, DeciderQuestion>;
   signal: AbortSignal;
-  fetch: typeof fetch;
+  /** A test double. Unset, each backend uses its own (Clef-Flash: undici's
+   * fetch with its keep-alive pool). */
+  fetch?: typeof fetch;
 }
 
 /** Where a backend call's time went, in whole ms. `requestMs`: send to

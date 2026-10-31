@@ -164,7 +164,7 @@ async function decide(request: BackendRequest): Promise<BackendResult> {
   if (!endpoint || !questionsFit(request.questions)) return { ok: false, reason: "misconfigured" };
   let response: Response;
   try {
-    response = await request.fetch(endpoint, {
+    response = await (request.fetch ?? fetch)(endpoint, {
       method: "POST",
       headers: { authorization: `Bearer ${request.key}`, "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify(jevRequestBody(request.state, request.questions)),

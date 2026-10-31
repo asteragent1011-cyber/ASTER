@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -325,6 +327,29 @@ describe("clefBackend.decide", () => {
     const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(new Error("Network drop"));
     const result = await clefBackend.decide(makeReq({ fetch: fetchMock as unknown as typeof fetch }));
     expect(result).toEqual({ ok: false, reason: "unreachable", timing: { requestMs: expect.any(Number) } });
+  });
+
+  it("reaches a real endpoint through its keep-alive pool when no fetch is injected", async () => {
+    // No mock: the default fetch and the pooled dispatcher together, on
+    // whichever Node runs the suite (a v8 Agent handed to Node 24's built-in
+    // fetch failed every call with "invalid onRequestStart method").
+    const server = createServer((_req, res) => {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({
+        success: true,
+        result: { model: "clef-flash", answers: { dept: { type: "choice", choice: "billing", probabilities: { billing: 0.88, technical: 0.12 } } } },
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    try {
+      const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+      const result = await clefBackend.decide(makeReq({ fetch: undefined, baseUrl }));
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.answers.dept).toMatchObject({ type: "choice", choice: "billing" });
+    } finally {
+      server.closeAllConnections();
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 
   it("maps malformed JSON response to malformed", async () => {

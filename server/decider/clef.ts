@@ -22,7 +22,12 @@
 // fresh handshake. Calls therefore go through one long-lived keep-alive
 // dispatcher (CLEF_DISPATCHER), and `warmClefConnection` opens that socket
 // ahead of the first decision.
-import { Agent } from "undici";
+//
+// The pool and the fetch that uses it both come from the undici package: the
+// fetch built into Node runs its own bundled undici, and Node 24's (v7, also
+// what Electron ships) rejects a v8 Agent ("invalid onRequestStart method"),
+// so every Clef call failed and rooms fell back to their lead.
+import { Agent, fetch as undiciFetch } from "undici";
 import type {
   BackendRequest,
   BackendResult,
@@ -75,12 +80,12 @@ export function warmClefConnection(baseUrl?: string | null): void {
   } catch {
     return;
   }
-  void fetch(`${origin}/client/v4/ips`, {
+  void undiciFetch(`${origin}/client/v4/ips`, {
     method: "HEAD",
     redirect: "error",
     signal: AbortSignal.timeout(15_000),
     dispatcher: clefDispatcher(),
-  } as RequestInit).then((response) => response.body?.cancel()).catch(() => undefined);
+  }).then((response) => response.body?.cancel()).catch(() => undefined);
 }
 
 function isLoopback(hostname: string): boolean {
@@ -269,7 +274,7 @@ const ms = (from: number, to: number) => Math.max(0, Math.round(to - from));
 async function decide(request: BackendRequest): Promise<BackendResult> {
   const endpoint = clefEndpoint(request.accountId, request.baseUrl);
   if (!endpoint || !questionsFit(request.questions)) return { ok: false, reason: "misconfigured" };
-  const fetchImpl = request.fetch ?? fetch;
+  const fetchImpl = request.fetch ?? (undiciFetch as unknown as typeof fetch);
   // Timing only: durations in ms, never the key, the state or the answers.
   const started = performance.now();
   let response: Response;
