@@ -16,6 +16,10 @@ describe("per-bot thread capacity through an isolated HTTP fixture", () => {
   let model: string;
   let evidence: unknown[];
   const sockets: Socket[] = [];
+  /** Project folders a test pinned bots to: removed once the fixture (and
+   * every engine it started) has stopped, since Windows refuses to delete a
+   * folder a live process still holds. */
+  const projects: string[] = [];
 
   const api = async (method: string, path: string, body?: unknown) => {
     const response = await fetch(`${fixture.info.url}${path}`, {
@@ -116,6 +120,7 @@ describe("per-bot thread capacity through an isolated HTTP fixture", () => {
     writeFileSync(evidencePath, JSON.stringify({ fixture: fixture.info, requests: evidence }, null, 2));
     console.info(JSON.stringify({ ...fixture.info, evidencePath }));
     await fixture.close();
+    for (const project of projects.splice(0)) rmSync(project, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   it("defaults to three, runs ten real turns after raising the limit, and safely queues and cancels overflow", async () => {
@@ -239,6 +244,7 @@ describe("per-bot thread capacity through an isolated HTTP fixture", () => {
     const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
     await limit(2);
     const project = mkdtempSync(join(tmpdir(), "omb-collide-"));
+    projects.push(project);
     // Both threads below pin to this one folder (same rule startTurn's cwd
     // resolution follows for a bot with an explicit project folder), so the
     // fake CLI's per-thread gate/dump naming (basename of its cwd) collapses
@@ -295,9 +301,6 @@ describe("per-bot thread capacity through an isolated HTTP fixture", () => {
       }
       if (routineId) await api("DELETE", `/api/routines/${routineId}`).catch(() => undefined);
       if (botId) await api("DELETE", `/api/bots/${botId}`).catch(() => undefined);
-      // Windows can still hold the fake engine's handle on the project for a
-      // moment after the bot is deleted.
-      rmSync(project, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   }, 90_000);
 
