@@ -4,6 +4,32 @@ Historical decision doc, 2026-08-14. It records the original ElevenLabs-only
 shape; the current product also supports Fish Audio, built-in Mac voices, and
 local Chatterbox. See the current [voice guide](../apps/docs/content/docs/features/voice-and-memory.mdx).
 
+## Voice mode (current)
+
+Added 2026-10-30 on top of the shape below. Voice mode is a hands-free loop
+over the existing chat, agent, SSE and text-to-speech pipelines — no new
+backend, no credentials in the frontend.
+
+1. The composer microphone or the chat-header phone button
+   (`src/components/VoiceFloatingBar.tsx`) starts `voiceMode`
+   (`src/lib/voice-mode.ts`).
+2. macOS uses the existing Electron speech bridge and native speech helper.
+   Supported browsers use `SpeechRecognition` / `webkitSpeechRecognition`;
+   the browser owns microphone permission.
+3. The final transcript dispatches the same `type: "send"` action normal chat
+   uses, keeping the selected bot and thread.
+4. The store watches the settled assistant `message` SSE frame; voice mode
+   claims it (so auto-speak does not double up), the `speaker` singleton reads
+   it aloud, then listening resumes.
+
+Direct chats only; group calls are unchanged. Browser recognition is missing
+in some browsers and usually needs a secure origin — when unsupported the
+microphone is not offered. Permission denials and recognition failures show as
+composer errors. `ELEVENLABS_MODEL_ID` (server-side) overrides the ElevenLabs
+model, default `eleven_flash_v2_5`.
+
+The sections below are the original design record.
+
 ## Shape
 
 ```
