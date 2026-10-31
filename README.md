@@ -151,6 +151,10 @@ skills/         Bundled agent skills
 
 ## Getting started
 
+> **New here?** [`docs/SETUP.md`](docs/SETUP.md) is the step-by-step guide for **macOS and Windows**:
+> tools to install, running in development mode, building and launching the packaged app,
+> permissions, and troubleshooting.
+
 ### Prerequisites
 
 - macOS, Windows, or Ubuntu 24.04 x64
