@@ -163,7 +163,6 @@ export type MascotBotProfile = {
   name: string;
   title?: string;
   description?: string;
-  mascotExpression?: string | null;
   busy?: boolean;
   unread?: boolean;
   tasks?: Array<{ unread?: boolean; routineRunId?: string }> | null;
@@ -176,9 +175,6 @@ export type MascotBotProfile = {
  * visual identity stays stable while its title and description are edited.
  */
 export function stateForBot(bot: MascotBotProfile): MausState {
-  const pinned = normalizeState(bot.mascotExpression);
-  if (pinned) return pinned;
-
   // the harness's receipts (digest, compaction) follow every turn; the mood
   // reads the last row a person reads, not the record about it
   const last = lastNonReceipt(bot.messages);

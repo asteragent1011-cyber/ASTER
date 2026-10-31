@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { BotAvatar, MausAvatar } from "@/components/Avatar";
 import { AsterBlobAvatar } from "@/components/aster/AsterBlobAvatar";
 import { MASCOT_BODIES } from "../../shared/mascot-bodies";
-import { ASTER_BLOB_IDS, COMPANION_COLORS, COMPANION_PALETTES, asterBlobFor, companionPalette, blobMotionFor, blobPhase, blobStateFor, botBodyFor, isAsterBlob } from "./aster-blobs";
+import { ASTER_BLOB_IDS, COMPANION_COLORS, COMPANION_PALETTES, asterBlobFor, choosingCompanion, companionBody, companionName, companionPalette, wearsOriginalColor, blobMotionFor, blobPhase, blobStateFor, botBodyFor, isAsterBlob } from "./aster-blobs";
 
 describe("which companion a bot wears", () => {
   it("is stable for a bot and spreads a roster across all four", () => {
@@ -50,7 +50,7 @@ describe("the companions' moods and beats", () => {
     expect(blobMotionFor("success")).toBe("message-received");
     expect(blobMotionFor("blink")).toBe("blink");
     expect(blobMotionFor("none")).toBeNull();
-    expect(blobMotionFor("failure")).toBeNull();
+    expect(blobMotionFor("failure")).toBe("worried");
   });
 
   it("gives each bot its own phase so a roster never moves in step", () => {
@@ -196,3 +196,60 @@ describe("a bot's colour tints its companion", () => {
   });
 });
 
+
+describe("choosing a companion", () => {
+  it("saves the companion id and shows it, even over a picture the bot had", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      const patch = choosingCompanion({ id: "koda", color: "teal", avatarUrl: "/api/attachments/k.webp" } as never, id);
+      expect(patch).toEqual({ mascotBody: id, avatarCrop: "mascot" });
+    }
+  });
+
+  it("keeps a colour the bot chose; Original follows the new companion", () => {
+    expect(choosingCompanion({ id: "koda", mascotBody: "nova", color: "coral" }, "orbit").color).toBeUndefined();
+    expect(choosingCompanion({ id: "koda", mascotBody: "nova", color: COMPANION_COLORS.nova }, "orbit").color).toBe(COMPANION_COLORS.orbit);
+    expect(wearsOriginalColor({ id: "koda", mascotBody: "luma", color: "purple" })).toBe(true);
+    expect(wearsOriginalColor({ id: "koda", mascotBody: "luma", color: "green" })).toBe(false);
+  });
+
+  it("a saved companion beats the id's pick and any legacy setting; unknown ids fall back to Luma", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      const markup = renderToStaticMarkup(createElement(BotAvatar, {
+        bot: { id: "koda", color: "green", mascotBody: id, avatarUrl: "/api/attachments/k.webp", avatarCrop: "mascot" },
+        animated: false,
+      }));
+      expect(markup).toContain(`data-body="${id}"`);
+      expect(markup).not.toContain("<img");
+    }
+    for (const unknown of [undefined, null, "", "hexagon", "LUMA", "nonsense"]) expect(companionBody(unknown)).toBe("luma");
+    expect(renderToStaticMarkup(createElement(MausAvatar, { bodyId: "nonsense" }))).toContain('data-body="luma"');
+  });
+
+  it("names every companion from the shared catalog", () => {
+    expect(ASTER_BLOB_IDS.map(companionName)).toEqual(["Luma", "Nova", "Orbit", "Echo"]);
+  });
+});
+
+describe("speaking", () => {
+  it("a reply read aloud speaks, even while busy; an alert still wins", () => {
+    expect(blobStateFor("dictating", true)).toBe("speaking");
+    expect(blobStateFor("humming")).toBe("speaking");
+    expect(blobStateFor("writing", false)).toBe("idle");
+  });
+});
+
+describe("switching chats switches the header companion", () => {
+  it("each bot's header draws its own saved companion and colour", async () => {
+    const { MascotCompanionHeader } = await import("@/components/MascotCentrepiece");
+    const make = (id: string, mascotBody: string, color: string) => ({ id, threadId: `t-${id}`, name: id, title: "", description: "",
+      notifications: false, color, unread: false, modelSelection: { instanceId: "local", model: "m" }, messages: [], mascotBody }) as never;
+    const header = (bot: never) => renderToStaticMarkup(createElement(MascotCompanionHeader, { bot, messages: [] }));
+    const first = header(make("yuki", "echo", "teal"));
+    const second = header(make("moss", "nova", "cyan"));
+    expect(first).toContain('data-body="echo"');
+    expect(first).toContain('data-color="teal"');
+    expect(second).toContain('data-body="nova"');
+    expect(second).toContain('data-color="cyan"');
+    expect(second).not.toContain('data-body="echo"');
+  });
+});

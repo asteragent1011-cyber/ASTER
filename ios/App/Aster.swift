@@ -118,38 +118,17 @@ extension View {
     }
 }
 
-/// The ASTER star: four soft points in the brand's blue-violet.
+/// The ASTER logo: the lavender blob on its navy tile with the sparkle
+/// (Assets.xcassets/AsterLogo, generated from shared/aster-logo.ts).
 struct AsterMark: View {
     var size: CGFloat = 16
 
     var body: some View {
-        AsterStar()
-            .fill(LinearGradient(
-                stops: [
-                    .init(color: Color(red: 158 / 255, green: 197 / 255, blue: 1), location: 0),
-                    .init(color: Color(red: 123 / 255, green: 140 / 255, blue: 246 / 255), location: 0.55),
-                    .init(color: Color(red: 161 / 255, green: 123 / 255, blue: 244 / 255), location: 1),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ))
+        Image("AsterLogo")
+            .resizable()
+            .interpolation(.high)
             .frame(width: size, height: size)
             .accessibilityHidden(true)
-    }
-}
-
-private struct AsterStar: Shape {
-    func path(in rect: CGRect) -> Path {
-        let k = min(rect.width, rect.height) / 32
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
-        var path = Path()
-        path.move(to: p(16, 1.5))
-        path.addCurve(to: p(30.5, 16), control1: p(17.1, 9.1), control2: p(22.9, 14.9))
-        path.addCurve(to: p(16, 30.5), control1: p(22.9, 17.1), control2: p(17.1, 22.9))
-        path.addCurve(to: p(1.5, 16), control1: p(14.9, 22.9), control2: p(9.1, 17.1))
-        path.addCurve(to: p(16, 1.5), control1: p(9.1, 14.9), control2: p(14.9, 9.1))
-        path.closeSubpath()
-        return path
     }
 }
 

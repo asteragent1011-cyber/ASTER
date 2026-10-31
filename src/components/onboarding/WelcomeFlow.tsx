@@ -13,7 +13,7 @@
 // its organisation assigns the models, and nothing there is installed on,
 // granted to or paired with this computer.
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { MausAvatar } from "@/components/Avatar";
+import { AsterMark } from "@/components/aster/AsterMark";
 import { useDesktopCapabilities } from "@/components/DesktopCapabilities";
 import { setEmailGateDone, track } from "@/lib/analytics";
 import { brand } from "@/lib/brand";
@@ -239,14 +239,7 @@ export function WelcomeFlow({
             {logo ? (
               <img src={logo} alt="" width={72} height={72} className="h-[72px] w-[72px] object-contain" />
             ) : (
-              <MausAvatar
-                color="green"
-                state={mascot}
-                motion={motion.kind}
-                motionKey={motion.key}
-                size={hello ? 72 : 40}
-                label={brand().name}
-              />
+              <AsterMark size={hello ? 72 : 40} label={brand().name} mood={mascot} beat={motion.key} />
             )}
           </div>
           {title && (

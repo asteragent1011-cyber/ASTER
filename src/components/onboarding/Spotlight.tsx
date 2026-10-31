@@ -13,7 +13,7 @@
 // the card sits centred over the dimmed window.
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { MausAvatar } from "@/components/Avatar";
+import { AsterMark } from "@/components/aster/AsterMark";
 import { cn } from "@/lib/cn";
 import type { MausState } from "@/lib/mascot";
 import { reducedMotion } from "@/lib/onboarding";
@@ -231,12 +231,7 @@ export function Spotlight({
           )}
         >
           <div className="shrink-0 drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]">
-            <MausAvatar
-              color="green"
-              state={mascot}
-              size={38}
-              trackPointer={false}
-            />
+            <AsterMark size={38} mood={mascot} />
           </div>
           <div
             key={anchor ?? "centre"}

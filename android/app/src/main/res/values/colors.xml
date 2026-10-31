@@ -5,5 +5,5 @@
       carries the brand green and the tile behind it stays dark, so the two
       stores and the two home screens show the same icon.
     -->
-    <color name="launcher_background">#FF10131F</color>
+    <color name="launcher_background">#FF171A42</color>
 </resources>

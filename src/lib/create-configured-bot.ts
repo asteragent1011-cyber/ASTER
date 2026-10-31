@@ -46,9 +46,11 @@ export async function createConfiguredBot(
   try {
     // The create endpoint already validated the chosen model and completed
     // workspace effort defaults. Do not overwrite those with the raw draft.
-    // The editor drew the companion its draft id picks; the server's id
-    // would pick another, so the bot keeps the one the reader saw and coloured.
-    const patched = await update(bot.id, { ...profile, mascotBody: botBodyFor(draft.bot), modelSelection: bot.modelSelection, ...draft.consent }, new AbortController().signal,
+    // The editor drew the companion its draft id picks, in the draft's
+    // colour; the server's id would pick another companion and the server
+    // deals a rotating colour, so the bot keeps exactly what the reader saw.
+    const shown = draft.bot;
+    const patched = await update(bot.id, { ...profile, mascotBody: botBodyFor(shown), color: shown.color, modelSelection: bot.modelSelection, ...draft.consent }, new AbortController().signal,
       request, approvals, bot);
     bot = { ...bot, ...patched };
     if (profile.approvalMode === "full" || profile.approvalMode === "custom") {

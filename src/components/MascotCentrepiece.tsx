@@ -1,12 +1,13 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { type Bot, type Message } from "@/state/store";
 import { BotAvatar } from "./Avatar";
 import { stateForBot, type MausState, type MausMotion } from "@/lib/mascot";
 import { cn } from "@/lib/cn";
 import { Grip } from "lucide-react";
 import { greetingFor } from "@/lib/aster-companion";
+import { botBodyFor } from "@/lib/aster-blobs";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { Badge } from "./glass-ui/badge";
-import { Card } from "./glass-ui/card";
 import { JellyCompanionStage } from "./aster/JellyCompanionStage";
 
 export interface MascotCentrepieceProps {
@@ -66,8 +67,8 @@ export const MascotCentrepiece = memo(function MascotCentrepiece({
         {/* The open bot's own companion, drawn by the same renderer as its
             sidebar avatar; keyed so switching bots replays its entrance. */}
         <div className="order-1 mx-auto md:order-2" data-mascot-companion>
-          <JellyCompanionStage>
-            <BotAvatar key={bot.id} bot={bot} size={250} living state={speaking ? "writing" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
+          <JellyCompanionStage body={botBodyFor(bot)}>
+            <BotAvatar key={bot.id} bot={bot} size={250} living state={speaking ? "dictating" : isTyping ? "listening" : "idle"} label={`${bot.name}, your companion`} />
           </JellyCompanionStage>
         </div>
       </div>
@@ -105,6 +106,18 @@ export const MascotCompanionHeader = memo(function MascotCompanionHeader({
     return stateForBot({ ...bot, messages });
   }, [hasError, speaking, toolInFlight, bot, isTyping, messages]);
 
+  // a failed turn (an "error:" row) makes the companion look worried, once
+  const failedId = useMemo(() => {
+    const newest = messages.at(-1);
+    return newest?.tool?.name.startsWith("error:") ? newest.id : null;
+  }, [messages]);
+  const [worried, setWorried] = useState(0);
+  const seenFailure = useRef(failedId);
+  useEffect(() => {
+    if (failedId && failedId !== seenFailure.current) setWorried((n) => n + 1);
+    seenFailure.current = failedId;
+  }, [failedId]);
+
   const activityText = useMemo(() => {
     if (hasError) return "Attention needed";
     if (speaking) return "Speaking...";
@@ -114,30 +127,32 @@ export const MascotCompanionHeader = memo(function MascotCompanionHeader({
     return "Ready";
   }, [hasError, speaking, toolInFlight, bot.busy, isTyping]);
 
+  // The bot's companion, always shown in full above the transcript: the home
+  // hero's stage (JellyCompanionStage + the living avatar), standing on the
+  // chat's own background, with its name and status beneath. Smaller on a
+  // phone-width column so the messages keep their room.
+  const roomy = useMediaQuery("(min-width: 640px)");
+  const statusDot = cn("size-1.5 shrink-0 rounded-full", bot.busy ? "bg-accent animate-pulse" : hasError ? "bg-danger" : "bg-success");
+
   return (
-    <Card data-companion-header variant="glass" className="pointer-events-auto mx-auto mb-3 flex-row items-center gap-3 rounded-2xl px-3.5 py-1.5">
-      <div className="relative size-9 shrink-0">
+    <div data-companion-header className="pointer-events-auto flex w-full shrink-0 flex-col items-center px-5 pb-2">
+      <JellyCompanionStage body={botBodyFor(bot)}>
         <BotAvatar
+          key={bot.id}
           bot={bot}
+          size={roomy ? 168 : 112}
+          living
           state={currentState}
-          size={36}
-          motion={motion}
-          motionKey={motionKey}
-          trackPointer={true}
+          motion={worried ? "failure" : motion}
+          motionKey={worried ? -worried : motionKey}
+          label={`${bot.name}, your companion`}
         />
+      </JellyCompanionStage>
+      <div role="status" className="mt-1 flex max-w-full items-center gap-1.5 text-[13px]">
+        <span className="truncate font-semibold text-ink">{bot.name}</span>
+        <span className={statusDot} />
+        <span className="truncate text-ink-secondary">{activityText}</span>
       </div>
-      <div className="flex flex-col min-w-0 pr-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-[13px] font-semibold text-ink">{bot.name}</span>
-          <span
-            className={cn(
-              "size-1.5 rounded-full",
-              bot.busy ? "bg-accent animate-pulse" : hasError ? "bg-danger" : "bg-success",
-            )}
-          />
-        </div>
-        <span className="truncate text-[11px] text-ink-secondary">{activityText}</span>
-      </div>
-    </Card>
+    </div>
   );
 });

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { StoreProvider, type Bot } from "@/state/store";
-import { asterBlobFor, COMPANION_COLORS, companionPalette } from "@/lib/aster-blobs";
+import { ASTER_BLOB_IDS, asterBlobFor, COMPANION_COLORS, companionPalette } from "@/lib/aster-blobs";
 import { BotProfileAvatarCard } from "./BotProfileAvatarCard";
 
 function makeBot(overrides: Partial<Bot> = {}): Bot {
@@ -44,13 +44,12 @@ describe("BotProfileAvatarCard and the companions", () => {
     expect(markup).not.toMatch(/aria-label="Use the [A-Za-z]+ body"/);
   });
 
-  it("shows the bot's own companion everywhere in the card, whatever retired body it saved", () => {
+  it("previews the bot's own companion, whatever retired body it saved", () => {
     const companion = asterBlobFor("bot-1");
     for (const saved of [undefined, "hexagon", "drop", "cursor"]) {
       const markup = renderCard(makeBot(saved ? { mascotBody: saved as Bot["mascotBody"] } : {}));
-      const bodies = [...markup.matchAll(/data-body="([a-z]+)"/g)].map((match) => match[1]);
-      expect(bodies.length).toBeGreaterThan(1);
-      expect(new Set(bodies)).toEqual(new Set([companion]));
+      expect(preview(markup)).toBe(companion);
+      expect(checkedCompanion(markup)).toBe(companion);
     }
   });
 
@@ -85,29 +84,77 @@ describe("BotProfileAvatarCard and the companions", () => {
     }
   });
 
-  it("previews the companion in the bot's colour and marks that colour chosen", () => {
-    const markup = renderCard(makeBot({ color: "coral" }));
-    // the preview and every expression wear the colour, tinted, not flat
-    const colours = [...markup.matchAll(/data-color="([a-z]+)"/g)].map((match) => match[1]);
-    expect(colours.length).toBeGreaterThan(1);
-    expect(new Set(colours)).toEqual(new Set(["coral"]));
-    const tinted = companionPalette(asterBlobFor("bot-1"), "coral");
-    expect(markup).toContain(`stop-color="${tinted.mid}"`);
-    expect(markup).toMatch(/aria-pressed="true"[^>]*aria-label="Use coral mascot color"/);
-    expect(markup).not.toMatch(/aria-pressed="true"[^>]*aria-label="Use green mascot color"/);
+  it("offers the four companions as characters, live, named, and keyboard-reachable", () => {
+    const markup = renderCard(makeBot({ mascotBody: "orbit" }));
+    expect(markup).toContain('role="radiogroup"');
+    for (const [id, name] of [["luma", "Luma"], ["nova", "Nova"], ["orbit", "Orbit"], ["echo", "Echo"]] as const) {
+      const option = new RegExp(`<button[^>]*data-companion-option="${id}"[^>]*>[\\s\\S]*?data-body="${id}"[\\s\\S]*?>${name}</span>`);
+      expect(markup).toMatch(option);
+    }
+    // one tab stop: the chosen companion; the rest are reached with the arrow keys
+    expect(markup.match(/data-companion-option="[a-z]+"/g)).toHaveLength(4);
+    expect(markup).toMatch(/role="radio" aria-checked="true" tabindex="0"[^>]*data-companion-option="orbit"/);
+    expect(markup.match(/role="radio" aria-checked="false" tabindex="-1"[^>]*data-companion-option/g)).toHaveLength(3);
   });
 
-  it("a reopened editor restores the saved colour, and switching colour keeps the companion", () => {
-    for (const color of ["teal", "yellow", "pink"] as const) {
-      const markup = renderCard(makeBot({ color }));
-      expect(markup).toMatch(new RegExp(`aria-pressed="true"[^>]*aria-label="Use ${color} mascot color"`));
-      expect(new Set([...markup.matchAll(/data-body="([a-z]+)"/g)].map((match) => match[1]))).toEqual(new Set([asterBlobFor("bot-1")]));
+  it("each saved companion is the one previewed and checked", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      const markup = renderCard(makeBot({ mascotBody: id }));
+      expect(preview(markup)).toBe(id);
+      expect(checkedCompanion(markup)).toBe(id);
     }
   });
 
-  it("Reset mascot restores the companion's own colour, the brand sheet untouched", () => {
-    const body = asterBlobFor("bot-1");
-    expect(companionPalette(body, COMPANION_COLORS[body])).toEqual(companionPalette(body));
+  it("the old expression grid and Reset mascot are gone", () => {
+    const markup = renderCard(makeBot());
+    expect(markup).not.toContain(">Expression<");
+    expect(markup).not.toMatch(/expression"/);
+    expect(markup).not.toContain("Reset mascot");
+  });
+
+  it("previews the companion in the bot's colour and marks that colour chosen", () => {
+    const markup = renderCard(makeBot({ mascotBody: "nova", color: "coral" }));
+    expect(markup).toMatch(/data-avatar-preview[\s\S]*?data-color="coral"/);
+    expect(markup).toContain(`stop-color="${companionPalette("nova", "coral").mid}"`);
+    expect(checkedSwatch(markup)).toBe("coral");
+  });
+
+  it("a reopened editor restores the saved colour, the companion unchanged", () => {
+    for (const color of ["teal", "yellow", "pink"] as const) {
+      const markup = renderCard(makeBot({ mascotBody: "echo", color }));
+      expect(checkedSwatch(markup)).toBe(color);
+      expect(preview(markup)).toBe("echo");
+    }
+  });
+
+  it("a bot in its companion's own colour has Original chosen, listed first", () => {
+    for (const id of ASTER_BLOB_IDS) {
+      const markup = renderCard(makeBot({ mascotBody: id, color: COMPANION_COLORS[id] }));
+      expect(checkedSwatch(markup)).toBe(COMPANION_COLORS[id]);
+      expect(markup).toMatch(/data-swatch="([a-z]+)"/);
+      expect(/data-swatch="([a-z]+)"/.exec(markup)?.[1]).toBe(COMPANION_COLORS[id]);
+      expect(markup).toContain('aria-label="Original color"');
+      // every colour once: Original stands in for the companion's own
+      expect(markup.match(/data-swatch=/g)).toHaveLength(10);
+    }
+  });
+
+  it("a shown picture leaves no companion chosen; a hidden one can be brought back", () => {
+    const picture = renderCard(makeBot({ avatarUrl: "/api/attachments/cat.webp", avatarCrop: "circle" }));
+    expect(checkedCompanion(picture)).toBeUndefined();
+    expect(picture).not.toContain("data-swatch");
+    const companion = renderCard(makeBot({ mascotBody: "luma", avatarUrl: "/api/attachments/cat.webp", avatarCrop: "mascot" }));
+    expect(checkedCompanion(companion)).toBe("luma");
+    expect(companion).toContain(">Use picture<");
   });
 });
 
+function preview(markup: string) {
+  return /data-avatar-preview[\s\S]*?data-body="([a-z]+)"/.exec(markup)?.[1];
+}
+function checkedCompanion(markup: string) {
+  return /aria-checked="true"[^>]*data-companion-option="([a-z]+)"/.exec(markup)?.[1];
+}
+function checkedSwatch(markup: string) {
+  return /aria-checked="true"[^>]*data-swatch="([a-z]+)"/.exec(markup)?.[1];
+}

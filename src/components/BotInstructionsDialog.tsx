@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { BookOpen, X } from "lucide-react";
 
 import { BotAvatar } from "./Avatar";
-import { normalizeState } from "@/lib/mascot";
 import type { Bot } from "@/state/store";
 
 export function BotInstructionsDialog({ bot, onClose, inline = false }: { bot: Bot; onClose: () => void; inline?: boolean }) {
@@ -67,7 +66,7 @@ export function BotInstructionsDialog({ bot, onClose, inline = false }: { bot: B
           <div className="flex min-w-0 items-center gap-3">
             <BotAvatar
               bot={bot}
-              state={normalizeState(bot.mascotExpression) ?? "idle"}
+              state={"idle"}
               size={38}
               motion="none"
               motionKey={0}

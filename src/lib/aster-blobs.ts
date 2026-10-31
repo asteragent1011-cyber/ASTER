@@ -1,7 +1,7 @@
 // The ASTER companions (the brand sheet's Luma, Nova, Orbit and Echo): which
 // one a bot wears, and which of the avatar's moods they show. Pure, so every
 // place that draws a bot agrees, and it is unit-tested.
-import type { MascotBodyId } from "../../shared/mascot-bodies";
+import { MASCOT_BODIES, type MascotBodyId } from "../../shared/mascot-bodies";
 import { MAUS_COLORS, type MausColor, type MausMotion, type MausState } from "./mascot";
 
 export const ASTER_BLOB_IDS = ["luma", "nova", "orbit", "echo"] as const satisfies readonly MascotBodyId[];
@@ -31,6 +31,11 @@ export function asterBlobFor(identity: string): AsterBlobId {
 
 /** The default companion, for an avatar that stands for no bot in particular. */
 export const DEFAULT_COMPANION: AsterBlobId = "luma";
+
+/** A companion's display name, from the shared catalog. */
+export function companionName(id: AsterBlobId): string {
+  return MASCOT_BODIES[id].name;
+}
 
 /** A companion id as given, or the default for anything else: an unknown
  * value, or a body from the retired geometric catalog (cursor, hexagon...). */
@@ -78,6 +83,35 @@ export const COMPANION_COLORS: Record<AsterBlobId, MausColor> = {
   echo: "purple",
 };
 
+/** What the picker says about each companion, under its name. */
+export const COMPANION_TRAITS: Record<AsterBlobId, string> = {
+  luma: "Calm, with a star",
+  nova: "Bright and playful",
+  orbit: "Steady, ringed by moons",
+  echo: "Soft and layered",
+};
+
+/** Whether a bot is drawn in its companion's own colours ("Original"). */
+export function wearsOriginalColor(bot: { id?: string; name?: string; mascotBody?: string | null; color?: string | null }): boolean {
+  return !bot.color || bot.color === COMPANION_COLORS[botBodyFor(bot)];
+}
+
+/**
+ * The profile change that puts a bot in [body]. It always shows the companion
+ * (a picture never silently wins over a choice made here) and saves the id, so
+ * the choice no longer rests on the bot's id. A colour the bot chose is kept;
+ * a bot in its old companion's own colours takes the new one's, so Original
+ * stays Original instead of turning the new companion another companion's hue.
+ */
+export function choosingCompanion(
+  bot: { id?: string; name?: string; mascotBody?: string | null; color?: string | null },
+  body: AsterBlobId,
+): { mascotBody: AsterBlobId; avatarCrop: "mascot"; color?: MausColor } {
+  return wearsOriginalColor(bot)
+    ? { mascotBody: body, avatarCrop: "mascot", color: COMPANION_COLORS[body] }
+    : { mascotBody: body, avatarCrop: "mascot" };
+}
+
 type Hsl = { h: number; s: number; l: number };
 
 function hexToHsl(hex: string): Hsl {
@@ -121,24 +155,28 @@ export function companionPalette(body: AsterBlobId, color?: string | null): Comp
 }
 
 /** The moods the companions draw, the reusable animation API's states. */
-export type AsterBlobState = "idle" | "thinking" | "happy" | "sleepy" | "alert" | "selected";
+export type AsterBlobState = "idle" | "thinking" | "speaking" | "happy" | "sleepy" | "alert" | "selected";
 /** One-shot beats, played once and handed back. */
-export type AsterBlobMotion = "blink" | "message-sent" | "message-received";
+/** worried: a turn failed; the eyes droop and the body shivers. */
+export type AsterBlobMotion = "blink" | "message-sent" | "message-received" | "worried";
 
 const HAPPY: ReadonlySet<MausState> = new Set<MausState>(["happy", "proud", "excited", "celebrate", "laughing", "playful", "bouncing"]);
 const SLEEPY: ReadonlySet<MausState> = new Set<MausState>(["sleeping", "drowsy", "bored", "powering-down"]);
 const ALERT: ReadonlySet<MausState> = new Set<MausState>(["alerting", "notifying", "surprised", "scared"]);
+const SPEAKING: ReadonlySet<MausState> = new Set<MausState>(["dictating", "humming"]);
 const WORKING: ReadonlySet<MausState> = new Set<MausState>([
   "thinking", "searching", "working", "loading", "listening", "orbit", "radar", "progress",
-  "humming", "writing", "dictating", "uploading", "receiving", "sending",
+  "writing", "uploading", "receiving", "sending",
 ]);
 
 /**
  * The companion's mood for a bot's mascot state. A bot's resting state is
  * partly about what it does (a coder rests as "working"), so when [busy] is
- * known it alone decides thinking; without it the state does.
+ * known it alone decides thinking; without it the state does. Speaking
+ * (a reply read aloud) shows over everything but an alert.
  */
 export function blobStateFor(state: MausState, busy?: boolean): AsterBlobState {
+  if (SPEAKING.has(state)) return "speaking";
   if (busy === true) return "thinking";
   if (ALERT.has(state)) return "alert";
   if (HAPPY.has(state)) return "happy";
@@ -161,6 +199,8 @@ export function blobMotionFor(motion: MausMotion): AsterBlobMotion | null {
     case "blink":
     case "surprise":
       return "blink";
+    case "failure":
+      return "worried";
     default:
       return null;
   }
@@ -175,3 +215,33 @@ export function blobPhase(identity: string): { floatDelayS: number; blinkDelayS:
     enterDelayMs: (h >>> 16) % 240,
   };
 }
+
+/** How a living companion moves: its temperament, as numbers the hero's
+ * frame loops and springs read. 1 is Luma's, the baseline. */
+export interface BlobPersonality {
+  /** How fast it drifts, and how far. */
+  roamSpeed: number;
+  roamReach: number;
+  /** How hard and how fast the body squishes as it breathes. */
+  squish: number;
+  squishSpeed: number;
+  /** Spring bounce (0..1) for its landings and settles. */
+  bounce: number;
+  /** How high a pop throws it. */
+  hop: number;
+  /** Seconds per lap for the moons on its ring. */
+  orbitS: number;
+  /** 0 floats its moons evenly; up to 1 they swing like weights, slow over
+   * the top and fast through the bottom, and drag the ring after them. */
+  moonWeight: number;
+}
+
+export const BLOB_PERSONALITY: Record<AsterBlobId, BlobPersonality> = {
+  luma: { roamSpeed: 1, roamReach: 1, squish: 1, squishSpeed: 1, bounce: 0.45, hop: 1, orbitS: 9, moonWeight: 0 },
+  // quick and bouncy
+  nova: { roamSpeed: 1.6, roamReach: 0.8, squish: 1.35, squishSpeed: 1.7, bounce: 0.68, hop: 1.3, orbitS: 5.5, moonWeight: 0 },
+  // heavy moons that swing and tug the ring
+  orbit: { roamSpeed: 0.85, roamReach: 0.9, squish: 0.85, squishSpeed: 0.9, bounce: 0.35, hop: 0.85, orbitS: 11, moonWeight: 1 },
+  // slow and floaty
+  echo: { roamSpeed: 0.55, roamReach: 1.45, squish: 0.75, squishSpeed: 0.6, bounce: 0.25, hop: 0.8, orbitS: 14, moonWeight: 0 },
+};

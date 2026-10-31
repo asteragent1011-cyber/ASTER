@@ -56,7 +56,12 @@ sealed interface Destination {
      */
     sealed interface Conversation : Destination
 
-    data class Chat(val target: ChatTarget) : Conversation
+    /**
+     * [home] marks the bot conversation the Home tab opened: the same screen,
+     * shown as a tab (the bar stays, Home selected) rather than as a chat
+     * pushed over the roster. Only Home and the launch set it.
+     */
+    data class Chat(val target: ChatTarget, val home: Boolean = false) : Conversation
 
     data class Thread(val threadId: String) : Conversation
 }
@@ -71,6 +76,7 @@ enum class AsterTab { HOME, CHATS, ROUTINES, APPS, SETTINGS }
 
 /** The tab a top-level screen is; null for screens that cover the tab bar. */
 fun Destination.asterTab(): AsterTab? = when (this) {
+    is Destination.Chat -> AsterTab.HOME.takeIf { home }
     Destination.Roster -> AsterTab.CHATS
     Destination.Routines -> AsterTab.ROUTINES
     Destination.ConnectedApps -> AsterTab.APPS
@@ -101,7 +107,7 @@ class CompanionNavigator(
 
     /** The bot conversation opened most recently: where the Home tab returns. */
     var lastBotChat: Destination.Chat? by mutableStateOf(
-        initial.lastOrNull { it is Destination.Chat && it.target is ChatTarget.Bot } as Destination.Chat?,
+        (initial.lastOrNull { it is Destination.Chat && it.target is ChatTarget.Bot } as Destination.Chat?)?.copy(home = false),
     )
         private set
 
@@ -117,16 +123,16 @@ class CompanionNavigator(
             AsterTab.ROUTINES -> listOf(Destination.Roster, Destination.Routines)
             AsterTab.APPS -> listOf(Destination.Roster, Destination.ConnectedApps)
             AsterTab.SETTINGS -> listOf(Destination.Roster, Destination.Settings)
-            AsterTab.HOME -> listOfNotNull(Destination.Roster, lastBotChat ?: fallbackHome())
+            AsterTab.HOME -> listOfNotNull(Destination.Roster, (lastBotChat ?: fallbackHome())?.copy(home = true))
         }
-        (stack.last() as? Destination.Chat)?.let { if (it.target is ChatTarget.Bot) lastBotChat = it }
+        (stack.last() as? Destination.Chat)?.let { if (it.target is ChatTarget.Bot) lastBotChat = it.copy(home = false) }
     }
 
     fun push(destination: Destination) {
         launchHomePending = false
         if (stack.last() == destination) return
         stack = stack + destination
-        if (destination is Destination.Chat && destination.target is ChatTarget.Bot) lastBotChat = destination
+        if (destination is Destination.Chat && destination.target is ChatTarget.Bot) lastBotChat = destination.copy(home = false)
     }
 
     /** The chat behind [chat], addressed by its owner. */
@@ -152,8 +158,8 @@ class CompanionNavigator(
             return true
         }
         val home = fallbackHome() ?: return false
-        stack = listOf(Destination.Roster, home)
-        lastBotChat = home
+        stack = listOf(Destination.Roster, home.copy(home = true))
+        lastBotChat = home.copy(home = false)
         launchHomePending = false
         return true
     }
@@ -207,7 +213,8 @@ class CompanionNavigator(
     /** Only an explicit successful action replaces the locally selected task. */
     fun selectTask(from: Destination.Conversation, target: ChatTarget) {
         if (stack.last() != from) return
-        stack = stack.dropLast(1) + Destination.Chat(target)
+        // Choosing another task on Home keeps it Home.
+        stack = stack.dropLast(1) + Destination.Chat(target, home = (from as? Destination.Chat)?.home == true)
     }
 
     companion object {
@@ -219,6 +226,7 @@ class CompanionNavigator(
         private const val COMPUTER = "computer:"
         private const val OVERVIEW = "overview:"
         private const val BOT_CHAT = "botchat:"
+        private const val HOME_CHAT = "homechat:"
         private const val ROOM_CHAT = "roomchat:"
 
         fun encode(stack: List<Destination>): List<String> = stack.map {
@@ -231,7 +239,7 @@ class CompanionNavigator(
                 is Destination.Computer -> COMPUTER + it.botId
                 is Destination.Overview -> OVERVIEW + it.botId
                 is Destination.Chat -> when (val target = it.target) {
-                    is ChatTarget.Bot -> BOT_CHAT + join(target.botId, target.threadId)
+                    is ChatTarget.Bot -> (if (it.home) HOME_CHAT else BOT_CHAT) + join(target.botId, target.threadId)
                     is ChatTarget.Room -> ROOM_CHAT + join(target.roomId, target.threadId)
                 }
             }
@@ -246,6 +254,8 @@ class CompanionNavigator(
                 it.startsWith(THREAD) -> Destination.Thread(it.removePrefix(THREAD))
                 it.startsWith(COMPUTER) -> Destination.Computer(it.removePrefix(COMPUTER))
                 it.startsWith(OVERVIEW) -> Destination.Overview(it.removePrefix(OVERVIEW))
+                it.startsWith(HOME_CHAT) -> split(it.removePrefix(HOME_CHAT))
+                    ?.let { (owner, thread) -> Destination.Chat(ChatTarget.Bot(owner, thread), home = true) }
                 it.startsWith(BOT_CHAT) -> split(it.removePrefix(BOT_CHAT))
                     ?.let { (owner, thread) -> Destination.Chat(ChatTarget.Bot(owner, thread)) }
                 it.startsWith(ROOM_CHAT) -> split(it.removePrefix(ROOM_CHAT))

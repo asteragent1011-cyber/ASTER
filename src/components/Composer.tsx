@@ -26,7 +26,7 @@ import {
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
 import { AsterMark } from "./aster/AsterMark";
-import { napCompanion, popCompanion } from "@/lib/companion-pop";
+import { cueCompanion, napCompanion, popCompanion } from "@/lib/companion-pop";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -53,10 +53,10 @@ import {
   type Attachment,
   type PasteAttachment,
 } from "@/lib/composer-attachments";
-import { normalizeState } from "@/lib/mascot";
 import { goalCoordinatorForComposer, groupComposerHint, jevRoomRoutingOn, roomRespondersForComposer } from "@/lib/group-routing";
 import { PendingApprovalActions, PendingApprovalPanel, pendingApprovals } from "./PendingApproval";
 import { useDesktopCapabilities } from "./DesktopCapabilities";
+import { browserSpeechRecognitionAvailable, useVoiceMode, voiceMode } from "@/lib/voice-mode";
 import { ReplyQuote } from "./ReplyQuote";
 import { useThreadRefs } from "./ThreadRefs";
 import {
@@ -230,8 +230,9 @@ export function Composer({
     },
     [text, editText, editAttachments],
   );
-  const [recording, setRecording] = useState(false);
-  const [speechError, setSpeechError] = useState<string | null>(null);
+  const voice = useVoiceMode();
+  const recording = voice.status === "listening";
+  const speechError = voice.error ?? null;
   const [caret, setCaret] = useState(0);
   const [highlight, setHighlight] = useState(0);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null); // Esc'd this @
@@ -287,7 +288,6 @@ export function Composer({
   }, [replyToId]);
   const mentionListRef = useRef<HTMLDivElement>(null);
   // what was typed before the mic went on — partials append after it
-  const baseText = useRef("");
 
   // image paste is offered only when every bot that will actually answer
   // can open one. sendGroup routes to mentions, else the room default —
@@ -743,52 +743,27 @@ export function Composer({
     editAttachments((prev) => [...prev, pasteAttachment(pasted)]);
   };
 
-  // native dictation: partials stream into the input while the Swift
-  // helper runs; the final transcript stays in the box, ready to edit/send
-  useEffect(() => {
-    if (!recording) return;
-    const bridge = window.ogb;
-    if (!bridge) {
-      setRecording(false);
-      return;
-    }
-    setSpeechError(null);
-    const offTranscript = bridge.onSpeechTranscript((line) => {
-      if (typeof line.text === "string") {
-        const base = baseText.current;
-        editText(base ? `${base} ${line.text}` : line.text);
-      }
-    });
-    const offEnd = bridge.onSpeechEnd(({ code, reason }) => {
-      setRecording(false);
-      if (code === 2) {
-        setSpeechError(t("composer.dictation.macOnly"));
-      } else if (code === 1) {
-        setSpeechError(t(
-          reason === "dictation-disabled"
-            ? "composer.dictation.disabled"
-            : reason === "speech-not-authorized"
-              ? "composer.dictation.permission"
-              : "composer.dictation.failed",
-        ));
-      }
-    });
-    void bridge.speechStart();
-    return () => {
-      offTranscript();
-      offEnd();
-      void bridge.speechStop();
-    };
-  }, [recording, editText]);
-
   const toggleMic = () => {
-    if (!capabilities.dictation.available || !window.ogb) {
-      setSpeechError(t("composer.dictation.unavailable"));
+    if (voice.status !== "idle" && voice.status !== "stopped" && voice.status !== "error") {
+      voiceMode.stop();
       return;
     }
-    baseText.current = text.trim();
-    setRecording((r) => !r);
+    if (!bot || group || (!capabilities.dictation.available && !browserSpeechRecognitionAvailable())) return;
+    editText("");
+    voiceMode.start({
+      botId: bot.id,
+      threadId,
+      onTranscript: (transcript) => editText(transcript),
+      submit: (transcript) => {
+        setText("");
+        dispatch({ type: "send", botId: bot.id, text: transcript, sendId: crypto.randomUUID(), threadId });
+      },
+    });
   };
+
+  useEffect(() => () => {
+    if (bot?.id) voiceMode.stopIfOwner(bot.id, threadId);
+  }, [bot?.id, threadId]);
 
   return (
     <div className="pointer-events-none relative px-5 pb-3">
@@ -891,7 +866,7 @@ export function Composer({
                 {peer.bot ? (
                   <BotAvatar
                     bot={peer.bot}
-                    state={normalizeState(peer.bot.mascotExpression) ?? "happy"}
+                    state={"happy"}
                     size={24}
                   />
                 ) : (
@@ -1096,6 +1071,11 @@ export function Composer({
               editText("");
               return;
             }
+            if (hero) {
+              // more secrets: ":)" makes it dance, "<3" fills the screen with hearts
+              const code = e.target.value.trim();
+              cueCompanion(code === ":)" ? "dance" : code === "<3" ? "hearts" : "typing");
+            }
             editText(e.target.value);
             setCaret(e.target.selectionStart ?? e.target.value.length);
             setDismissedAt(null);
@@ -1167,7 +1147,7 @@ export function Composer({
               }
               send();
             }
-            if (e.key === "Escape" && recording) setRecording(false);
+            if (e.key === "Escape" && recording) voiceMode.stop();
           }}
           // an upload in flight must not disable the box: a disabled element
           // drops keyboard focus and never gets it back, so the writer had to
@@ -1219,7 +1199,7 @@ export function Composer({
             <Square size={14} className="fill-current" />
           </button>
         )}
-        {!locked && !busy && !hasContent && capabilities.dictation.available && (
+        {!locked && !busy && !hasContent && !group && bot && (capabilities.dictation.available || browserSpeechRecognitionAvailable()) && (
           <button
             onClick={toggleMic}
             aria-label={recording ? t("composer.dictation.stop") : t("composer.dictation.start")}

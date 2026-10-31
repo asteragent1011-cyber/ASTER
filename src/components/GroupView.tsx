@@ -17,6 +17,8 @@ import {
   type Message,
 } from "@/state/store";
 import { BotAvatar } from "./Avatar";
+import { MascotCompanionHeader } from "./MascotCentrepiece";
+import { COMPANION_COLORS, DEFAULT_COMPANION } from "@/lib/aster-blobs";
 import { ThreadChip } from "./ThreadChip";
 import { ToolActivity } from "./ToolActivity";
 import { ThreadRefText } from "./ThreadRefs";
@@ -25,7 +27,6 @@ import { showToolCallsEnabled } from "@/lib/feature-flags";
 import { CompactionChip, DigestChip } from "./DigestChip";
 import { roomActivityVisible } from "@/lib/room-activity";
 import { StatusActivityRow } from "@/components/StatusActivityRow";
-import { normalizeState } from "@/lib/mascot";
 import { defaultResponderName, effectiveDefaultResponder, groupResponseHint, jevRoomRoutingOn } from "@/lib/group-routing";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { Composer } from "./Composer";
@@ -138,7 +139,7 @@ function ClusterLabel({ bot, name, color }: { bot?: Bot; name: string; color: st
     <div className="mt-1 flex items-center gap-1.5 pl-0.5">
       <BotAvatar
         bot={bot ?? { name, color: color as Bot["color"] }}
-        state={normalizeState(bot?.mascotExpression) ?? "happy"}
+        state={"happy"}
         size={16}
         motion="none"
         motionKey={0}
@@ -849,7 +850,7 @@ function RoomSetup({ group, members }: { group: Group; members: Bot[] }) {
                         >
                           <BotAvatar
                             bot={member}
-                            state={normalizeState(member.mascotExpression) ?? "happy"}
+                            state={"happy"}
                             size={24}
                             animated={false}
                           />
@@ -968,7 +969,7 @@ export function GroupView({ group }: { group: Group }) {
   const remoteClient = window.ogb?.remoteClient?.active === true;
   // Same Windows caption handling as ChatView: drag on the header, shift the
   // right-hand controls below the renderer-drawn caption buttons.
-  const { dragStyle: headerDragStyle, noDragStyle: headerNoDragStyle, controlsShiftStyle } = useCaptionChrome();
+  const { headerDragClass, noDragStyle: headerNoDragStyle, controlsShiftStyle } = useCaptionChrome();
   const stream = useStreaming();
   const streaming = stream.streaming[group.threadId];
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1068,6 +1069,8 @@ export function GroupView({ group }: { group: Group }) {
   }, [group.messages, group.working, group.busyBotId, group.name, speaker?.name]);
   const presenceSpeaker =
     speaker ?? awaited ?? members.find((member) => member.id === popping?.botId) ?? members[0];
+  const lastSpeakerId = useMemo(() => group.messages.findLast((message) => message.from?.botId)?.from?.botId, [group.messages]);
+  const roomCompanion = speaker ?? awaited ?? members.find((member) => member.id === lastSpeakerId) ?? members[0];
 
   // Windowed transcript, mirroring ChatView: only a tail of the room mounts;
   // the anchored boundary re-tails on a render-phase reset when the room (or
@@ -1210,7 +1213,7 @@ export function GroupView({ group }: { group: Group }) {
         group.busyBotId === b.id && "ring-2 ring-accent/50 ring-offset-1 ring-offset-app",
       )}
     >
-      <BotAvatar bot={b} state={normalizeState(b.mascotExpression) ?? "happy"} size={24} animated={false} />
+      <BotAvatar bot={b} state={"happy"} size={24} animated={false} />
       {group.busyBotId === b.id && (
         <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full border border-app bg-accent" />
       )}
@@ -1225,8 +1228,8 @@ export function GroupView({ group }: { group: Group }) {
       )}
       {/* Header: static member avatars; a ring + dot marks the working bot. */}
       <div
-        style={headerDragStyle}
         className={cn(
+          headerDragClass,
           // @container so the header can wrap in a narrow column. A container
           // query never matches the container itself, so the row that has to
           // wrap is the child below, not this element.
@@ -1396,6 +1399,12 @@ export function GroupView({ group }: { group: Group }) {
         );
       })()}
 
+      {/* the room's companion, anchored above the transcript: whoever is
+          answering, else whoever spoke last */}
+      {!setupPending && group.messages.length > 0 && roomCompanion && (
+        <MascotCompanionHeader bot={roomCompanion} messages={group.messages} toolInFlight={toolInFlight} />
+      )}
+
       <div className="relative min-h-0 flex-1">
       <div
         ref={scrollRef}
@@ -1503,7 +1512,7 @@ export function GroupView({ group }: { group: Group }) {
               avatar={
                 // the speaker's real profile image when it has one, as in ChatView
                 <BotAvatar
-                  bot={presenceSpeaker ?? { color: "green" }}
+                  bot={presenceSpeaker ?? { color: COMPANION_COLORS[DEFAULT_COMPANION] }}
                   state={toolInFlight && !awaited ? "working" : "thinking"}
                   size={36}
                   trackPointer={false}

@@ -3,6 +3,7 @@ import { api, type Bot, type ModelSelection } from "@/state/store";
 import type { BotUpdatePatch } from "@/state/bot-patch-queue";
 import type { Routine, RoutineInput } from "./routines";
 import type { ChosenPreset } from "./bot-presets";
+import { botBodyFor, COMPANION_COLORS } from "./aster-blobs";
 
 export const EMPTY_BOT_DEFAULTS: NewBotDefaults = { profile: {}, memory: {}, skills: [], routines: [] };
 
@@ -32,9 +33,11 @@ export class BotCreationDraft {
 
   get bot(): Bot {
     const { computer, cwd, peers, ...profile } = this.template.profile;
+    // Until a colour is picked, the companion wears its own (Original).
+    const color = COMPANION_COLORS[botBodyFor({ id: this.id, mascotBody: profile.mascotBody })];
     return {
       id: this.id, threadId: this.id, name: "", title: "", description: "", soul: "",
-      color: "green", notifications: true, unread: false, messages: [],
+      color, notifications: true, unread: false, messages: [],
       modelSelection: { instanceId: "", model: "" }, ...profile,
       computer: computer ?? undefined, cwd: cwd ?? undefined, peers: peers ?? undefined,
     };

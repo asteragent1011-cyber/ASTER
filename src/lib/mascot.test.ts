@@ -19,3 +19,10 @@ describe("stateForBot", () => {
     expect(stateForBot({ name: "Atlas", messages: [{ kind: "options" }, { kind: "digest" }] })).toBe("curious");
   });
 });
+
+describe("a retired pinned expression", () => {
+  it("no longer fixes the companion's mood: a saved expression is kept in the profile but not drawn", () => {
+    const bot = { name: "Koda", title: "", description: "", busy: true, mascotExpression: "sleeping" };
+    expect(stateForBot(bot)).toBe("working");
+  });
+});

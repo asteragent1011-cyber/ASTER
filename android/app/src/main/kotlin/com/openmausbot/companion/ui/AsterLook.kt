@@ -235,30 +235,15 @@ fun asterStatusLabel(mood: AsterMood): String = when (mood) {
     AsterMood.RESPONDING -> "Responding…"
 }
 
-/** The ASTER star: four soft points in the brand's blue-violet. */
+/** The ASTER logo: the lavender blob on its navy tile with the sparkle
+ * (res/drawable/ic_aster_logo.xml, generated from shared/aster-logo.ts). */
 @Composable
 fun AsterMark(size: Dp, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.size(size)) {
-        val k = this.size.minDimension / 32f
-        val star = Path().apply {
-            moveTo(16f * k, 1.5f * k)
-            cubicTo(17.1f * k, 9.1f * k, 22.9f * k, 14.9f * k, 30.5f * k, 16f * k)
-            cubicTo(22.9f * k, 17.1f * k, 17.1f * k, 22.9f * k, 16f * k, 30.5f * k)
-            cubicTo(14.9f * k, 22.9f * k, 9.1f * k, 17.1f * k, 1.5f * k, 16f * k)
-            cubicTo(9.1f * k, 14.9f * k, 14.9f * k, 9.1f * k, 16f * k, 1.5f * k)
-            close()
-        }
-        drawPath(
-            star,
-            Brush.linearGradient(
-                0f to Color(0xFF9EC5FF),
-                0.55f to Color(0xFF7B8CF6),
-                1f to Color(0xFFA17BF4),
-                start = Offset(4f * k, 4f * k),
-                end = Offset(28f * k, 28f * k),
-            ),
-        )
-    }
+    Image(
+        painter = painterResource(R.drawable.ic_aster_logo),
+        contentDescription = null,
+        modifier = modifier.size(size),
+    )
 }
 
 private data class MoodTiming(val floatMs: Int, val morphMs: Int, val halo: Float)

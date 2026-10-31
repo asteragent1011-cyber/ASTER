@@ -48,7 +48,7 @@ import { isProviderSafetyBlock, PROVIDER_SAFETY_GUIDANCE, PROVIDER_SAFETY_HELP_U
 import { BotAvatar } from "./Avatar";
 import { TurnPresence } from "./TurnPresence";
 import { showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
-import { normalizeState, stateForBot } from "@/lib/mascot";
+import { stateForBot } from "@/lib/mascot";
 import { peerLine, type PeerLine } from "@/lib/peer-message";
 import { showWorkingDots } from "@/lib/turn-tail";
 import { liveActivityLabel } from "@/lib/live-activity";
@@ -79,7 +79,8 @@ import { ModelPicker } from "./ModelPicker";
 import { ExportTranscriptMenu } from "./ExportTranscriptMenu";
 
 import { SpeakButton } from "./SpeakButton";
-import { CallButton, CallOverlay } from "./CallView";
+import { CallOverlay } from "./CallView";
+import { VoiceFloatingBar } from "./VoiceFloatingBar";
 import { effectivePlace, toolPlace, type EffectivePlace } from "@/lib/place";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -607,7 +608,7 @@ function PeerLabel({ peer }: { peer: PeerLine }) {
     <div className="mb-1 flex items-center gap-1.5 pl-0.5" data-testid="peer-label">
       <BotAvatar
         bot={author ?? { name: peer.name, color: "blue" }}
-        state={normalizeState(author?.mascotExpression) ?? "happy"}
+        state={"happy"}
         size={16}
         motion="none"
         motionKey={0}
@@ -708,13 +709,9 @@ const MessagesList = memo(function MessagesList({
   const isIdle = !bot.busy && messages.length === 0;
   return (
     <>
-      {isIdle ? (
+      {/* the companion lives above the transcript once there is one (ChatView) */}
+      {isIdle && (
         <MascotCentrepiece
-          bot={bot}
-          messages={messages}
-        />
-      ) : (
-        <MascotCompanionHeader
           bot={bot}
           messages={messages}
         />
@@ -926,7 +923,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   // Windows has no native caption buttons (renderer-drawn, see
   // WindowCaptionButtons); this header is the window drag region, and the
   // icon row shifts below the 26px-tall corner the buttons occupy.
-  const { dragStyle: headerDragStyle, noDragStyle: headerNoDragStyle, controlsShiftStyle } = useCaptionChrome();
+  const { headerDragClass, noDragStyle: headerNoDragStyle, controlsShiftStyle } = useCaptionChrome();
   const scrollRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const composerDockRef = useRef<HTMLDivElement>(null);
@@ -1234,8 +1231,8 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       <CallOverlay bot={bot} />
       {/* Header */}
       <div
-        style={headerDragStyle}
         className={cn(
+          headerDragClass,
           // @container so the chips on the right can fold to icon bubbles
           // when the column is narrow (side panel open, small window). A
           // container query never matches the container itself, so the row
@@ -1333,7 +1330,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             <TaskPicker bot={bot} />
             <UsageChip bot={bot} />
             {!remoteClient && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
-            <CallButton bot={bot} />
+            <VoiceFloatingBar bot={bot} />
             <button
               data-tour="computer"
               onClick={() => dispatch({ type: "toggleComputer" })}
@@ -1398,6 +1395,12 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         }
       />
 
+
+      {/* The bot's companion, anchored above the transcript so it stays in
+          view while the chat scrolls; the empty chat shows the hero instead. */}
+      {(bot.busy || messages.length > 0) && (
+        <MascotCompanionHeader bot={bot} messages={messages} />
+      )}
 
       {/* Messages + composer share one pane so bubbles scroll into the pill
           instead of dying on a rectangular clip above a black dock. */}

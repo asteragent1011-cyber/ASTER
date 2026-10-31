@@ -91,7 +91,6 @@ export function AgentChat({ playing, onCue, onEnded, label }: SceneProps) {
         <div className="flex items-start gap-2.5">
           <div className="shrink-0 drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]">
             <MausAvatar
-              color="green"
               state={replied ? (done ? "proud" : "writing") : phase === "think" ? "working" : "listening"}
               size={34}
               animated={!still}

@@ -27,6 +27,7 @@ import {
 } from "@/lib/aster-companion";
 import { BotAvatar } from "../Avatar";
 import { AsterMark } from "./AsterMark";
+import { useCaptionChrome } from "../DesktopCapabilities";
 import { popCompanion } from "@/lib/companion-pop";
 
 const MODES: Record<AsterMode, { label: string; hint: string; icon: ReactNode }> = {
@@ -74,13 +75,15 @@ export const AsterContextPanel = memo(function AsterContextPanel({
   onOpenChats: () => void;
 }) {
   const { dispatch } = useStore();
+  const { dragClass } = useCaptionChrome();
   const [mode, setMode] = useState<AsterMode>(() => readAsterMode());
   const stage = growthStage(bot);
   const reached = GROWTH_STAGES.indexOf(stage);
 
   return (
     <aside aria-label="ASTER companion panel" className="aster-context relative z-10 hidden w-[312px] shrink-0 flex-col gap-3 overflow-y-auto py-5 pr-5 xl:flex">
-      <div className="flex items-center gap-3">
+      {/* the panel's top bar is a drag handle for the frameless window */}
+      <div className={cn("flex items-center gap-3", dragClass)}>
         <button
           type="button"
           onClick={onOpenSearch}

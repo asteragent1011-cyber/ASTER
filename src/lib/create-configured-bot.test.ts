@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, persistBotUpdate, type Bot } from "@/state/store";
 import { BotCreationDraft, EMPTY_BOT_DEFAULTS } from "./bot-creation-draft";
 import { createConfiguredBot } from "./create-configured-bot";
-import { botBodyFor } from "./aster-blobs";
+import { botBodyFor, choosingCompanion, COMPANION_COLORS } from "./aster-blobs";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -46,6 +46,25 @@ describe("configured bot creation", () => {
     expect(f.bodies[1]).toMatchObject({ color: "coral", mascotBody: shown });
     expect(result.bot.color).toBe("coral");
     expect(botBodyFor(result.bot)).toBe(shown);
+  });
+
+  it("a picked companion and an untouched colour are saved as shown: Original, not the server's rotating colour", async () => {
+    for (const body of ["luma", "nova", "orbit", "echo"] as const) {
+      const f = fixture("ask");
+      f.draft.patch(choosingCompanion(f.draft.bot, body));
+      expect(f.draft.bot.color).toBe(COMPANION_COLORS[body]);
+      const result = await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals);
+      expect(f.bodies[1]).toMatchObject({ mascotBody: body, color: COMPANION_COLORS[body], avatarCrop: "mascot" });
+      expect(botBodyFor(result.bot)).toBe(body);
+    }
+  });
+
+  it("a colour picked before the companion survives the companion change", async () => {
+    const f = fixture("ask");
+    f.draft.patch({ color: "teal" });
+    f.draft.patch(choosingCompanion(f.draft.bot, "orbit"));
+    await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals);
+    expect(f.bodies[1]).toMatchObject({ mascotBody: "orbit", color: "teal" });
   });
 
   it("keeps the server-completed workspace effort when applying draft settings", async () => {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import com.openmausbot.companion.core.target
 import com.openmausbot.companion.core.chatSummaries
 import com.openmausbot.companion.core.Chat
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -32,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -392,7 +394,10 @@ private fun PairedScreen(
     LaunchedEffect(navigator) {
         environment.session.state.first { navigator.settleLaunchHome(fallbackHome) }
     }
-    val tab = navigator.current.asterTab()
+    // Home is a chat with a composer: while the keyboard is up the bar steps
+    // aside rather than riding on top of it.
+    val keyboardUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val tab = navigator.current.asterTab()?.takeUnless { it == AsterTab.HOME && keyboardUp }
 
     Column(Modifier.fillMaxSize()) {
     Box(

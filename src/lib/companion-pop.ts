@@ -20,3 +20,13 @@ export function napCompanion(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(COMPANION_NAP_EVENT));
 }
+
+export const COMPANION_CUE_EVENT = "aster:companion-cue";
+
+/** typing: the reader is typing on the home; dance and hearts: secret codes. */
+export type CompanionCue = "typing" | "dance" | "hearts";
+
+export function cueCompanion(cue: CompanionCue): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<CompanionCue>(COMPANION_CUE_EVENT, { detail: cue }));
+}

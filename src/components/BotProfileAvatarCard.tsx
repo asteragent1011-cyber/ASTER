@@ -1,17 +1,11 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { ImagePlus, Loader2, Sparkles, Trash2 } from "lucide-react";
 
 import { useStore, type Bot } from "@/state/store";
 import { useBotEditor } from "./bot-settings/BotEditorContext";
 import { imageAttachmentFromFile } from "@/lib/composer-attachments";
 import { cn } from "@/lib/cn";
-import {
-  PICKABLE_STATES,
-  MAUS_COLORS,
-  MAUS_COLOR_NAMES,
-  type MausMotion,
-  type MausState,
-} from "@/lib/mascot";
+import { MAUS_COLOR_NAMES, type MausColor, type MausMotion, type MausState } from "@/lib/mascot";
 import {
   AVATAR_FOCUS_CENTER,
   AVATAR_ZOOM_MAX,
@@ -21,12 +15,22 @@ import {
   clampAvatarZoom,
 } from "../../shared/bot-avatar";
 import { BotAvatar, MausAvatar } from "./Avatar";
-import { botBodyFor, COMPANION_COLORS } from "@/lib/aster-blobs";
+import {
+  ASTER_BLOB_IDS,
+  botBodyFor,
+  choosingCompanion,
+  COMPANION_COLORS,
+  COMPANION_TRAITS,
+  companionName,
+  companionPalette,
+  wearsOriginalColor,
+  type AsterBlobId,
+} from "@/lib/aster-blobs";
 import { AvatarImageGenerator } from "./AvatarImageGenerator";
 import { useOrganizationBranding } from "@/lib/use-organization-branding";
 
 type AvatarPatch = Partial<
-  Pick<Bot, "avatarCrop" | "avatarUrl" | "avatarZoom" | "avatarFocusX" | "avatarFocusY" | "color" | "mascotExpression">
+  Pick<Bot, "avatarCrop" | "avatarUrl" | "avatarZoom" | "avatarFocusX" | "avatarFocusY" | "color" | "mascotBody">
 >;
 
 const FRAME_SIZE = 168;
@@ -113,6 +117,139 @@ function AvatarFraming({
         )}
       </div>
     </div>
+  );
+}
+
+/** Arrow keys move a radio group's choice, as a native radio group would. */
+function radioKeys<T>(choices: readonly T[], current: number, choose: (choice: T) => void) {
+  return (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1
+      : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = (Math.max(current, 0) + step + choices.length) % choices.length;
+    choose(choices[next]!);
+    event.currentTarget.querySelectorAll<HTMLElement>("[role=radio]")[next]?.focus();
+  };
+}
+
+const SECTION_LABEL = "mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary";
+
+/** The four companions as characters to pick, each drawn live as it would look. */
+function CompanionPicker({
+  bot,
+  showsPicture,
+  disabled,
+  onPatch,
+}: {
+  bot: Bot;
+  showsPicture: boolean;
+  disabled: boolean;
+  onPatch: (patch: AvatarPatch) => void;
+}) {
+  // While the bot shows its picture no companion is chosen; picking one switches back.
+  const current = showsPicture ? null : botBodyFor(bot);
+  const choose = (body: AsterBlobId) => onPatch(choosingCompanion(bot, body));
+  return (
+    <>
+      <div id={`companion-${bot.id}`} className={SECTION_LABEL}>Companion</div>
+      <div
+        role="radiogroup"
+        aria-labelledby={`companion-${bot.id}`}
+        className="grid grid-cols-4 gap-2"
+        onKeyDown={disabled ? undefined : radioKeys(ASTER_BLOB_IDS, current ? ASTER_BLOB_IDS.indexOf(current) : -1, choose)}
+      >
+        {ASTER_BLOB_IDS.map((body, index) => {
+          const selected = body === current;
+          return (
+            <button
+              key={body}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected || (!current && index === 0) ? 0 : -1}
+              disabled={disabled}
+              onClick={() => choose(body)}
+              title={COMPANION_TRAITS[body]}
+              data-companion-option={body}
+              className={cn(
+                "group flex flex-col items-center gap-1 rounded-xl border px-1 pb-2 pt-1.5 transition-colors disabled:opacity-50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-border",
+                selected ? "border-accent-border bg-accent/10" : "border-hairline/40 bg-inset hover:bg-control",
+              )}
+            >
+              <MausAvatar
+                bodyId={body}
+                identity={`${bot.id}-${body}`}
+                color={choosingCompanion(bot, body).color ?? bot.color}
+                selected={selected}
+                size={56}
+              />
+              <span className={cn("text-[12.5px] font-medium", selected ? "text-ink" : "text-ink-secondary group-hover:text-ink")}>
+                {companionName(body)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {current && <div className="mt-1.5 text-center text-[11.5px] text-ink-secondary">{COMPANION_TRAITS[current]}</div>}
+    </>
+  );
+}
+
+const colorLabel = (color: MausColor) => color[0]!.toUpperCase() + color.slice(1);
+
+/**
+ * The companion's colour: Original draws its own brand colours, every other
+ * swatch tints it (companionPalette). Each swatch is painted with the tinted
+ * body itself, so what is picked is what the companion becomes.
+ */
+function ColorPicker({ bot, disabled, onPatch }: { bot: Bot; disabled: boolean; onPatch: (patch: AvatarPatch) => void }) {
+  const body = botBodyFor(bot);
+  const original = COMPANION_COLORS[body];
+  const choices: MausColor[] = [original, ...MAUS_COLOR_NAMES.filter((color) => color !== original)];
+  const current = wearsOriginalColor(bot) ? original : bot.color;
+  const choose = (color: MausColor) => onPatch({ color });
+  return (
+    <>
+      <div id={`companion-color-${bot.id}`} className={SECTION_LABEL}>Color</div>
+      <div
+        role="radiogroup"
+        aria-labelledby={`companion-color-${bot.id}`}
+        className="flex flex-wrap gap-2.5"
+        onKeyDown={disabled ? undefined : radioKeys(choices, choices.indexOf(current), choose)}
+      >
+        {choices.map((color) => {
+          const selected = color === current;
+          const swatch = companionPalette(body, color);
+          const name = color === original ? "Original" : colorLabel(color);
+          return (
+            <button
+              key={color}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
+              disabled={disabled}
+              onClick={() => choose(color)}
+              title={name}
+              aria-label={`${name} color`}
+              data-swatch={color}
+              className={cn(
+                "relative size-9 rounded-full transition-transform hover:scale-110 disabled:opacity-50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-border focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+                selected && "ring-2 ring-ink ring-offset-2 ring-offset-card",
+              )}
+              style={{ background: `radial-gradient(circle at 34% 28%, ${swatch.light}, ${swatch.mid} 48%, ${swatch.deep})` }}
+            >
+              {color === original && (
+                <Sparkles size={13} aria-hidden className="absolute inset-0 m-auto text-white/90 drop-shadow" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -211,13 +348,16 @@ export function BotProfileAvatarCard({
     <div className="overflow-hidden rounded-xl border border-hairline/40 bg-card">
       <div className="flex items-center justify-between border-b border-hairline/40 px-3 py-2.5">
         <span className="rounded-lg bg-control px-3 py-1.5 text-[14px] font-medium text-ink">Avatar</span>
-        <button
-          disabled={busy}
-          onClick={() => onPatch({ avatarCrop: "mascot", color: COMPANION_COLORS[botBodyFor(bot)], mascotExpression: null })}
-          className="rounded-md px-2 py-1.5 text-[13px] text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-50"
-        >
-          Reset mascot
-        </button>
+        {bot.avatarUrl && !showsPicture && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onPatch({ avatarCrop: "circle" })}
+            className="rounded-md px-2 py-1.5 text-[13px] text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-50"
+          >
+            Use picture
+          </button>
+        )}
       </div>
 
       <div className="p-3">
@@ -233,7 +373,7 @@ export function BotProfileAvatarCard({
         {showsPicture ? (
           <AvatarFraming bot={bot} disabled={busy} onPatch={onPatch} />
         ) : (
-          <div className="flex justify-center py-3">
+          <div data-avatar-preview className="flex justify-center py-3">
             <BotAvatar
               bot={bot}
               state={activeState}
@@ -244,7 +384,10 @@ export function BotProfileAvatarCard({
           </div>
         )}
 
-        <div className="mt-2 flex gap-2">
+        <CompanionPicker bot={bot} showsPicture={showsPicture} disabled={busy} onPatch={onPatch} />
+        {!showsPicture && <ColorPicker bot={bot} disabled={busy} onPatch={onPatch} />}
+
+        <div className="mt-4 flex gap-2">
           <input
             ref={fileRef}
             type="file"
@@ -275,56 +418,6 @@ export function BotProfileAvatarCard({
           )}
         </div>
         <div className="mt-1.5 text-[11.5px] text-ink-secondary">PNG, JPEG, GIF, or WebP · up to 10 MB</div>
-
-        {!showsPicture && (
-          <>
-            <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
-              Expression
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {PICKABLE_STATES.map((expression) => (
-                <button
-                  key={expression}
-                  type="button"
-                  disabled={busy}
-                  aria-pressed={activeState === expression}
-                  onClick={() => onPatch({ mascotExpression: expression })}
-                  className={cn(
-                    "flex h-[58px] items-center justify-center rounded-xl bg-inset transition-colors hover:bg-control disabled:opacity-50",
-                    activeState === expression && "ring-2 ring-accent-border",
-                  )}
-                  title={expression}
-                  aria-label={`Use ${expression} expression`}
-                >
-                  <MausAvatar color={bot.color} bodyId={botBodyFor(bot)} identity={bot.id} state={expression} size={42} animated={false} />
-                </button>
-              ))}
-            </div>
-
-            <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
-              Color
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              {MAUS_COLOR_NAMES.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  disabled={busy}
-                  aria-pressed={bot.color === color}
-                  onClick={() => onPatch({ color })}
-                  className={cn(
-                    "size-10 rounded-full border-2 border-transparent transition-transform hover:scale-110 disabled:opacity-50",
-                    bot.color === color && "ring-2 ring-accent-border ring-offset-2 ring-offset-card",
-                  )}
-                  style={{ backgroundColor: MAUS_COLORS[color] }}
-                  title={color}
-                  aria-label={`Use ${color} mascot color`}
-                />
-              ))}
-            </div>
-
-          </>
-        )}
 
         <AvatarImageGenerator
           botLabel={bot.title || bot.name}

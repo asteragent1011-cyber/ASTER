@@ -19,6 +19,7 @@ import { applySkin, readAppearancePreference, type AppearanceMode } from "@/lib/
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { SidebarProfileMenu } from "./SidebarProfileMenu";
 import { AsterMark } from "./aster/AsterMark";
+import { useCaptionChrome } from "./DesktopCapabilities";
 
 export interface NavigationRailProps {
   expanded: boolean;
@@ -102,6 +103,8 @@ export const NavigationRail = memo(function NavigationRail({
     applySkin(next);
   };
 
+  const { dragClass } = useCaptionChrome();
+
   const goHome = () => {
     if (state.activeView !== "chat") dispatch({ type: "showChat" });
     if (expanded) onToggleExpanded();
@@ -113,6 +116,8 @@ export const NavigationRail = memo(function NavigationRail({
       className={cn(
         "aster-nav glass-rail z-30 flex h-full w-[60px] shrink-0 select-none flex-col items-center justify-between py-3.5",
         "lg:w-[232px] lg:items-stretch lg:px-3 lg:pb-4 lg:pt-5",
+        // the rail's empty space drags the frameless window; its controls stay clickable
+        dragClass,
       )}
     >
       <div className="flex flex-col items-center gap-2.5 lg:items-stretch lg:gap-1.5">

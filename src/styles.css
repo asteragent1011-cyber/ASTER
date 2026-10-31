@@ -847,6 +847,27 @@ body {
   30% { opacity: 1; }
   60% { opacity: 0.25; }
 }
+.voice-floating-bar {
+  animation: voice-bar-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes voice-bar-in {
+  from { opacity: 0; transform: translate(-50%, 12px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.voice-orb {
+  animation: voice-orb-breathe 1.8s ease-in-out infinite;
+}
+@keyframes voice-orb-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 0%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in oklab, var(--color-accent) 13%, transparent); }
+}
+.voice-wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+.voice-wave i { display: block; width: 2px; height: 5px; border-radius: 999px; background: currentColor; animation: voice-wave 0.9s ease-in-out infinite; }
+.voice-wave i:nth-child(2) { animation-delay: 0.12s; }
+.voice-wave i:nth-child(3) { animation-delay: 0.24s; }
+.voice-wave i:nth-child(4) { animation-delay: 0.36s; }
+.voice-wave i:nth-child(5) { animation-delay: 0.48s; }
+@keyframes voice-wave { 0%, 100% { height: 4px; opacity: 0.45; } 50% { height: 13px; opacity: 1; } }
 .thinking-shimmer {
   background: linear-gradient(90deg, var(--color-ink-secondary) 40%, var(--color-ink) 50%, var(--color-ink-secondary) 60%);
   background-size: 200% 100%;
@@ -855,7 +876,7 @@ body {
   color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
-  .animate-caret, .animate-msg-in, .animate-shimmer, .animate-pop-in, .animate-pop-out { animation: none; }
+  .animate-caret, .animate-msg-in, .animate-shimmer, .animate-pop-in, .animate-pop-out, .voice-floating-bar, .voice-orb, .voice-wave i { animation: none; }
   .animate-status-pulse { animation: none; opacity: 0.6; }
   .thinking-shimmer { background: none; color: var(--color-ink-secondary); }
   .turn-mascot-in, .turn-mascot-out, .turn-answer { animation: none; }
@@ -2190,6 +2211,7 @@ button:disabled.bg-danger {
 .aster-blob__float { animation: aster-blob-float 4.6s ease-in-out var(--aster-blob-float, 0s) infinite; }
 .aster-blob__lift { transition: transform 180ms ease-out; }
 .aster-blob:hover .aster-blob__lift { transform: translateY(-3px) scale(1.04); }
+[data-companion-option]:hover .aster-blob__lift { transform: translateY(-3px) scale(1.06); }
 .aster-blob__eyes { transform-origin: 50% 50%; animation: aster-blob-blink 6.2s ease-in-out var(--aster-blob-blink, 0s) infinite; }
 .aster-blob__look { transition: transform 260ms ease-out; }
 .aster-blob__happy { opacity: 0; transition: opacity 160ms ease-out; }
@@ -2206,6 +2228,8 @@ button:disabled.bg-danger {
 .aster-blob[data-state="thinking"] .aster-blob__float { animation-duration: 2.8s; }
 .aster-blob[data-state="thinking"] .aster-blob__particle { animation-duration: 1.6s; }
 .aster-blob[data-state="alert"] .aster-blob__eyes { transform: scale(1.18); animation: none; }
+.aster-blob[data-state="speaking"] .aster-blob__eyes { transform-origin: 50% 50%; animation: aster-blob-speak 460ms ease-in-out infinite alternate; }
+.aster-blob[data-state="speaking"] .aster-blob__float { animation-duration: 2.2s; }
 .aster-blob[data-state="selected"] .aster-blob__lift { transform: scale(1.05); }
 .aster-blob[data-state="selected"] .aster-blob__rim { stroke-opacity: 0.7; }
 
@@ -2261,9 +2285,36 @@ button:disabled.bg-danger {
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(1.5px, -3px); }
 }
+@keyframes aster-blob-speak {
+  from { transform: scale(1, 1); }
+  to { transform: scale(1.08, 0.72); }
+}
 @keyframes aster-blob-twinkle {
   0%, 100% { opacity: 0.85; transform: translateY(0); }
   50% { opacity: 0.35; transform: translateY(-3px); }
+}
+
+/* The ASTER logo's hop when a guide (onboarding) reacts. */
+.aster-mark-beat { transform-origin: 50% 90%; animation: aster-mark-beat 520ms cubic-bezier(0.3, 0.7, 0.4, 1); }
+@keyframes aster-mark-beat {
+  0% { transform: none; }
+  25% { transform: scale(1.08, 0.92); }
+  55% { transform: translateY(-8%) scale(0.96, 1.05); }
+  100% { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aster-mark-beat { animation: none; }
+}
+
+/* Frameless desktop windows (useCaptionChrome().dragClass): the area drags
+   the window, and every control inside it opts out so it stays clickable.
+   Electron reads -webkit-app-region from stylesheets as well as inline styles. */
+.window-drag { -webkit-app-region: drag; }
+@media (min-width: 48rem) {
+  .window-drag-header { -webkit-app-region: drag; }
+}
+.window-drag :is(button, a, input, textarea, select, summary, label, [role="button"], [role="link"], [role="menuitem"], [role="radio"], [role="switch"], [role="tab"], [role="menu"], [role="dialog"], [role="listbox"], [tabindex], [contenteditable="true"]) {
+  -webkit-app-region: no-drag;
 }
 
 /* still: lists that ask for no animation, and reduced motion */
@@ -2276,7 +2327,8 @@ button:disabled.bg-danger {
 @media (prefers-reduced-motion: reduce) {
   .aster-blob *,
   .aster-blob[data-motion] * { animation: none !important; transition: none !important; }
-  .aster-blob:hover .aster-blob__lift { transform: none; }
+  .aster-blob:hover .aster-blob__lift,
+  [data-companion-option]:hover .aster-blob__lift { transform: none; }
 }
 
 /* The home's hero companion (living: aster/AsterBlobAvatar.tsx's frame loop
@@ -2334,6 +2386,44 @@ button:disabled.bg-danger {
 @keyframes aster-drowse {
   from { transform: scaleY(0.45); }
   to { transform: scaleY(0.12); }
+}
+
+/* a startled blink when the pointer darts past; ^ ^ through a dance */
+.aster-jelly-stage[data-mood="blink"] .aster-blob__eyes { animation: aster-blob-blink-once 260ms ease-in-out; }
+.aster-jelly-stage[data-mood="dance"] .aster-blob__eyes { opacity: 0; }
+.aster-jelly-stage[data-mood="dance"] .aster-blob__happy { opacity: 1; }
+
+/* worried (a failed turn): eyes droop and shrink, the body shivers */
+.aster-blob[data-motion="worried"] .aster-blob__eyes { animation: none; transform: translateY(2px) scale(0.85, 0.7); }
+.aster-blob[data-motion="worried"] .aster-blob__squish { animation: aster-blob-shiver 1.4s ease-in-out; }
+@keyframes aster-blob-shiver {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50% { transform: translateX(-2px); }
+  20%, 40%, 60% { transform: translateX(2px); }
+  75% { transform: translateX(0) scale(0.97, 1.02); }
+}
+
+/* hearts: from petting and the <3 code, rising, drifting and fading */
+.aster-hearts > .aster-heart {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  filter: drop-shadow(0 2px 6px rgb(132 102 238 / 0.35));
+  animation: aster-heart-rise 2.2s ease-out both;
+}
+.aster-hearts--screen > .aster-heart { top: auto; bottom: -40px; animation-name: aster-heart-float; }
+@keyframes aster-heart-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  15% { opacity: 1; transform: translate(calc(var(--drift) * 0.2), -20px) scale(1.1); }
+  100% { opacity: 0; transform: translate(var(--drift), -150px) scale(0.8); }
+}
+@keyframes aster-heart-float {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+  10% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(var(--drift), -105vh) scale(1.2) rotate(25deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aster-hearts { display: none; }
 }
 
 /* zzz: three letters rising and fading, one after another */

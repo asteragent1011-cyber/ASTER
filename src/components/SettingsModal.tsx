@@ -48,6 +48,7 @@ import { WorkspaceBackupSettings } from "./WorkspaceBackupSettings";
 import { CompanyBackupSettings } from "./CompanyBackupSettings";
 import { cn } from "@/lib/cn";
 import { setNotificationSounds, useNotificationSounds } from "@/lib/notification-preferences";
+import { setCompanionSounds, useCompanionSounds } from "@/lib/companion-sounds";
 import { setShowThreads, useShowThreads } from "@/lib/thread-preferences";
 import { setShowRunCard, useShowRunCard } from "@/lib/run-card-preferences";
 import { effectiveLanguage, setLanguageChoice, useLanguageChoice } from "@/lib/language-preference";
@@ -352,6 +353,15 @@ function NotificationSoundsRow() {
         aria-label={t("settings.notificationSounds.play")}
         onClick={() => setNotificationSounds(!enabled)}
       />
+    </SettingRow>
+  );
+}
+
+function CompanionSoundsRow() {
+  const enabled = useCompanionSounds();
+  return (
+    <SettingRow title="Companion sounds" subtitle="A soft boop when your companion pops, and a tiny snore while it naps. Off by default.">
+      <Switch checked={enabled} aria-label="Companion sounds" onClick={() => setCompanionSounds(!enabled)} />
     </SettingRow>
   );
 }
@@ -817,6 +827,7 @@ export function SettingsModal() {
                   <FontRow />
                   <ShowThreadsRow />
                   <NotificationSoundsRow />
+                  <CompanionSoundsRow />
                   {!remoteActive && <ToolCallsRow />}
                   <RunCardRow />
                 </div>
