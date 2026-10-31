@@ -1,4 +1,4 @@
-# MausBot Play release checklist
+# ASTER Play release checklist
 
 Use with the [release preparation guide](README.md). Complete this for the exact
 commit and artifact being submitted; unchecked items remain release work.
@@ -7,7 +7,7 @@ commit and artifact being submitted; unchecked items remain release work.
 
 - [ ] Record the release commit and intended version from
   `android/app/build.gradle.kts`; confirm the version against Console uploads.
-- [ ] Confirm Android branding is MausBot and desktop references are OpenMausBot.
+- [ ] Confirm the Android app and every desktop reference are branded ASTER.
 - [ ] Confirm package `com.openmausbot.companion` and the release SDK settings.
 - [ ] Have the release owner confirm signing configuration, certificate identity,
   key backups, and supported installation/upgrade paths.
@@ -25,10 +25,10 @@ commit and artifact being submitted; unchecked items remain release work.
 ## Listing and reviewer access
 
 - [ ] Write the description and release notes from features verified in this
-  release, including its OpenMausBot desktop dependency.
+  release, including its ASTER desktop dependency.
 - [ ] Exclude unmerged call-mode and voice-key setup claims (#739/#1531).
 - [ ] Review icon, feature graphic, and each selected screenshot against the
-  release, with MausBot branding and no private data.
+  release, with ASTER branding and no private data.
 - [ ] Keep `assets/screenshots/03-call.png` excluded: it is unapproved and unusable
   until the actual release supports and verifies the depicted call feature.
 - [ ] Check current Console asset requirements and use only reviewed images.

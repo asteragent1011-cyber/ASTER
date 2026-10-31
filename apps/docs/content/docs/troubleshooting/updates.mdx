@@ -14,7 +14,7 @@ ASTER checks for updates in the background and offers the download in a card at 
 Ubuntu packages are installed from the releases repository by hand, so the app hands you the exact line rather than guessing at a package handler:
 
 ```bash
-sudo apt-get install -y '/home/you/.cache/openmausbot-updater/pending/OpenMausBot-<version>-amd64.deb'
+sudo apt-get install -y '/home/you/.cache/openmausbot-updater/pending/ASTER-<version>-amd64.deb'
 ```
 
 Reopen ASTER once it finishes to be running the new version.
@@ -42,7 +42,7 @@ Open **App settings → General → Diagnostics → Export Diagnostics…**. Inc
 The install command is on your clipboard either way. Open a terminal yourself and paste it. If the clipboard was overwritten, the package is already downloaded and you can run:
 
 ```bash
-sudo apt-get install -y ~/.cache/openmausbot-updater/pending/OpenMausBot-*-amd64.deb
+sudo apt-get install -y ~/.cache/openmausbot-updater/pending/ASTER-*-amd64.deb
 ```
 
 Use `apt-get`, not `dpkg -i` — only `apt-get` resolves dependencies, and on Ubuntu 24.04 ours are satisfied through virtual packages that `dpkg` alone will not follow.
@@ -52,5 +52,5 @@ Use `apt-get`, not `dpkg -i` — only `apt-get` resolves dependencies, and on Ub
 Open **App settings** and check the displayed version. A commit merged to `main` is not in the desktop app until a release workflow publishes a new version.
 
 <Callout type="warn" title="Use official artifacts">
-  Do not install update files forwarded through chat or uploaded to an unrelated repository. Use the OpenMausBot releases repository and its checksums.
+  Do not install update files forwarded through chat or uploaded to an unrelated repository. Use the ASTER releases page (github.com/asteragent1011-cyber/ASTER/releases) and its checksums.
 </Callout>

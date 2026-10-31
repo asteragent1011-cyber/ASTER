@@ -118,7 +118,7 @@ async function refreshMachineName(): Promise<void> {
     const owner = config.profile?.name?.trim();
     if (owner) cachedName = `${owner}'s computer`;
   } catch {
-    /* not up, or no profile — "OpenMausBot" is a fine thing to be called */
+    /* not up, or no profile — "ASTER" is a fine thing to be called */
   }
 }
 

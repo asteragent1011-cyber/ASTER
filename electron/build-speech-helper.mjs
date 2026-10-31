@@ -11,7 +11,10 @@ const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.dirname(electronDir);
 const resourcesDir = path.join(electronDir, "resources");
 
-export const speechHelperBundle = path.join(resourcesDir, "OpenMausBot Speech.app");
+// The folder name is what macOS shows in Privacy & Security (Speech
+// Recognition, Microphone). The bundle identifier in the Info.plist stays
+// com.openmausbot.app.speech-helper: permissions are recorded against it.
+export const speechHelperBundle = path.join(resourcesDir, "ASTER Speech.app");
 export const speechHelperBinary = path.join(speechHelperBundle, "Contents", "MacOS", "speech-helper");
 
 export function buildSpeechHelper() {

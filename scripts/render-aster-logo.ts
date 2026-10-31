@@ -87,6 +87,42 @@ frames[-1].save(out, format="ICO", sizes=[(s, s) for s in sizes], append_images=
     properties: { "preserves-vector-representation": true },
   }, null, 2)}\n`);
 
+  // Google Play: the 512 store icon (full-bleed; Play applies its own mask),
+  // its source, and the 1024x500 feature graphic with the logo and the name
+  writeFileSync(at("android/PlayStore/assets/app-icon-source.svg"), `${asterLogoSvg("full-bleed")}\n`);
+  resized(bleed, 512, at("android/PlayStore/assets/play-icon-512.png"));
+  writeFileSync(at("android/PlayStore/assets/play-icon.html"),
+    `<html><body style="margin:0">${asterLogoSvg("full-bleed").replace('viewBox="0 0 1024 1024"', 'viewBox="0 0 1024 1024" width="512" height="512"')}</body></html>\n`);
+  const featureHtml = at("android/PlayStore/assets/feature-graphic.html");
+  writeFileSync(featureHtml, `<!doctype html><html><head><meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:1024px; height:500px; overflow:hidden; font-family:-apple-system,"SF Pro Display",Inter,system-ui,sans-serif;
+         background:#0B0D2A; color:#F4F3FF; }
+  .wrap { position:relative; width:1024px; height:500px; display:flex; align-items:center; gap:56px; padding:0 72px; }
+  .glow { position:absolute; width:620px; height:620px; right:-160px; top:-160px; border-radius:50%;
+          background:radial-gradient(circle, rgba(169,155,255,0.30) 0%, rgba(169,155,255,0) 68%); }
+  .mark { position:relative; flex:0 0 auto; width:250px; height:250px; filter:drop-shadow(0 30px 60px rgba(0,0,0,0.5)); }
+  .mark svg { width:250px; height:250px; }
+  .copy { position:relative; }
+  h1 { font-size:76px; font-weight:700; letter-spacing:-0.02em; line-height:1; }
+  p { margin-top:22px; font-size:29px; line-height:1.35; color:#B9B6E0; max-width:520px; }
+  .rule { margin-top:30px; width:88px; height:5px; border-radius:99px; background:linear-gradient(90deg,#A99BFF,#8B9BFF); }
+</style></head><body>
+<div class="wrap"><div class="glow"></div>
+  <div class="mark">${asterLogoSvg("icon").replace('viewBox="0 0 1024 1024"', 'viewBox="100 100 824 824"')}</div>
+  <div class="copy">
+    <h1>ASTER</h1>
+    <p>Your own AI bots, running on your own computer — answered from your phone.</p>
+    <div class="rule"></div>
+  </div>
+</div></body></html>
+`);
+  execFileSync(CHROME, [
+    "--headless", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+    "--window-size=1024,500", `--screenshot=${at("android/PlayStore/assets/feature-graphic-1024x500.png")}`, `file://${featureHtml}`,
+  ], { stdio: "ignore" });
+
   // iOS: full-bleed and opaque (App Store icons may not carry alpha)
   execFileSync("python3", ["-c", `
 import sys

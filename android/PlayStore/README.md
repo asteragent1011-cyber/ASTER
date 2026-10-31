@@ -1,4 +1,4 @@
-# MausBot Google Play release preparation
+# ASTER Google Play release preparation
 
 Use this guide with the [release checklist](CHECKLIST.md). It records repository
 inputs and checks to perform for each release; it does not supply approved Play
@@ -6,7 +6,7 @@ Console declarations or establish that a release is ready to publish.
 
 ## Release identity and build
 
-The Android app is **MausBot**; the desktop app remains **OpenMausBot**.
+The Android app and the desktop app are both **ASTER**.
 The Android package is `com.openmausbot.companion`.
 
 Use the selected release commit's [Gradle configuration](../app/build.gradle.kts)
@@ -48,7 +48,7 @@ Suggested short description, subject to verification on the release build:
 
 > Chat with AI bots on your paired computer from your phone.
 
-Describe the OpenMausBot desktop dependency and the setup needed for each
+Describe the ASTER desktop dependency and the setup needed for each
 supported connection method. Write the full description and release notes from
 features verified in the selected release. Android call mode and on-device voice
 key setup are not established by this preparation work; do not advertise them
@@ -59,7 +59,7 @@ These files are candidates for review, not an approved upload set:
 | Asset | Repository file | Review needed |
 | --- | --- | --- |
 | Icon, 512×512 | [play-icon-512.png](assets/play-icon-512.png) | Match the release launcher icon. |
-| Feature graphic, 1024×500 | [feature-graphic-1024x500.png](assets/feature-graphic-1024x500.png) | Check MausBot branding and supported feature claims. |
+| Feature graphic, 1024×500 | [feature-graphic-1024x500.png](assets/feature-graphic-1024x500.png) | Check ASTER branding and supported feature claims. |
 | Threads, 1080×2400 | [01-threads.png](assets/screenshots/01-threads.png) | Compare with the selected release. |
 | Chat, 1080×2400 | [02-chat.png](assets/screenshots/02-chat.png) | Compare with the selected release. |
 | Call, 1080×2400 | [03-call.png](assets/screenshots/03-call.png) | **Unapproved and unusable for submission until the actual release supports and verifies this feature.** |

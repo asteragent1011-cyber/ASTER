@@ -153,7 +153,7 @@ export function templateUnit(spec: { node: string; script: string; layout?: Flee
   return [
     "# Written by `openmausbot fleet init`. One unit for every workspace: %i is the slug.",
     "[Unit]",
-    "Description=OpenMausBot workspace %i",
+    "Description=ASTER workspace %i",
     "After=network-online.target openmausbot-fence.service",
     "Wants=network-online.target",
     "Requires=openmausbot-fence.service",
