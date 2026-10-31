@@ -116,7 +116,7 @@ const backupSchema = z.object({
       z.object({ kind: z.literal("member"), botId: key }),
       z.object({ kind: z.literal("everyone") }),
       z.object({ kind: z.literal("mentions") }),
-      z.object({ kind: z.literal("auto"), fallbackBotId: key.optional() }),
+      z.object({ kind: z.literal("auto"), fallbackBotId: key.optional(), engine: z.literal("clef").optional() }),
     ]),
   }))).max(2_000),
   routines: z.array(z.object({

@@ -8,6 +8,7 @@
  * server/store.ts; the wire projection is typed so a new server field
  * fails compilation until it is either declared here or explicitly listed
  * as server-private. */
+import type { AsterMode, GrowthStage } from "./aster-mode.ts";
 import type { ApprovalMode } from "./approval-mode.ts";
 import type { CommandAllowlistCandidate } from "./command-allowlist.ts";
 import type { TurnDigest } from "./digest.ts";
@@ -134,6 +135,12 @@ export interface WireTask {
   /** The person pinned this thread above the update-ordered list. Only true
    * is stored; absence means unpinned. */
   pinned?: boolean;
+  /** How the person wants ASTER to help in this conversation; it adds a
+   * section to the bot's system prompt (shared/aster-mode.ts). Absent = Balanced. */
+  asterMode?: AsterMode;
+  /** A Growth stage the person set by hand for this conversation. Absent =
+   * read automatically from the conversation's messages. */
+  growthStage?: GrowthStage;
   /** Epoch ms of the newest message, or createdAt when the thread has none.
    * Server-derived. Clients must not write it. */
   updatedAt?: number;
@@ -454,7 +461,7 @@ export interface WireMessage {
   /** A room reply whose speaker the decision model picked (an Auto room),
    * with how sure it was. Absent on every other message; clients that do
    * not know it ignore it. */
-  routedBy?: { provider: "jev" | "clef-flash"; probability: number };
+  routedBy?: { provider: "jev" | "clef-flash" | "ollama"; probability: number };
   /** Set on the user-role line another bot delivered into this bot's own
    * conversation (ask_bot, start_thread). */
   peerAsk?: { botId: string; name: string; unattended?: boolean };
@@ -552,12 +559,16 @@ export interface SecretRequestCardData {
 /** Who answers a room message nobody was @mentioned in. `auto` asks the
  * decision model (server/decider/room-routing.ts) and falls back to
  * `fallbackBotId` (else the first member) whenever it is off or unsure.
+ * `engine: "clef"` is the room's Clef behavior: it asks the Clef engine the
+ * person chose in Settings (a local Ollama model or Clef-Flash) instead of the
+ * app's Auto engine, and may pick several members. A reader that does not
+ * know `engine` treats the room as plain Auto.
  * Readers must treat any kind they do not know as the default lead. */
 export type GroupDefaultResponder =
   | { kind: "member"; botId: string }
   | { kind: "everyone" }
   | { kind: "mentions" }
-  | { kind: "auto"; fallbackBotId?: string };
+  | { kind: "auto"; fallbackBotId?: string; engine?: "clef" };
 
 /** One independent conversation inside a user-created channel. */
 export interface GroupTask {

@@ -35,6 +35,11 @@ let titleDump = "";
 let fallbackTitleDump = "";
 const jevRequests: JevRequest[] = [];
 let script: RouteScript = {};
+let fakeUrl = "";
+/** The local Ollama the Clef engine asks: answers per question id. */
+type OllamaScript = { status?: number; answers?: Record<string, unknown> };
+let ollamaScript: OllamaScript = {};
+const ollamaRequests: Array<{ body: any }> = [];
 
 const routeRequests = () => jevRequests.filter((request) => request.body?.questions?.answer?.type === "choice");
 const keyChecks = () => jevRequests.filter((request) => request.body?.questions?.answer?.type === "noul");
@@ -60,6 +65,13 @@ beforeAll(async () => {
         res.writeHead(status, { "content-type": "application/json" });
         res.end(JSON.stringify(value));
       };
+      // A local Ollama, for the Clef engine: the chat API with a JSON schema.
+      if (req.url === "/api/chat") {
+        ollamaRequests.push({ body });
+        if (ollamaScript.status && ollamaScript.status !== 200) return send(ollamaScript.status, { error: "boom" });
+        return send(200, { model: body.model, message: { role: "assistant", content: JSON.stringify({ answers: ollamaScript.answers }) }, prompt_eval_count: 300 });
+      }
+      if (req.url === "/api/tags") return send(200, { models: [{ name: "fake-local:1b" }, { name: "huge:480b-cloud" }] });
       const question = body.questions?.answer;
       // Cloudflare Workers AI, for the Clef-Flash provider: the same script
       // answers, in Cloudflare's envelope. `/client/v4/ips` is the warm-up.
@@ -97,6 +109,7 @@ beforeAll(async () => {
   });
   await new Promise<void>((resolve) => jev.listen(0, "127.0.0.1", resolve));
   const jevUrl = `http://127.0.0.1:${(jev.address() as AddressInfo).port}`;
+  fakeUrl = jevUrl;
 
   home = mkdtempSync(join(tmpdir(), "omb-decider-rooms-"));
   data = join(home, ".openmausbot");
@@ -340,6 +353,53 @@ describe("Auto rooms ask the decision model who answers", { timeout: 90_000 }, (
       expect((await roomState(room.id)).messages.filter((message) => !before.has(message.id) && message.kind === "text" && message.role === "bot")).toEqual([]);
     } finally {
       await api("PUT", "/api/config", { decider: { provider: "jev", cloudflareToken: "", cloudflareAccountId: "" } });
+    }
+  });
+
+  it("a room set to Clef asks the local model, which may pick several members, and never the Auto engine", async () => {
+    // a public Ollama address is refused: room text must stay on the person's machines
+    expect((await api("PUT", "/api/config", { decider: { ollamaUrl: "https://ollama.example.com" } })).status).toBe(400);
+    expect((await api("PUT", "/api/config", { decider: { ollamaModel: "huge:480b-cloud" } })).status).toBe(400);
+    const listed = await api("GET", `/api/decider/ollama/models?url=${encodeURIComponent(fakeUrl)}`);
+    expect(listed.body).toEqual({ ok: true, url: fakeUrl, models: ["fake-local:1b"] });
+    // the local model is the Clef engine by default
+    const saved = await api("PUT", "/api/config", { decider: { ollamaUrl: fakeUrl, ollamaModel: "fake-local:1b" } });
+    expect(saved.status).toBe(200);
+    expect(saved.body.decider).toMatchObject({ clefReady: true, ollamaModel: "fake-local:1b" });
+
+    const setTo = await api("PATCH", `/api/groups/${room.id}`, { defaultResponder: { kind: "auto", engine: "clef" } });
+    expect(setTo.status).toBe(200);
+    expect((await roomState(room.id)).room.defaultResponder).toEqual({ kind: "auto", engine: "clef" });
+    try {
+      // several members: the subset the local model names, each reply marked
+      ollamaScript = { answers: { answer: { choice: "__everyone__", confidence: 0.92 }, member_0: { p: 0.9 }, member_1: { p: 0.05 }, member_2: { p: 0.88 } } };
+      const jevBefore = routeRequests().length;
+      const askedBefore = ollamaRequests.length;
+      const { replies } = await round(room.id, "Maya, design the status page; Ravi, wire its latency numbers.");
+      expect(replies.map((reply) => reply.from!.name).sort()).toEqual(["Maya", "Ravi"]);
+      expect(replies[0]!.routedBy).toEqual({ provider: "ollama", probability: 0.92 });
+      expect(routeRequests().length).toBe(jevBefore);
+      const asked = ollamaRequests.slice(askedBefore);
+      expect(asked).toHaveLength(1);
+      expect(asked[0]!.body.model).toBe("fake-local:1b");
+      expect(Object.keys(asked[0]!.body.format.properties.answers.properties)).toEqual(["answer", "member_0", "member_1", "member_2"]);
+
+      // one member, then a local failure: the room's lead answers, unmarked
+      ollamaScript = { answers: { answer: { choice: bots.Theo!.id, confidence: 0.81 }, member_0: { p: 0 }, member_1: { p: 0 }, member_2: { p: 0 } } };
+      expect((await round(room.id, "Theo, can you take this one?")).replies.map((reply) => reply.from!.name)).toEqual(["Theo"]);
+      ollamaScript = { status: 500 };
+      const fellBack = (await round(room.id, "Anyone around?")).replies;
+      expect(fellBack.map((reply) => reply.from!.name)).toEqual(["Maya"]);
+      expect(fellBack[0]!.routedBy).toBeUndefined();
+
+      // an @mention still wins, without asking anyone
+      const before = ollamaRequests.length;
+      expect((await round(room.id, "@Ravi what is p95 now?")).replies.map((reply) => reply.from!.name)).toEqual(["Ravi"]);
+      expect(ollamaRequests.length).toBe(before);
+    } finally {
+      ollamaScript = {};
+      await api("PATCH", `/api/groups/${room.id}`, { defaultResponder: { kind: "auto" } });
+      await api("PUT", "/api/config", { decider: { ollamaUrl: "", ollamaModel: "" } });
     }
   });
 

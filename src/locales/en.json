@@ -2182,6 +2182,8 @@
   "room.responder.jevOffHint": "Jev is off, so {name} answers plain messages in this Auto room.",
   "room.responder.jevOffOpen": "Turn on Jev",
   "room.routedBy": "Picked by Jev · {percent}%",
+  "room.routedByClef": "Picked by Clef-Flash · {percent}%",
+  "room.routedByLocal": "Picked by Clef (local model) · {percent}%",
   "room.folder.title": "Working folder",
   "room.folder.detail": "Where every bot in this group runs its shell and file tools.",
   "room.folder.own": "Each bot’s own folder",

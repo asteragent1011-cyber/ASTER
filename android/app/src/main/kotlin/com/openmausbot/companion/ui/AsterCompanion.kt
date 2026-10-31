@@ -60,4 +60,68 @@ object AsterCompanion {
 
     /** The home composer's invitation, the desktop's hero placeholder. */
     const val HOME_PLACEHOLDER = "What would you like to do today?"
+
+    /** Rows that record a turn rather than say anything: the digest and compaction receipts. */
+    private fun isReceipt(message: Message): Boolean =
+        message.kind == Message.Kind.DIGEST || message.kind == Message.Kind.COMPACTION
+
+    /**
+     * Where the open conversation stands, read from its messages (the desktop's
+     * `growthStage`): nothing asked yet, asked and not started, thinking,
+     * running tools, or answered. Receipts after a turn do not count.
+     */
+    fun growthStage(busy: Boolean, messages: List<Message>): GrowthStage {
+        val rows = messages.filterNot(::isReceipt)
+        if (rows.none { it.role == Message.Role.USER }) return GrowthStage.CURIOUS
+        val last = rows.lastOrNull()
+        if (busy) return if (last?.kind == Message.Kind.ACTIVITY) GrowthStage.WORKING else GrowthStage.PLANNING
+        return if (last?.role == Message.Role.USER) GrowthStage.LEARNING else GrowthStage.ACHIEVED
+    }
+
+    /**
+     * Where the conversation stands: the stage the person set by hand on its
+     * thread ([manual], a wire value), else the automatic reading. The
+     * desktop's `conversationGrowth`.
+     */
+    fun conversationGrowth(busy: Boolean, messages: List<Message>, manual: String?): Pair<GrowthStage, Boolean> {
+        val pinned = GrowthStage.fromWire(manual)
+        return if (pinned != null) pinned to true else growthStage(busy, messages) to false
+    }
+}
+
+/**
+ * How a person wants ASTER to help in one conversation (the desktop's
+ * `AsterMode`, shared/aster-mode.ts). Saved on the conversation's thread on the
+ * computer, so every device sees the same choice, and the bot's next turn
+ * carries it in its system prompt.
+ */
+enum class AsterMode(val wireValue: String, val label: String, val hint: String) {
+    BALANCED("balanced", "Balanced", "Everyday help"),
+    CREATIVE("creative", "Creative", "For ideas & brainstorming"),
+    TECHNICAL("technical", "Technical", "For coding & problem solving"),
+    STUDY("study", "Study", "For learning & research"),
+    RELAXED("relaxed", "Relaxed", "For casual conversations"),
+    ;
+
+    companion object {
+        /** A stored value this build cannot read is Balanced, as on the desktop. */
+        fun fromWire(value: String?): AsterMode = entries.firstOrNull { it.wireValue == value } ?: BALANCED
+    }
+}
+
+/** The desktop's `GROWTH_STAGES`, in order. */
+enum class GrowthStage(val label: String) {
+    CURIOUS("Curious"),
+    LEARNING("Learning"),
+    PLANNING("Planning"),
+    WORKING("Working"),
+    ACHIEVED("Achieved"),
+    ;
+
+    val wireValue: String get() = name.lowercase()
+
+    companion object {
+        /** A stage this build cannot read is no stage: the automatic reading stands. */
+        fun fromWire(value: String?): GrowthStage? = entries.firstOrNull { it.wireValue == value }
+    }
 }

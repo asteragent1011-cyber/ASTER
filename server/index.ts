@@ -3,6 +3,7 @@
 // folds one SSE event stream; every provider process runs here.
 // First, before any module that could start a process: a Cloud home's
 // secrets off the launcher's pipe (cloud-secrets-boot.ts).
+import { ASTER_MODES, GROWTH_STAGES, asterModeSystemPrompt, isAsterMode, isGrowthStage } from "../shared/aster-mode.ts";
 import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
@@ -324,8 +325,9 @@ import {
   toWireTask,
 } from "./store.ts";
 import * as tts from "./tts/index.ts";
-import { createDecider, deciderIncludedHere, deciderReady, deciderSavePatch, describeDecider } from "./decider/index.ts";
+import { clefEngine, clefReady, createDecider, deciderIncludedHere, deciderReady, deciderSavePatch, describeDecider } from "./decider/index.ts";
 import { decideRoomResponder, type RoomRoutingInput } from "./decider/room-routing.ts";
+import { warmOllamaModel } from "./decider/ollama.ts";
 import { narrateTool, toUtterances } from "./tts/speech-text.ts";
 import { buildRecoveryText, buildTurnContext, engineIsFresh, NATIVELY_REPLAYING_DRIVER_KINDS, peerMessageText } from "./turn-context.ts";
 import { Handoffs, handedStateUsable, recordHanded, renderUnseen, sessionStart, unseenMessages, withUnseenMessages, type ContextMessage } from "./delta-context.ts";
@@ -3451,13 +3453,16 @@ function defaultsPresetFor(body: Record<string, unknown>, includeNotes: boolean)
 
 function checkedGroupResponder(value: unknown, memberIds: string[]): GroupDefaultResponder | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const responder = value as { kind?: unknown; botId?: unknown; fallbackBotId?: unknown };
+  const responder = value as { kind?: unknown; botId?: unknown; fallbackBotId?: unknown; engine?: unknown };
   if (responder.kind === "everyone") return { kind: "everyone" };
   if (responder.kind === "mentions") return { kind: "mentions" };
   if (responder.kind === "auto") {
-    if (responder.fallbackBotId === undefined || responder.fallbackBotId === null) return { kind: "auto" };
+    // engine: "clef" is the room's Clef behavior; anything else is refused.
+    if (responder.engine !== undefined && responder.engine !== null && responder.engine !== "clef") return null;
+    const engine = responder.engine === "clef" ? { engine: "clef" as const } : {};
+    if (responder.fallbackBotId === undefined || responder.fallbackBotId === null) return { kind: "auto", ...engine };
     return typeof responder.fallbackBotId === "string" && memberIds.includes(responder.fallbackBotId)
-      ? { kind: "auto", fallbackBotId: responder.fallbackBotId }
+      ? { kind: "auto", fallbackBotId: responder.fallbackBotId, ...engine }
       : null;
   }
   if (
@@ -3610,6 +3615,7 @@ function previewSystemPrompt(bot: BotRecord) {
   const privateWorkspace = instance && supportsWorkspaceFiles(instance.driverKind);
   const built = buildSystemPrompt(persona, bot.soul ?? "", [
     { id: "user-profile", label: "About the user", text: userProfileSystemPrompt(cfg.profile) },
+    { id: "aster-mode", label: "Aster Mode", text: asterModeSystemPrompt(store.taskByThread(bot.id, bot.threadId)?.asterMode) },
     {
       id: "setup",
       label: "Setup",
@@ -9700,6 +9706,8 @@ async function startTurn(
       }
       const prompt = buildSystemPrompt(persona, liveBot?.soul ?? bot.soul ?? "", [
         { id: "user-profile", label: "About the user", text: userProfileSystemPrompt(cfg.profile) },
+        // the mode the person chose for this conversation (Aster Mode)
+        { id: "aster-mode", label: "Aster Mode", text: asterModeSystemPrompt(store.taskByThread(bot.id, threadId)?.asterMode) },
         // first after the soul: the block names agent tools, so it only goes
         // to a turn whose engine actually mounted them (setupMode is already
         // false when they are not — see agentsMounted above)
@@ -12672,10 +12680,12 @@ function startGroupTurn(
   if (options.goalCoordinatorBotId && (channelMode !== "goal" || !requestedGoalCoordinator)) {
     throw Object.assign(new Error("the selected goal coordinator is not an active room member"), { status: 409 });
   }
-  // An Auto room may ask the decision model who answers. It reads the room
-  // as it stood before this message, which is appended just below.
+  // An Auto room may ask the decision model who answers; a room set to Clef
+  // asks its Clef engine (a local Ollama model or Clef-Flash) instead. It
+  // reads the room as it stood before this message, appended just below.
+  const clefRoom = group.defaultResponder.kind === "auto" && group.defaultResponder.engine === "clef";
   const autoCandidate = !group.dm && channelMode === "chat" && group.defaultResponder.kind === "auto" &&
-    deciderReady(cfg, "roomRouting");
+    (clefRoom ? clefReady(cfg, "roomRouting") : deciderReady(cfg, "roomRouting"));
   const historyBeforeSend = autoCandidate
     ? store.messagesFor(threadId).filter((m) => m.kind === "text" && m.text).slice(-GROUP_CONTEXT_MESSAGES)
     : [];
@@ -12809,6 +12819,7 @@ function startGroupTurn(
   const routing = autoRoute
     ? decideRoomResponder(decider, roomRoutingInput(group.name, text, availableMembers, historyBeforeSend, options.sender), {
         signal: operation.cancellation.signal,
+        ...(clefRoom ? { engine: clefEngine(cfg) } : {}),
       })
     : null;
   if (queuedGroup && queuedGroup.length > 0) {
@@ -12871,7 +12882,7 @@ function startGroupTurn(
         const route = await routing;
         if (operation.cancelled) return;
         // Ids and reasons only: never message text, never a credential.
-        console.log(`[decider] room ${groupId}: ${route.kind}${route.kind === "member" ? ` ${route.botId}` : ""}${route.kind === "fallback" ? ` (${route.reason})` : ` via ${route.provider ?? "jev"} p=${route.probability.toFixed(2)}`}`);
+        console.log(`[decider] room ${groupId}: ${route.kind}${route.kind === "member" ? ` ${route.botId}` : route.kind === "members" ? ` ${route.botIds.join(",")}` : ""}${route.kind === "fallback" ? ` (${route.reason})` : ` via ${route.provider ?? "jev"} p=${route.probability.toFixed(2)}`}`);
         if (route.kind === "nobody") {
           // The decision model judged that no bot needs to answer. Said in the
           // room, so a person is never left wondering whether it was heard.
@@ -12883,8 +12894,10 @@ function startGroupTurn(
           return;
         }
         const picked = route.kind === "member" ? availableMembers.filter((member) => member.id === route.botId)
-          : route.kind === "everyone" ? availableMembers
-            : [];
+          // several members, in room order
+          : route.kind === "members" ? availableMembers.filter((member) => route.botIds.includes(member.id))
+            : route.kind === "everyone" ? availableMembers
+              : [];
         if (picked.length && route.kind !== "fallback") {
           round = picked;
           routedBy = { provider: route.provider ?? "jev", probability: Math.round(route.probability * 100) / 100 };
@@ -14527,7 +14540,7 @@ ROUTES.push(createBotMemoryRoutes({
     broadcast({ kind: "config", ...configStatus() });
   },
 }));
-ROUTES.push(createDeciderRoutes({ decider }));
+ROUTES.push(createDeciderRoutes({ decider, config: () => cfg }));
 ROUTES.push(createAntigravityLeftoverRoutes({
   hosted: Boolean(hostedModels),
   isAntigravity: (instanceId) => registry.get(instanceId)?.driverKind === "antigravityAgent",
@@ -21204,7 +21217,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (!body || typeof body !== "object" || Array.isArray(body)) return json(res, 400, { error: "body must be a JSON object" });
       const current = store.projectBotForTask(m[1], m[2]);
       if (!current) return json(res, 404, { error: "no such task" });
-      const allowed = new Set(["title", "projectId", "modelSelection", "updateBotDefault", "resetApprovalToAsk", "approvalMode", "autoApprove", "requireAvailableModel", "pinnedMessageId", "acknowledgeLocalAuto", "archivedAt", "pinned", "snoozedUntil", "surface"]);
+      const allowed = new Set(["title", "projectId", "modelSelection", "updateBotDefault", "resetApprovalToAsk", "approvalMode", "autoApprove", "requireAvailableModel", "pinnedMessageId", "acknowledgeLocalAuto", "archivedAt", "pinned", "snoozedUntil", "surface", "asterMode", "growthStage"]);
       if (Object.keys(body).some((key) => !allowed.has(key))) return json(res, 400, { error: "unsupported thread setting" });
       const notYours = cloudThreadRefusal(auth, m[2]);
       if (notYours) return json(res, 403, { error: notYours });
@@ -21242,6 +21255,19 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (body.pinned !== undefined) {
         if (typeof body.pinned !== "boolean") return json(res, 400, { error: "pinned must be a boolean" });
         patch.pinned = body.pinned ? true : undefined;
+      }
+      // Aster Mode: null (or Balanced) returns the conversation to the bot's own
+      // instructions. It reaches the next turn's system prompt.
+      if (body.asterMode !== undefined) {
+        if (body.asterMode === null || body.asterMode === "balanced") patch.asterMode = undefined;
+        else if (isAsterMode(body.asterMode)) patch.asterMode = body.asterMode;
+        else return json(res, 400, { error: `asterMode must be one of ${ASTER_MODES.join(", ")}, or null` });
+      }
+      // A Growth stage set by hand; null hands it back to the automatic reading.
+      if (body.growthStage !== undefined) {
+        if (body.growthStage === null) patch.growthStage = undefined;
+        else if (isGrowthStage(body.growthStage)) patch.growthStage = body.growthStage;
+        else return json(res, 400, { error: `growthStage must be one of ${GROWTH_STAGES.join(", ")}, or null` });
       }
       if (body.snoozedUntil !== undefined) {
         if (body.snoozedUntil === null) patch.snoozedUntil = undefined;
@@ -22370,6 +22396,8 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const planned = deciderSavePatch(patch.decider, cfg.decider, deciderIncludedHere());
         if (!planned.ok) return json(res, 400, { error: planned.error });
         patch.decider = planned.patch;
+        // A newly chosen local model starts loading now, before any room needs it.
+        if (planned.patch.ollamaModel) warmOllamaModel(planned.patch.ollamaUrl ?? cfg.decider?.ollamaUrl, planned.patch.ollamaModel);
       }
       const changingVoiceProvider = patch.tts?.provider !== undefined
         && patch.tts.provider !== tts.voiceProvider(cfg);

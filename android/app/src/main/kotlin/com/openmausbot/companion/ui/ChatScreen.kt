@@ -260,6 +260,8 @@ private fun LoadedChat(
     // Saveable: the profile form is a form, and a rotation must not throw away
     // what was typed into it — the sheet has to come back for that to matter.
     var showingProfile by rememberSaveable { mutableStateOf(false) }
+    var showingAster by rememberSaveable { mutableStateOf(false) }
+    var asterPending by remember(threadId) { mutableStateOf<AsterPending?>(null) }
     var showingPlus by remember(threadId) { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
@@ -974,6 +976,16 @@ private fun LoadedChat(
                             showingPlus = true
                         }
                     },
+                    // the desktop's companion panel lives beside a bot's chat, not a room's
+                    onOpenAster = if (chat is Chat.BotChat) {
+                        {
+                            dictation.stop()
+                            focusManager.clearFocus()
+                            showingAster = true
+                        }
+                    } else {
+                        null
+                    },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .widthIn(max = CHAT_CONTENT_MAX_WIDTH),
@@ -1100,6 +1112,42 @@ private fun LoadedChat(
         if (chat.supportsTasks) TaskSheet(chat = chat, onDismiss = { showingTasks = false }, onSelectTask = onSelectTask, onDeletedCurrent = onBack)
     }
 
+    if (showingAster && chat is Chat.BotChat) {
+        // Both live on this conversation's thread on the computer. A choice
+        // shows at once and stands until the refreshed thread confirms it; a
+        // failed save drops it (the session reports the error) and the saved
+        // value shows again.
+        val task = chat.bot.tasks?.firstOrNull { it.threadId == threadId }
+        val savedMode = AsterMode.fromWire(task?.asterMode)
+        val (autoOrPinned, pinned) = AsterCompanion.conversationGrowth(chat.busy, rawTranscript, task?.growthStage)
+        val pending = asterPending
+        AsterPanelSheet(
+            botName = chat.name,
+            stage = if (pending is AsterPending.Stage) pending.stage ?: AsterCompanion.growthStage(chat.busy, rawTranscript) else autoOrPinned,
+            manualStage = if (pending is AsterPending.Stage) pending.stage != null else pinned,
+            mode = if (pending is AsterPending.Mode) pending.mode else savedMode,
+            // nowhere to save without a connection or the thread, or while a save is under way
+            enabled = task != null && pending == null,
+            onSelectMode = { mode ->
+                if (mode != savedMode) {
+                    asterPending = AsterPending.Mode(mode)
+                    scope.launch {
+                        session.setAsterMode(chat.bot, threadId, mode.wireValue.takeUnless { mode == AsterMode.BALANCED })
+                        asterPending = null
+                    }
+                }
+            },
+            onSelectStage = { stage ->
+                asterPending = AsterPending.Stage(stage)
+                scope.launch {
+                    session.setGrowthStage(chat.bot, threadId, stage?.wireValue)
+                    asterPending = null
+                }
+            },
+            onDismiss = { showingAster = false },
+        )
+    }
+
     if (showingProfile && bot != null) {
         AgentProfileSheet(
             bot = bot,
@@ -1176,6 +1224,7 @@ private fun ChatHeader(
     onWatchComputer: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenThreads: () -> Unit,
+    onOpenAster: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val surface = LocalAsterLook.current?.ground?.copy(alpha = 0.92f) ?: MaterialTheme.colorScheme.surface
@@ -1203,6 +1252,14 @@ private fun ChatHeader(
         ) {
             BackPill(unreadElsewhere = unreadElsewhere, onBack = onBack)
             Spacer(Modifier.weight(1f))
+            if (onOpenAster != null) {
+                ChromeButton(
+                    painter = painterResource(R.drawable.ic_aster_mark),
+                    contentDescription = "Aster Mode and Growth",
+                    onClick = onOpenAster,
+                )
+                Spacer(Modifier.size(8.dp))
+            }
             // The computer is a bot idea; a room has none (§12).
             if (chat is Chat.BotChat) {
                 ChromeButton(
@@ -1806,4 +1863,11 @@ private fun Composer(
             }
         }
     }
+}
+
+/** A choice in the Aster panel waiting for the computer to confirm it. */
+private sealed interface AsterPending {
+    data class Mode(val mode: AsterMode) : AsterPending
+    /** null = back to automatic */
+    data class Stage(val stage: GrowthStage?) : AsterPending
 }

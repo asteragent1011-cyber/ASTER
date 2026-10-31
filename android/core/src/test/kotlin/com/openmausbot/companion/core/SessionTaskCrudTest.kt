@@ -53,6 +53,8 @@ class SessionTaskCrudTest {
             { session.switchTask(task, host) },
             { session.renameTask(task, host, "New name") },
             { session.archiveTask(task, host, 1.0) },
+            { session.setAsterMode(host, task.threadId, "study") },
+            { session.setGrowthStage(host, task.threadId, "planning") },
             { session.deleteTask(task, host) },
             { session.createTask(room, null) },
             { session.switchTask(task, room) },
@@ -89,6 +91,33 @@ class SessionTaskCrudTest {
         assertNull(session.createTask(bot("b1", "task-1", "task-1"), null))
         assertEquals("Create failed", session.actionError)
         assertEquals("task-2", session.state.value.rooms.single().threadId)
+    }
+
+    @Test
+    fun asterModeAndGrowthAreSavedOnTheConversationsThread() = runTest {
+        val session = session()
+        val host = bot("b1", "task-1", "task-1")
+        val sent = { server.takeRequest().let { "${it.method} ${it.path} ${it.body.readUtf8()}" } }
+
+        server.enqueue(json("{}"))
+        assertEquals(true, session.setAsterMode(host, "task-1", "technical"))
+        assertEquals("""PATCH /api/bots/b1/tasks/task-1 {"asterMode":"technical"}""", sent())
+        // Balanced and "automatic" are a real JSON null, not an omitted field
+        server.enqueue(json("{}"))
+        assertEquals(true, session.setAsterMode(host, "task-1", null))
+        assertEquals("""PATCH /api/bots/b1/tasks/task-1 {"asterMode":null}""", sent())
+        server.enqueue(json("{}"))
+        assertEquals(true, session.setGrowthStage(host, "task-1", "working"))
+        assertEquals("""PATCH /api/bots/b1/tasks/task-1 {"growthStage":"working"}""", sent())
+        server.enqueue(json("{}"))
+        assertEquals(true, session.setGrowthStage(host, "task-1", null))
+        assertEquals("""PATCH /api/bots/b1/tasks/task-1 {"growthStage":null}""", sent())
+        assertNull(session.actionError)
+
+        // a refusal is reported and the call says it did not save
+        server.enqueue(json("""{"error":"asterMode must be one of balanced, creative, technical, study, relaxed, or null"}""", code = 400))
+        assertEquals(false, session.setAsterMode(host, "task-1", "loud"))
+        assertEquals("asterMode must be one of balanced, creative, technical, study, relaxed, or null", session.actionError)
     }
 
     @Test

@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import {
   Aperture,
   Bell,
@@ -19,9 +19,8 @@ import { cn } from "@/lib/cn";
 import {
   ASTER_MODES,
   GROWTH_STAGES,
-  growthStage,
-  readAsterMode,
-  saveAsterMode,
+  conversationGrowth,
+  conversationMode,
   type AsterMode,
   type GrowthStage,
 } from "@/lib/aster-companion";
@@ -61,8 +60,9 @@ function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 /** The home screen's right column: search, notifications and the open
- * bot; how ASTER should help (a preference of this browser); and where the
- * open conversation stands, read from its messages. */
+ * bot; how ASTER should help in this conversation (saved on its thread, and
+ * part of the bot's system prompt from the next turn); and where the
+ * conversation stands, read from its messages unless the person set it. */
 export const AsterContextPanel = memo(function AsterContextPanel({
   bot,
   unreadCount,
@@ -75,13 +75,31 @@ export const AsterContextPanel = memo(function AsterContextPanel({
   onOpenChats: () => void;
 }) {
   const { dispatch } = useStore();
-  const { dragClass } = useCaptionChrome();
-  const [mode, setMode] = useState<AsterMode>(() => readAsterMode());
-  const stage = growthStage(bot);
+  // On Windows the renderer-drawn caption buttons own the window's top-right
+  // corner, which is this panel's: drop it below them like any docked panel.
+  const { dragClass, padClass } = useCaptionChrome();
+  // Both live on the open conversation's thread, so they follow it across
+  // reloads, devices and thread switches. A bot whose threads have not
+  // arrived yet has nowhere to save them: the controls wait.
+  const task = bot.tasks?.find((each) => each.threadId === bot.threadId);
+  const mode = conversationMode(task);
+  const { stage, manual } = conversationGrowth(bot, task);
   const reached = GROWTH_STAGES.indexOf(stage);
+  const unavailable = !task;
+  const setMode = (next: AsterMode) => {
+    if (!task || next === mode) return;
+    dispatch({ type: "updateTask", botId: bot.id, threadId: task.threadId, patch: { asterMode: next } });
+    popCompanion("prompt");
+  };
+  // Picking a stage pins it; picking the pinned stage again, or "Automatic",
+  // hands it back to the messages.
+  const setStage = (next: GrowthStage | null) => {
+    if (!task) return;
+    dispatch({ type: "updateTask", botId: bot.id, threadId: task.threadId, patch: { growthStage: next } });
+  };
 
   return (
-    <aside aria-label="ASTER companion panel" className="aster-context relative z-10 hidden w-[312px] shrink-0 flex-col gap-3 overflow-y-auto py-5 pr-5 xl:flex">
+    <aside aria-label="ASTER companion panel" className={cn("aster-context relative z-10 hidden w-[312px] shrink-0 flex-col gap-3 overflow-y-auto py-5 pr-5 xl:flex", padClass)}>
       {/* the panel's top bar is a drag handle for the frameless window */}
       <div className={cn("flex items-center gap-3", dragClass)}>
         <button
@@ -115,8 +133,8 @@ export const AsterContextPanel = memo(function AsterContextPanel({
       </div>
 
       <section aria-label="Aster Mode" className="aster-card flex flex-col gap-2 rounded-[22px] p-3.5">
-        <PanelHeader title="Aster Mode" subtitle="Choose how you want Aster to help" />
-        <div role="radiogroup" aria-label="Aster Mode" className="mt-1 flex flex-col gap-0.5">
+        <PanelHeader title="Aster Mode" subtitle={unavailable ? "Loading this conversation..." : "How Aster helps in this conversation"} />
+        <div role="radiogroup" aria-label="Aster Mode" aria-disabled={unavailable || undefined} className="mt-1 flex flex-col gap-0.5">
           {ASTER_MODES.map((id) => {
             const item = MODES[id];
             const selected = id === mode;
@@ -126,12 +144,10 @@ export const AsterContextPanel = memo(function AsterContextPanel({
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => {
-                  setMode(id);
-                  saveAsterMode(id);
-                  popCompanion("prompt");
-                }}
-                className={cn("aster-mode-row flex items-center gap-3 rounded-2xl px-2 py-1.5 text-left", selected && "is-selected")}
+                disabled={unavailable}
+                onClick={() => setMode(id)}
+                data-aster-mode={id}
+                className={cn("aster-mode-row flex items-center gap-3 rounded-2xl px-2 py-1.5 text-left disabled:opacity-50", selected && "is-selected")}
               >
                 <span className="aster-mode-icon flex size-8 shrink-0 items-center justify-center rounded-full">{item.icon}</span>
                 <span className="min-w-0 flex-1">
@@ -146,22 +162,43 @@ export const AsterContextPanel = memo(function AsterContextPanel({
       </section>
 
       <section aria-label="Aster's Growth" className="aster-card flex flex-col gap-3 rounded-[22px] p-3.5">
-        <PanelHeader title="Aster's Growth" subtitle="Where this conversation stands" />
+        <PanelHeader title="Aster's Growth" subtitle={manual ? "Set by you for this conversation" : "Where this conversation stands"} />
         <ol className="flex items-start justify-between px-0.5">
           {GROWTH_STAGES.map((id, index) => {
             const item = STAGES[id];
+            const current = id === stage;
             return (
               <li
                 key={id}
-                aria-current={id === stage ? "step" : undefined}
-                className={cn("aster-stage flex w-12 flex-col items-center gap-1.5", index <= reached && "is-reached", id === stage && "is-current")}
+                aria-current={current ? "step" : undefined}
+                className={cn("aster-stage flex w-12 flex-col items-center gap-1.5", index <= reached && "is-reached", current && "is-current")}
               >
-                <span className="aster-stage-orb flex size-9 items-center justify-center rounded-full">{item.icon}</span>
-                <span className="text-[10.5px] text-ink-tertiary">{item.label}</span>
+                <button
+                  type="button"
+                  disabled={unavailable}
+                  onClick={() => setStage(manual && current ? null : id)}
+                  aria-pressed={current}
+                  aria-label={manual && current ? `${item.label}, set by you: use automatic` : `Set stage to ${item.label}`}
+                  title={manual && current ? "Set by you. Click to go back to automatic" : `Set stage to ${item.label}`}
+                  data-growth-stage={id}
+                  className="flex flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent-border disabled:opacity-50"
+                >
+                  <span className="aster-stage-orb flex size-9 items-center justify-center rounded-full">{item.icon}</span>
+                  <span className="text-[10.5px] text-ink-tertiary">{item.label}</span>
+                </button>
               </li>
             );
           })}
         </ol>
+        {manual && (
+          <button
+            type="button"
+            onClick={() => setStage(null)}
+            className="self-center rounded-full px-2.5 py-1 text-[11.5px] text-ink-secondary hover:bg-control hover:text-ink"
+          >
+            Back to automatic
+          </button>
+        )}
       </section>
     </aside>
   );

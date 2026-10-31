@@ -394,12 +394,13 @@ export const Transcript = memo(function Transcript({
   );
 });
 
-/** Under a reply in an Auto room: the decision model chose this speaker. */
+/** Under a reply in an Auto or Clef room: which decision engine chose this
+ * speaker, and how sure it was. */
 export function RoutedByLine({ routedBy }: { routedBy: NonNullable<Message["routedBy"]> }) {
   const percent = Math.round(Math.min(1, Math.max(0, routedBy.probability)) * 100);
   return (
     <div data-testid="routed-by" className="mt-1 px-1 text-[11px] text-ink-secondary">
-      {t("room.routedBy", { percent: String(percent) })}
+      {t(routedBy.provider === "ollama" ? "room.routedByLocal" : routedBy.provider === "clef-flash" ? "room.routedByClef" : "room.routedBy", { percent: String(percent) })}
     </div>
   );
 }

@@ -1806,6 +1806,20 @@ class Session(
         true
     }
 
+    /** Saves a conversation's Aster Mode on its thread (null = Balanced); the bot's next turn reads it. */
+    suspend fun setAsterMode(forBot: Bot, threadId: String, mode: String?): Boolean = mutateTask(false) { client ->
+        client.setTaskAsterMode(forBot.id, threadId, mode)
+        refresh()
+        true
+    }
+
+    /** Pins a conversation's Growth stage (null = read it from the messages again). */
+    suspend fun setGrowthStage(forBot: Bot, threadId: String, stage: String?): Boolean = mutateTask(false) { client ->
+        client.setTaskGrowthStage(forBot.id, threadId, stage)
+        refresh()
+        true
+    }
+
     suspend fun archiveTask(task: BotTask, forBot: Bot, archivedAt: Double?): Boolean = mutateTask(false) { client ->
         client.setTaskArchived(forBot.id, task.threadId, archivedAt)
         refresh()

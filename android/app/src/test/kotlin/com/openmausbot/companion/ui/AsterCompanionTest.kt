@@ -61,4 +61,69 @@ class AsterCompanionTest {
         assertEquals(AsterCompanion.HOME_PLACEHOLDER, ComposerPromise.placeholder(name = "Koda", busy = false, engineCanSteer = false, sending = false, listening = false, home = true))
         assertEquals("Ask Koda", ComposerPromise.placeholder(name = "Koda", busy = false, engineCanSteer = false, sending = false, listening = false))
     }
+
+    // The desktop's `growthStage` cases (src/lib/aster-companion.test.ts), on the phone.
+    private fun row(role: Message.Role, kind: Message.Kind = Message.Kind.TEXT) = said(role, "", kind)
+
+    @Test
+    fun `growth is curious before anything is asked, even with a bot greeting`() {
+        assertEquals(GrowthStage.CURIOUS, AsterCompanion.growthStage(busy = false, messages = emptyList()))
+        assertEquals(GrowthStage.CURIOUS, AsterCompanion.growthStage(busy = false, messages = listOf(greeting)))
+        // a busy bot that has not been asked anything (a routine) is still curious
+        assertEquals(GrowthStage.CURIOUS, AsterCompanion.growthStage(busy = true, messages = listOf(row(Message.Role.BOT, Message.Kind.ACTIVITY))))
+    }
+
+    @Test
+    fun `growth is learning when asked and not started`() {
+        assertEquals(GrowthStage.LEARNING, AsterCompanion.growthStage(busy = false, messages = listOf(row(Message.Role.USER))))
+    }
+
+    @Test
+    fun `growth is planning while thinking and working while a tool runs`() {
+        assertEquals(GrowthStage.PLANNING, AsterCompanion.growthStage(busy = true, messages = listOf(row(Message.Role.USER))))
+        assertEquals(
+            GrowthStage.WORKING,
+            AsterCompanion.growthStage(busy = true, messages = listOf(row(Message.Role.USER), row(Message.Role.BOT, Message.Kind.ACTIVITY))),
+        )
+    }
+
+    @Test
+    fun `growth is achieved once answered, ignoring receipts after the answer`() {
+        val answered = listOf(row(Message.Role.USER), row(Message.Role.BOT))
+        assertEquals(GrowthStage.ACHIEVED, AsterCompanion.growthStage(busy = false, messages = answered))
+        assertEquals(GrowthStage.ACHIEVED, AsterCompanion.growthStage(busy = false, messages = answered + row(Message.Role.BOT, Message.Kind.DIGEST)))
+        assertEquals(GrowthStage.ACHIEVED, AsterCompanion.growthStage(busy = false, messages = answered + row(Message.Role.BOT, Message.Kind.COMPACTION)))
+        // a receipt is skipped when finding the last row: a thinking turn after it is still planning
+        assertEquals(
+            GrowthStage.PLANNING,
+            AsterCompanion.growthStage(busy = true, messages = listOf(row(Message.Role.USER), row(Message.Role.BOT, Message.Kind.DIGEST))),
+        )
+        // a new question after an answer goes back to learning
+        assertEquals(GrowthStage.LEARNING, AsterCompanion.growthStage(busy = false, messages = answered + row(Message.Role.USER)))
+    }
+
+    @Test
+    fun `the stages and modes are the desktop's, in its order`() {
+        assertEquals(listOf("curious", "learning", "planning", "working", "achieved"), GrowthStage.entries.map { it.name.lowercase() })
+        assertEquals(listOf("balanced", "creative", "technical", "study", "relaxed"), AsterMode.entries.map { it.wireValue })
+    }
+
+    @Test
+    fun `a stored mode this build cannot read is Balanced`() {
+        assertEquals(AsterMode.TECHNICAL, AsterMode.fromWire("technical"))
+        assertEquals(AsterMode.BALANCED, AsterMode.fromWire("bogus"))
+        assertEquals(AsterMode.BALANCED, AsterMode.fromWire(null))
+    }
+
+    @Test
+    fun `a stage set by hand wins over the automatic reading`() {
+        val answered = listOf(row(Message.Role.USER), row(Message.Role.BOT))
+        assertEquals(GrowthStage.ACHIEVED to false, AsterCompanion.conversationGrowth(false, answered, null))
+        for (stage in GrowthStage.entries) {
+            assertEquals(stage to true, AsterCompanion.conversationGrowth(false, answered, stage.wireValue))
+        }
+        // a value this build cannot read falls back to the automatic reading
+        assertEquals(GrowthStage.ACHIEVED to false, AsterCompanion.conversationGrowth(false, answered, "done"))
+        assertNull(GrowthStage.fromWire("done"))
+    }
 }

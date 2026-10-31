@@ -13,11 +13,15 @@
 // member), which is exactly what a lead-mode room does today. Nothing here
 // throws.
 import type { Decider } from "./index.ts";
-import type { DeciderFailure, DeciderProvider } from "./types.ts";
+import type { ChoiceQuestion, ClefEngine, DeciderFailure, DeciderProvider, YesNoQuestion } from "./types.ts";
 
 /** Turn starts take seconds anyway, and people far from the US West Coast
  * see 400–700 ms round trips; 1.5 s keeps a slow answer usable. */
 export const ROOM_ROUTING_TIMEOUT_MS = 1_500;
+/** A local model runs on the person's own hardware: a loaded 7–14B model
+ * answers in about a second, a cold one needs to load first. The room's turn
+ * waits for the answer only when its own turn comes up. */
+export const LOCAL_ROOM_ROUTING_TIMEOUT_MS = 12_000;
 /** Bench calibration: answers at >= 0.6 were right 92–99% of the time. */
 export const ROOM_ROUTING_MIN_PROBABILITY = 0.6;
 export const EVERYONE_OPTION = "__everyone__";
@@ -62,6 +66,8 @@ export interface RoomRoutingInput {
 
 export type RoomRoute =
   | { kind: "member"; botId: string; probability: number; provider?: DeciderProvider }
+  /** A Clef room: the message needs several members, and these are they. */
+  | { kind: "members"; botIds: string[]; probability: number; provider?: DeciderProvider }
   | { kind: "everyone"; probability: number; provider?: DeciderProvider }
   | { kind: "nobody"; probability: number; provider?: DeciderProvider }
   | { kind: "fallback"; reason: DeciderFailure | "low_confidence" | "no_choice" };
@@ -111,23 +117,64 @@ export function roomRoutingRequest(input: RoomRoutingInput) {
   return { state, question: { instructions: ROOM_ROUTING_INSTRUCTIONS, options } };
 }
 
-/** Ask once and turn the answer into a route. Never throws. */
+/** For a Clef room: one yes/no per member, asked in the same call, so a
+ * message that needs several members can name which ones. */
+const MEMBER_QUESTION_PREFIX = "member_";
+export function memberQuestions(members: RoomRoutingMember[]): Record<string, YesNoQuestion> {
+  return Object.fromEntries(members.map((member, index) => [`${MEMBER_QUESTION_PREFIX}${index}`, {
+    type: "yesno" as const,
+    instructions: `Should ${clip(member.name, NAME_MAX)} answer or do part of the work for \`new_message\`? (${memberOption(member)})`,
+  }]));
+}
+
+/** Ask once and turn the answer into a route. Never throws.
+ *
+ * `engine` asks a Clef room's engine instead of the app's Auto engine, and
+ * then also asks which members a several-member message needs: the subset
+ * with p >= 0.6 answers (one of them alone if only one qualifies), else the
+ * whole room, as Auto does. */
 export async function decideRoomResponder(
-  decider: Pick<Decider, "choose">,
+  decider: Pick<Decider, "choose"> & Partial<Pick<Decider, "ask">>,
   input: RoomRoutingInput,
-  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+  options: { signal?: AbortSignal; timeoutMs?: number; engine?: ClefEngine } = {},
 ): Promise<RoomRoute> {
   try {
     if (input.members.length < 2) return { kind: "fallback", reason: "no_choice" };
     const { state, question } = roomRoutingRequest(input);
-    const result = await decider.choose("roomRouting", state, question, {
-      timeoutMs: options.timeoutMs ?? ROOM_ROUTING_TIMEOUT_MS,
-      signal: options.signal,
-    });
-    if (!result.ok) return { kind: "fallback", reason: result.reason };
-    const { choice, pTop } = result.answers;
+    const timeoutMs = options.timeoutMs ?? (options.engine === "ollama" ? LOCAL_ROOM_ROUTING_TIMEOUT_MS : ROOM_ROUTING_TIMEOUT_MS);
+    let answers: Record<string, { choice?: string; pTop?: number; p?: number }>;
+    let provider: DeciderProvider | undefined;
+    if (options.engine) {
+      if (!decider.ask) return { kind: "fallback", reason: "misconfigured" };
+      // A Clef room: its own engine, and which members a several-member message needs.
+      const answer: ChoiceQuestion = { type: "choice", instructions: question.instructions, options: question.options };
+      const result = await decider.ask("roomRouting", state, { answer, ...memberQuestions(input.members) }, {
+        timeoutMs, signal: options.signal, provider: options.engine,
+      });
+      if (!result.ok) return { kind: "fallback", reason: result.reason };
+      answers = result.answers as typeof answers;
+      provider = result.provider;
+    } else {
+      // Auto: exactly the request it has always sent (Cloud Pro's relay accepts only this).
+      const result = await decider.choose("roomRouting", state, question, { timeoutMs, signal: options.signal });
+      if (!result.ok) return { kind: "fallback", reason: result.reason };
+      answers = { answer: result.answers };
+      provider = result.provider;
+    }
+    const choice = answers.answer!.choice!;
+    const pTop = answers.answer!.pTop!;
+    const result = { provider };
     if (pTop < ROOM_ROUTING_MIN_PROBABILITY) return { kind: "fallback", reason: "low_confidence" };
-    if (choice === EVERYONE_OPTION) return { kind: "everyone", probability: pTop, provider: result.provider };
+    if (choice === EVERYONE_OPTION) {
+      if (options.engine) {
+        const wanted = input.members.filter((_, index) => (answers[`${MEMBER_QUESTION_PREFIX}${index}`]?.p ?? 0) >= ROOM_ROUTING_MIN_PROBABILITY);
+        if (wanted.length === 1) return { kind: "member", botId: wanted[0]!.id, probability: pTop, provider: result.provider };
+        if (wanted.length > 1 && wanted.length < input.members.length) {
+          return { kind: "members", botIds: wanted.map((member) => member.id), probability: pTop, provider: result.provider };
+        }
+      }
+      return { kind: "everyone", probability: pTop, provider: result.provider };
+    }
     if (choice === NOBODY_OPTION) {
       return pTop >= ROOM_ROUTING_NOBODY_MIN_PROBABILITY
         ? { kind: "nobody", probability: pTop, provider: result.provider }

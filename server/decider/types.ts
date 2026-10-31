@@ -3,7 +3,10 @@
 // Nothing here names a vendor: `jev` is one backend, and another (a local
 // Jev-compatible server, an LLM) plugs in behind the same types.
 
-export type DeciderProvider = "jev" | "clef-flash";
+export type DeciderProvider = "jev" | "clef-flash" | "ollama";
+
+/** The engine a room set to Clef asks: a local Ollama model, or Clef-Flash. */
+export type ClefEngine = "ollama" | "clef-flash";
 
 /** Jobs a person can switch on or off one by one in Settings. */
 export type DeciderJob = "roomRouting";
@@ -104,6 +107,9 @@ export type DeciderResult<T> =
 export interface AskOptions {
   /** Hard ceiling for the whole call, body included. */
   timeoutMs?: number;
+  /** Ask this engine instead of the app's Auto engine: a room set to Clef
+   * asks its Clef engine. It has its own readiness (clefReady). */
+  provider?: ClefEngine;
   /** The caller's own cancellation (a room Stop). */
   signal?: AbortSignal;
 }
@@ -113,6 +119,8 @@ export interface BackendRequest {
   key: string;
   baseUrl?: string;
   accountId?: string;
+  /** The model to run, for a backend that serves several (Ollama). */
+  model?: string;
   state: unknown;
   questions: Record<string, DeciderQuestion>;
   signal: AbortSignal;

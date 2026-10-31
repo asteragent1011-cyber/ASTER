@@ -3,32 +3,15 @@
 // them, and the mood the hero mascot moves in. Pure, so the panels stay thin.
 import type { Message } from "@/state/store";
 
-export type AsterMode = "balanced" | "creative" | "technical" | "study" | "relaxed";
-export const ASTER_MODES: AsterMode[] = ["balanced", "creative", "technical", "study", "relaxed"];
-const MODE_KEY = "aster.mode";
+// The modes and stages, and the prompt a mode adds, are shared with the
+// server (shared/aster-mode.ts): both are saved per conversation on its thread.
+export { ASTER_MODES, GROWTH_STAGES, type AsterMode, type GrowthStage } from "../../shared/aster-mode";
+import { GROWTH_STAGES, type AsterMode, type GrowthStage } from "../../shared/aster-mode";
 
-/** The mode is a preference of this browser only; nothing on the server
- * reads it yet. Storage can throw (private mode), so every access is
- * guarded and a failure falls back to Balanced. */
-export function readAsterMode(storage: Pick<Storage, "getItem"> | undefined = globalThis.localStorage): AsterMode {
-  try {
-    const stored = storage?.getItem(MODE_KEY);
-    return ASTER_MODES.includes(stored as AsterMode) ? (stored as AsterMode) : "balanced";
-  } catch {
-    return "balanced";
-  }
+/** A conversation's mode, as saved on its thread; Balanced when none is. */
+export function conversationMode(task: { asterMode?: AsterMode } | undefined): AsterMode {
+  return task?.asterMode ?? "balanced";
 }
-
-export function saveAsterMode(mode: AsterMode, storage: Pick<Storage, "setItem"> | undefined = globalThis.localStorage): void {
-  try {
-    storage?.setItem(MODE_KEY, mode);
-  } catch {
-    /* the choice still applies for this session */
-  }
-}
-
-export type GrowthStage = "curious" | "learning" | "planning" | "working" | "achieved";
-export const GROWTH_STAGES: GrowthStage[] = ["curious", "learning", "planning", "working", "achieved"];
 
 const isReceipt = (message: Message) => message.kind === "digest" || message.kind === "compaction";
 
@@ -40,6 +23,16 @@ export function growthStage(bot: { busy?: boolean; messages: Message[] }): Growt
   const last = rows.at(-1);
   if (bot.busy) return last?.kind === "activity" ? "working" : "planning";
   return last?.role === "user" ? "learning" : "achieved";
+}
+
+/** Where the conversation stands: the stage the person set by hand, when
+ * they set one, else the automatic reading of its messages. */
+export function conversationGrowth(
+  bot: { busy?: boolean; messages: Message[] },
+  task: { growthStage?: GrowthStage } | undefined,
+): { stage: GrowthStage; manual: boolean } {
+  const manual = task?.growthStage;
+  return manual && GROWTH_STAGES.includes(manual) ? { stage: manual, manual: true } : { stage: growthStage(bot), manual: false };
 }
 
 /** The four moods the hero mascot animates. */

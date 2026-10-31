@@ -140,5 +140,4 @@ class ChatPreferencesTest {
         prefs.rememberThread(room, "computer")
         assertEquals(room, prefs.restoringThread(room, "computer"))
     }
-
 }

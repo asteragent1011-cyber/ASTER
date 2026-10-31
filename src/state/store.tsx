@@ -2,6 +2,7 @@
 // it dispatches typed commands over HTTP and folds the one SSE event
 // stream from the harness server into local state. The reducer stays
 // pure; everything async lives in the wrapped dispatch + SSE fold.
+import type { AsterMode, GrowthStage } from "../../shared/aster-mode";
 import {
   createContext,
   useCallback,
@@ -281,6 +282,10 @@ export interface ModelSelection {
  * provider session. The bot's threadId points at the active one. */
 export interface Task {
   waitingForTeammates?: boolean;
+  /** Aster Mode for this conversation; absent = Balanced (shared/aster-mode.ts). */
+  asterMode?: AsterMode;
+  /** A Growth stage set by hand; absent = read from the messages. */
+  growthStage?: GrowthStage;
   threadId: string;
   /** Internal routine execution; reachable through its run receipt, not history menus. */
   routineRunId?: string;
@@ -497,6 +502,10 @@ export function currentTaskBot(bot: Bot, threadId = bot.threadId): Bot {
 }
 
 export type TaskUpdatePatch = Partial<Pick<Task, "modelSelection" | "approvalMode" | "autoApprove" | "pinnedMessageId">> & {
+  /** null = Balanced again */
+  asterMode?: AsterMode | null;
+  /** null = read the stage from the messages again */
+  growthStage?: GrowthStage | null;
   confirmFullAccess?: boolean;
   acknowledgeLocalAuto?: boolean;
   updateBotDefault?: boolean;
@@ -511,8 +520,10 @@ export type TaskUpdatePatch = Partial<Pick<Task, "modelSelection" | "approvalMod
 };
 
 function taskPatchFields(patch: TaskUpdatePatch): Partial<Task> {
-  const { confirmFullAccess: _fullConsent, acknowledgeLocalAuto: _localAck, updateBotDefault: _modelDefault, resetApprovalToAsk, projectId, archivedAt, snoozedUntil, surface, pinned, ...fields } = patch;
+  const { confirmFullAccess: _fullConsent, acknowledgeLocalAuto: _localAck, updateBotDefault: _modelDefault, resetApprovalToAsk, projectId, archivedAt, snoozedUntil, surface, pinned, asterMode, growthStage, ...fields } = patch;
   return { ...fields, ...(resetApprovalToAsk ? { approvalMode: "ask", autoApprove: false, alwaysAllow: [] } : {}),
+    ...(asterMode === undefined ? {} : { asterMode: asterMode === null || asterMode === "balanced" ? undefined : asterMode }),
+    ...(growthStage === undefined ? {} : { growthStage: growthStage ?? undefined }),
     ...(projectId === undefined ? {} : { projectId: projectId ?? undefined }),
     ...(archivedAt === undefined ? {} : { archivedAt: archivedAt ?? undefined }),
     ...(snoozedUntil === undefined ? {} : { snoozedUntil: snoozedUntil ?? undefined }),

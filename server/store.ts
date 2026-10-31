@@ -121,6 +121,7 @@ const TASK_PATCH_FIELDS = [
   "title", "projectId", "modelSelection", "approvalMode", "autoApprove", "alwaysAllow",
   "unread", "rewound", "archivedAt", "pinned", "pinnedMessageId", "resumeCursors", "lastInstanceId", "cwd",
   "routineRunId", "surface", "surfaceSource", "snoozedUntil", "appliedCompactionId", "contextFloor", "lastContextModel",
+  "asterMode", "growthStage",
 ] as const satisfies readonly (keyof TaskRecord)[];
 export type TaskPatch = Partial<Pick<TaskRecord, typeof TASK_PATCH_FIELDS[number]>>;
 
@@ -528,14 +529,15 @@ export function normalizeGroupDefaultResponder(
 ): GroupDefaultResponder {
   if (dm) return { kind: "mentions" };
   if (value && typeof value === "object") {
-    const candidate = value as { kind?: unknown; botId?: unknown; fallbackBotId?: unknown };
+    const candidate = value as { kind?: unknown; botId?: unknown; fallbackBotId?: unknown; engine?: unknown };
     if (candidate.kind === "everyone") return { kind: "everyone" };
     if (candidate.kind === "mentions") return { kind: "mentions" };
     if (candidate.kind === "auto") {
+      const engine = candidate.engine === "clef" ? { engine: "clef" as const } : {};
       // A fallback who left the room reverts to "the first member".
       return typeof candidate.fallbackBotId === "string" && memberIds.includes(candidate.fallbackBotId)
-        ? { kind: "auto", fallbackBotId: candidate.fallbackBotId }
-        : { kind: "auto" };
+        ? { kind: "auto", fallbackBotId: candidate.fallbackBotId, ...engine }
+        : { kind: "auto", ...engine };
     }
     if (
       candidate.kind === "member" &&

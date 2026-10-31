@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { companionMood, greetingFor, growthStage, isCompanionHome, readAsterMode, saveAsterMode } from "./aster-companion";
+import { ASTER_MODES, GROWTH_STAGES, companionMood, conversationGrowth, conversationMode, greetingFor, growthStage, isCompanionHome } from "./aster-companion";
 import type { Message } from "@/state/store";
 
 const msg = (role: Message["role"], kind: Message["kind"] = "text"): Message =>
@@ -44,21 +44,19 @@ describe("greetingFor", () => {
   });
 });
 
-describe("aster mode preference", () => {
-  it("round-trips a valid mode and falls back to balanced", () => {
-    const map = new Map<string, string>();
-    const storage = { getItem: (k: string) => map.get(k) ?? null, setItem: (k: string, v: string) => void map.set(k, v) };
-    expect(readAsterMode(storage)).toBe("balanced");
-    saveAsterMode("technical", storage);
-    expect(readAsterMode(storage)).toBe("technical");
-    map.set("aster.mode", "bogus");
-    expect(readAsterMode(storage)).toBe("balanced");
+describe("a conversation's mode and growth", () => {
+  it("reads the mode saved on the thread, Balanced when none is", () => {
+    expect(conversationMode(undefined)).toBe("balanced");
+    expect(conversationMode({})).toBe("balanced");
+    for (const mode of ASTER_MODES) expect(conversationMode({ asterMode: mode })).toBe(mode);
   });
 
-  it("survives storage that throws", () => {
-    const broken = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); } };
-    expect(readAsterMode(broken)).toBe("balanced");
-    expect(() => saveAsterMode("study", broken)).not.toThrow();
+  it("uses a stage set by hand, else reads it from the messages", () => {
+    const answered = { messages: [msg("user"), msg("bot")] };
+    expect(conversationGrowth(answered, undefined)).toEqual({ stage: "achieved", manual: false });
+    for (const stage of GROWTH_STAGES) expect(conversationGrowth(answered, { growthStage: stage })).toEqual({ stage, manual: true });
+    // a stored value this build does not know falls back to the automatic reading
+    expect(conversationGrowth(answered, { growthStage: "bogus" as never })).toEqual({ stage: "achieved", manual: false });
   });
 });
 

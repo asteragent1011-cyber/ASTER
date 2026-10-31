@@ -699,6 +699,24 @@ class CompanionClient(
         ))
     }
 
+    /** A conversation's Aster Mode; null (a real JSON null) returns it to Balanced. */
+    suspend fun setTaskAsterMode(botId: String, threadId: String, mode: String?) {
+        sendUnit(makeRequest(
+            "PATCH",
+            "/api/bots/${segment(botId)}/tasks/${segment(threadId)}",
+            body = buildJsonObject { put("asterMode", JsonPrimitive(mode)) },
+        ))
+    }
+
+    /** A Growth stage set by hand; null hands it back to the automatic reading. */
+    suspend fun setTaskGrowthStage(botId: String, threadId: String, stage: String?) {
+        sendUnit(makeRequest(
+            "PATCH",
+            "/api/bots/${segment(botId)}/tasks/${segment(threadId)}",
+            body = buildJsonObject { put("growthStage", JsonPrimitive(stage)) },
+        ))
+    }
+
     /** Title is echoed so an older server does not rename the thread to empty. */
     suspend fun setRoomTaskPinned(groupId: String, threadId: String, pinned: Boolean, title: String) {
         sendUnit(makeRequest(

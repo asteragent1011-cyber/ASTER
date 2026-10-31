@@ -21,10 +21,11 @@ import type { AppConfig } from "../config.ts";
 import { deciderCredential } from "../included-services.ts";
 import { jevBackend } from "./jev.ts";
 import { clefBackend, warmClefConnection } from "./clef.ts";
+import { isLocalOllamaModel, localDeciderUrl, ollamaBackend, warmOllamaModel } from "./ollama.ts";
 import { appendDeciderLog, stateHash } from "./log.ts";
 import { KEY_CHECK_QUESTION, KEY_CHECK_STATE, relayAccepts, relaySeam } from "./relay.ts";
 import type {
-  Answers, AskOptions, BackendResult, ChoiceAnswer, ChoiceQuestion, DeciderBackend, DeciderFailure, DeciderJob,
+  Answers, AskOptions, BackendResult, ChoiceAnswer, ChoiceQuestion, ClefEngine, DeciderBackend, DeciderFailure, DeciderJob,
   DeciderProvider, DeciderQuestion, DeciderResult, DeciderSeam, ScoreAnswer, YesNoAnswer,
 } from "./types.ts";
 
@@ -42,13 +43,14 @@ const offBackend: { id: "off"; decide(): Promise<BackendResult> } = {
   id: "off",
   decide: async () => ({ ok: false, reason: "disabled" }),
 };
-const BACKENDS: Record<DeciderProvider, DeciderBackend> = { jev: jevBackend, "clef-flash": clefBackend };
+const BACKENDS: Record<DeciderProvider, DeciderBackend> = { jev: jevBackend, "clef-flash": clefBackend, ollama: ollamaBackend };
 
 type DeciderConfig = NonNullable<AppConfig["decider"]>;
 
 export function deciderProvider(cfg: AppConfig): DeciderProvider | "off" {
   const env = process.env.DECIDER_PROVIDER?.trim() || process.env.OMB_DECIDER_PROVIDER?.trim();
   const raw = env || cfg.decider?.provider || "jev";
+  if (raw === "ollama") return "ollama";
   const provider = raw === "clef" || raw === "clef-flash" || raw === "cloudflare" ? "clef-flash" : raw;
   return provider in BACKENDS ? (provider as DeciderProvider) : "off";
 }
@@ -57,6 +59,8 @@ export interface DeciderAccountResolved {
   token: string;
   api: string;
   accountId?: string;
+  /** Ollama: the local model the decision runs on. */
+  model?: string;
   included: boolean;
 }
 
@@ -74,6 +78,13 @@ export function deciderAccount(
   draftAccountId?: string,
 ): DeciderAccountResolved | null {
   const provider = explicitProvider ?? deciderProvider(cfg);
+  if (provider === "ollama") {
+    // No key: a local model, on this machine or the person's own network only.
+    const url = localDeciderUrl(cfg.decider?.ollamaUrl);
+    const model = cfg.decider?.ollamaModel?.trim();
+    if (!url || !model || !isLocalOllamaModel(model)) return null;
+    return { token: "", api: url.origin, model, included: false };
+  }
   if (provider === "clef-flash") {
     const token = draft?.trim() || cfg.decider?.cloudflareToken || (cfg.decider?.provider === "clef-flash" ? cfg.decider?.key : undefined) || process.env.CLOUDFLARE_API_TOKEN;
     const accountId = draftAccountId?.trim() || cfg.decider?.cloudflareAccountId || cfg.decider?.accountId || process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -83,6 +94,19 @@ export function deciderAccount(
   }
   const account = deciderCredential(draft?.trim() || (cfg.decider?.provider === "clef-flash" ? undefined : cfg.decider?.key), cfg.decider?.baseUrl);
   return account?.included && seam && !relaySeam(seam) ? null : account;
+}
+
+/** The engine rooms set to Clef ask. Default: the local Ollama model. */
+export function clefEngine(cfg: AppConfig): ClefEngine {
+  return cfg.decider?.clefEngine ?? "ollama";
+}
+
+/** Whether a room set to Clef would ask its engine right now. The room's
+ * choice of Clef is the opt-in, so the Auto engine's master switch does not
+ * gate it; the room-routing job switch still does, and the engine must be set
+ * up (an Ollama model, or a Clef-Flash token and Account ID). */
+export function clefReady(cfg: AppConfig, job: DeciderJob): boolean {
+  return deciderJobOn(cfg, job) && Boolean(deciderAccount(cfg, job, undefined, clefEngine(cfg)));
 }
 
 /** A key is on file, or Cloud Pro includes decisions here. */
@@ -135,6 +159,13 @@ export function describeDecider(cfg: AppConfig) {
     ...(clefAccount ? { clefConfigured: true } : {}),
     ...(clefAccountId ? { clefAccountId } : {}),
     ...(jevAccount ? { jevConfigured: true } : {}),
+    // Clef rooms, only once set: the chosen engine (absent = the local
+    // model), whether it is ready, and the local model and its address (on
+    // the person's own machines; never a secret).
+    ...(cfg.decider?.clefEngine ? { clefEngine: cfg.decider.clefEngine } : {}),
+    ...(clefReady(cfg, "roomRouting") ? { clefReady: true } : {}),
+    ...(cfg.decider?.ollamaModel ? { ollamaModel: cfg.decider.ollamaModel } : {}),
+    ...(cfg.decider?.ollamaUrl ? { ollamaUrl: cfg.decider.ollamaUrl } : {}),
   };
 }
 
@@ -189,6 +220,20 @@ export function deciderSavePatch(
     next.enabled = false;
   } else if (patch.jobs) {
     next.jobs = { ...current?.jobs, ...patch.jobs };
+  }
+
+  // A local engine stays local: no public address, no Ollama cloud model.
+  if (typeof patch.ollamaUrl === "string") {
+    next.ollamaUrl = patch.ollamaUrl.trim();
+    if (next.ollamaUrl && !localDeciderUrl(next.ollamaUrl)) {
+      return { ok: false, error: "The Ollama address must be this computer or your private network, so room messages never leave your machines." };
+    }
+  }
+  if (typeof patch.ollamaModel === "string") {
+    next.ollamaModel = patch.ollamaModel.trim();
+    if (next.ollamaModel && !isLocalOllamaModel(next.ollamaModel)) {
+      return { ok: false, error: "That Ollama model runs in Ollama's cloud. Pick a model that runs on this computer." };
+    }
   }
 
   if (next.enabled === true) {
@@ -255,12 +300,20 @@ export function createDecider(deps: DeciderDeps): Decider {
       const cfg = deps.config();
       const account = deciderProvider(cfg) === "clef-flash" && deciderEnabled(cfg) ? deciderAccount(cfg, "roomRouting") : null;
       if (account) warmClefConnection(account.api);
+      // A room set to Clef on a local model: load the model ahead of the first message.
+      if (clefEngine(cfg) === "ollama" && cfg.decider?.ollamaModel) warmOllamaModel(cfg.decider.ollamaUrl, cfg.decider.ollamaModel);
     } catch {
       /* warming is best-effort */
     }
   }
 
-  function gate(cfg: AppConfig, seam: DeciderSeam): DeciderFailure | null {
+  function gate(cfg: AppConfig, seam: DeciderSeam, engine?: ClefEngine): DeciderFailure | null {
+    if (engine) {
+      // A Clef room asks its own engine, with its own readiness.
+      if (seam === "keyCheck") return null;
+      if (!deciderJobOn(cfg, seam)) return "job_off";
+      return deciderAccount(cfg, seam, undefined, engine) ? null : "no_key";
+    }
     if (deciderProvider(cfg) === "off") return "disabled";
     if (seam === "keyCheck") return null;
     if (!deciderConfigured(cfg)) return cfg.decider?.enabled === true ? "no_key" : "disabled";
@@ -274,7 +327,7 @@ export function createDecider(deps: DeciderDeps): Decider {
   async function call<Qs extends Record<string, DeciderQuestion>>(
     seam: DeciderSeam,
     backend: DeciderBackend | typeof offBackend,
-    request: { key: string; baseUrl?: string; accountId?: string; state: unknown; questions: Qs },
+    request: { key: string; baseUrl?: string; accountId?: string; model?: string; state: unknown; questions: Qs },
     options: AskOptions,
   ): Promise<DeciderResult<Answers<Qs>>> {
     const provider = backend.id === "off" ? undefined : backend.id;
@@ -341,14 +394,14 @@ export function createDecider(deps: DeciderDeps): Decider {
   ): Promise<DeciderResult<Answers<Qs>>> {
     try {
       const cfg = deps.config();
-      const refused = gate(cfg, seam);
-      if (refused) return { ok: false, reason: refused };
-      const provider = deciderProvider(cfg);
+      const refused = gate(cfg, seam, options.provider);
+      if (refused) return { ok: false, ...(options.provider ? { provider: options.provider } : {}), reason: refused };
+      const provider = options.provider ?? deciderProvider(cfg);
       const backend = provider === "off" ? offBackend : BACKENDS[provider];
-      const account = deciderAccount(cfg, seam)!;
+      const account = deciderAccount(cfg, seam, undefined, options.provider)!;
       // Through the included token, only the exact requests the relay takes.
       if (account.included && !relayAccepts(seam, state, questions)) return { ok: false, reason: "misconfigured" };
-      return await call(seam, backend, { key: account.token, baseUrl: account.api, accountId: account.accountId, state, questions }, options);
+      return await call(seam, backend, { key: account.token, baseUrl: account.api, accountId: account.accountId, model: account.model, state, questions }, options);
     } catch {
       return { ok: false, reason: "malformed" };
     }
@@ -388,6 +441,7 @@ export function createDecider(deps: DeciderDeps): Decider {
           key: account.token,
           baseUrl: account.api,
           accountId: account.accountId,
+          model: account.model,
           state: KEY_CHECK_STATE,
           questions,
         }, { timeoutMs: KEY_CHECK_TIMEOUT_MS, ...options }));

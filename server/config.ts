@@ -473,7 +473,7 @@ const appConfigSchema = z.object({
    * authorization log's retention. */
   decider: z.object({
     enabled: z.boolean().optional(),
-    provider: z.enum(["jev", "clef-flash", "off"]).optional(),
+    provider: z.enum(["jev", "clef-flash", "ollama", "off"]).optional(),
     key: optionalText,
     accountId: optionalText,
     cloudflareAccountId: optionalText,
@@ -485,6 +485,17 @@ const appConfigSchema = z.object({
       .refine((value) => !value || /^https?:\/\//i.test(value), "the decision model address must start with http:// or https://")
       .optional(),
     jobs: z.object({ roomRouting: z.boolean().optional() }).optional(),
+    /** The engine rooms set to Clef ask: a local Ollama model, or Clef-Flash. */
+    clefEngine: z.enum(["ollama", "clef-flash"]).optional(),
+    /** The local Ollama server for decisions; only this machine or a private
+     * network is accepted (server/decider/ollama.ts). Default 127.0.0.1:11434. */
+    ollamaUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .refine((value) => !value || /^https?:\/\//i.test(value), "the Ollama address must start with http:// or https://")
+      .optional(),
+    ollamaModel: z.string().trim().max(200).optional(),
   }).optional(),
   /** Avatar provider credentials stay separate; choosing a router never reuses a cloud key. */
   imageGen: z.object({
@@ -587,7 +598,7 @@ export interface AppConfig {
   opencodeGo?: { apiKey?: string };
   tts?: { key?: string; fishKey?: string; voice?: string; provider?: "elevenlabs" | "fish" | "system" | "chatterbox" | "xai"; baseUrl?: string; model?: string };
   /** The decision model; see the schema above and server/decider. */
-  decider?: { enabled?: boolean; provider?: "jev" | "clef-flash" | "off"; key?: string; accountId?: string; cloudflareAccountId?: string; cloudflareToken?: string; baseUrl?: string; jobs?: { roomRouting?: boolean } };
+  decider?: { enabled?: boolean; provider?: "jev" | "clef-flash" | "ollama" | "off"; key?: string; accountId?: string; cloudflareAccountId?: string; cloudflareToken?: string; baseUrl?: string; jobs?: { roomRouting?: boolean }; clefEngine?: "ollama" | "clef-flash"; ollamaUrl?: string; ollamaModel?: string };
   imageGen?: ImageGenerationConfig;
   profile?: { name?: string; email?: string; aboutMe?: string };
   rooms?: { turnTimeoutMinutes: number; handoffLifetimeMinutes?: number; handoffMinRunwayMinutes?: number; handoffHardCapMinutes?: number };

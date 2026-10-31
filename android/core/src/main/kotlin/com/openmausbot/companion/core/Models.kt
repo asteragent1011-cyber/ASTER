@@ -341,6 +341,11 @@ data class BotTask(
     val routineRunId: String? = null,
     /** The person pinned this thread above the update-ordered list. */
     val pinned: Boolean? = null,
+    /** Aster Mode for this conversation (balanced, creative, technical, study,
+     * relaxed); absent = Balanced. It shapes the bot's next turn on the computer. */
+    val asterMode: String? = null,
+    /** A Growth stage the person set by hand; absent = read from the messages. */
+    val growthStage: String? = null,
     /** Newest message time. Absent on older computers; the list uses createdAt. */
     val updatedAt: Double? = null,
     /**
